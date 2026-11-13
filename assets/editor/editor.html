@@ -1,0 +1,464 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<!--
+  Rich-text editor used by lib/widgets/html_editor.dart in place of the web's
+  Tiptap component (src/components/Tiptap.vue): same toolbar (order, icons,
+  34px buttons, native selects and colour inputs), same editor area and the
+  same small Insert/Cancel modals. HTML in / HTML out. Talks to Flutter
+  through flutter_inappwebview handlers:
+    JS → Flutter: 'change' (html), 'height' (px), 'pickImage' → data URL | null
+    Flutter → JS: window.editorApi.{init,setHtml,getHtml,setDark,setEditable,focus}
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* --primary-foreground (shell, buttons, selects) and the inherited text colour. */
+  :root { --pf: #ffffff; --fg: #1f2430;
+    --font: 'Plus Jakarta Sans', 'Outfit', Inter, ui-sans-serif, sans-serif, system-ui; }
+  body.dark { --pf: #1f2430; --fg: #e1e3e9; --font: Inter, ui-sans-serif, sans-serif, system-ui; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--pf); color: var(--fg); font-family: var(--font); font-size: 16px;
+    line-height: 1.5; }
+  button, input, select, textarea { font: inherit; color: inherit; margin: 0; }
+  textarea, input:not([type="color"]) { background: transparent; border: 0; padding: 0; outline: none; }
+
+  /* .tiptap-shell (border/radius are drawn by the Flutter container) */
+  #shell { position: relative; padding: 12px; overflow: hidden; }
+
+  /* .toolbar / .group */
+  #toolbar { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  #toolbar.hidden { display: none; }
+  .group { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .icon, .sel { flex-shrink: 0; }
+
+  /* .icon */
+  .icon { height: 34px; width: 34px; display: grid; place-items: center; border-radius: 8px; padding: 0;
+    background: var(--pf); border: 1px solid #dce1e7; cursor: pointer; transition: 0.15s; }
+  .icon svg { width: 18px; height: 18px; stroke: #9ca3af; stroke-width: 1.3; }
+  .icon:hover { background: #f3f4f6; }
+  .icon.active { background: #2563eb; border-color: #2563eb; }
+  .icon.active svg { stroke: #ffffff; }
+
+  /* .sel */
+  .sel { height: 34px; padding: 4px 8px; border-radius: 8px; border: 1px solid #dce1e7; background: var(--pf); }
+
+  /* .color — a native colour input (black until a colour is picked). */
+  .color { width: 34px; height: 34px; padding: 0; border-radius: 6px; border: 1px solid #e6e9ef;
+    background: transparent; cursor: pointer; flex-shrink: 0; }
+
+  /* .sep */
+  .sep { width: 1px; height: 28px; background: #e5e7eb; margin: 0 6px; }
+
+  /* .editor + .ProseMirror */
+  .editor { background: #d8d9dc; color: #000; }
+  #editor { min-height: 240px; padding: 14px; border-radius: 8px; border: 1px solid #f1f5f9; background: #ffffff;
+    font-size: 15px; line-height: 1.6; outline: none; white-space: pre-wrap; overflow-wrap: anywhere;
+    word-break: break-word; overflow-x: hidden; position: relative; }
+  #editor.is-empty[data-placeholder]:not([data-placeholder=""])::before { content: attr(data-placeholder);
+    position: absolute; left: 15px; top: 15px; color: #9ca3af; pointer-events: none; }
+  #editor p, #editor li, #editor span, #editor strong, #editor em, #editor code, #editor a {
+    overflow-wrap: anywhere; word-break: break-word; }
+  #editor p, #editor pre, #editor blockquote { margin: 0; }
+  #editor a { word-break: break-all; color: #2563eb; text-decoration: underline; }
+  /* style.css `ul { list-style: disc; margin-left: 2rem }` + Tiptap's padding */
+  #editor ul { list-style-type: disc; margin: 0 0 0 2rem; padding-left: 22px; }
+  #editor ol { list-style-type: decimal; margin: 0 0 0 2rem; padding-left: 22px; }
+  #editor pre { background: #111827; color: #e5e7eb; padding: 12px; border-radius: 8px; white-space: pre-wrap;
+    word-break: break-word; overflow-x: auto; max-width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo,
+    Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; }
+  #editor code { background: #f3f4f6; padding: 2px 5px; border-radius: 5px; font-family: ui-monospace,
+    SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; }
+  #editor pre code { background: none; padding: 0; color: inherit; }
+  #editor img, #editor iframe { max-width: 100%; height: auto; display: block; margin: 10px auto; border-radius: 8px; }
+  #editor h1 { font-size: 28px; font-weight: 700; line-height: 1.2; margin: 0.67em 0; }
+  #editor h2 { font-size: 24px; font-weight: 700; line-height: 1.25; margin: 0.67em 0; }
+  #editor h3 { font-size: 20px; font-weight: 700; line-height: 1.3; margin: 0.67em 0; }
+  #editor h4 { font-size: 18px; font-weight: 700; line-height: 1.3; margin: 0.67em 0; }
+  #editor h5 { font-size: 16px; font-weight: 700; line-height: 1.35; margin: 0.67em 0; }
+  #editor h6 { font-size: 14px; font-weight: 700; line-height: 1.35; margin: 0.67em 0; }
+
+  /* Modals (.overlay / .panel / .actions) */
+  .overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.35); display: flex; align-items: center;
+    justify-content: center; z-index: 1200; }
+  .overlay.hidden, .pop.hidden { display: none; }
+  .panel { background: #fff; padding: 14px; border-radius: 8px; min-width: 320px; max-width: 320px;
+    border: 1px solid #e5e7eb; box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12); animation: pop 0.15s ease; }
+  @keyframes pop { from { transform: translateY(-6px) scale(0.97); opacity: 0; }
+    to { transform: translateY(0) scale(1); opacity: 1; } }
+  .panel input::placeholder, .panel textarea::placeholder { color: #9ca3af; }
+  .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+  .actions button { background: transparent; border: 0; padding: 0; cursor: default; }
+
+  /* Fallback colour palette (Android WebView has no native colour picker). */
+  .pop { position: fixed; z-index: 1300; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px;
+    padding: 8px; box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12); }
+  .swatches { display: grid; grid-template-columns: repeat(8, 20px); gap: 4px; }
+  .swatches button { width: 20px; height: 20px; border-radius: 4px; border: 1px solid #e5e7eb; cursor: pointer; padding: 0; }
+</style>
+</head>
+<body>
+<div id="shell">
+  <div id="toolbar">
+    <div class="group">
+      <button class="icon" data-act="undo" title="Undo" disabled><svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6 0 1.21-.37 2.33-1 3.26l1.46 1.46A7.932 7.932 0 0 0 20 13c0-4.42-3.58-8-8-8z"/></svg></button>
+      <button class="icon" data-act="redo" title="Redo" disabled><svg viewBox="0 0 24 24"><path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6 0 1.21.37 2.33 1 3.26L5.54 17.72A7.932 7.932 0 0 1 4 13c0-4.42 3.58-8 8-8z"/></svg></button>
+      <div class="sep"></div>
+
+      <select class="sel" id="block" title="Paragraph / Heading">
+        <option value="p">Paragraph</option>
+        <option value="h1">H1</option><option value="h2">H2</option><option value="h3">H3</option>
+        <option value="h4">H4</option><option value="h5">H5</option><option value="h6">H6</option>
+      </select>
+      <select class="sel" id="font" title="Font family">
+        <option value="">Default</option>
+        <option value="Inter, system-ui, -apple-system, 'Segoe UI', Roboto">Inter</option>
+        <option value="Arial, Helvetica, sans-serif">Arial</option>
+        <option value="'Times New Roman', Times, serif">Times</option>
+        <option value="'Courier New', Courier, monospace">Courier</option>
+      </select>
+      <select class="sel" id="size" title="Font size">
+        <option value="">Size</option>
+        <option value="12">12</option><option value="14">14</option><option value="16">16</option>
+        <option value="18">18</option><option value="20">20</option><option value="24">24</option>
+        <option value="32">32</option>
+      </select>
+
+      <div class="sep"></div>
+
+      <button class="icon" data-cmd="bold" title="Bold"><svg viewBox="0 0 24 24"><path d="M7 5h6a4 4 0 0 1 0 8H7zM7 13h7a4 4 0 0 1 0 8H7z"/></svg></button>
+      <button class="icon" data-cmd="italic" title="Italic"><svg viewBox="0 0 24 24"><path d="M10 4v3h2.21l-3.42 10H6v3h8v-3h-2.21l3.42-10H18V4z"/></svg></button>
+      <button class="icon" data-cmd="strikeThrough" title="Strike"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12h12"/><text x="6" y="16" font-size="14" font-family="Arial, sans-serif" fill="currentColor">S</text></svg></button>
+
+      <div class="sep"></div>
+
+      <button class="icon" data-cmd="insertUnorderedList" title="Bullet list"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="5" width="3" height="3"/><rect x="3" y="11" width="3" height="3"/><rect x="3" y="17" width="3" height="3"/><rect x="7" y="6" width="14" height="2" rx="1"/><rect x="7" y="12" width="14" height="2" rx="1"/><rect x="7" y="18" width="14" height="2" rx="1"/></svg></button>
+      <button class="icon" data-cmd="insertOrderedList" title="Numbered list"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" font-family="Arial, sans-serif" font-weight="bold"><text x="1" y="8" font-size="5">1</text><text x="1" y="14" font-size="5">2</text><text x="1" y="20" font-size="5">3</text><rect x="7" y="6" width="14" height="2" rx="1"/><rect x="7" y="12" width="14" height="2" rx="1"/><rect x="7" y="18" width="14" height="2" rx="1"/></svg></button>
+
+      <div class="sep"></div>
+
+      <button class="icon" data-act="codeblock" title="Code block"><svg viewBox="0 0 24 24"><path d="M8 17l-5-5 5-5M16 7l5 5-5 5M12 20l4-16"/></svg></button>
+
+      <div class="sep"></div>
+
+      <button class="icon" data-act="upload" title="Upload image"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>
+      <button class="icon" data-act="imageurl" title="Insert image by URL"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5c-1.1 0-2-.9-2-2V7c0-1.1.9-2 2-2h7"/><circle cx="9" cy="13" r="3"/><path d="M21 3h-6m0 0l2-2m-2 2l2 2"/></svg></button>
+      <input class="color" id="foreColor" type="color" title="Font color">
+      <input class="color" id="hiliteColor" type="color" title="Highlight color">
+
+      <div class="sep"></div>
+
+      <button class="icon" data-cmd="justifyLeft" title="Align left"><svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h12M3 18h18"/></svg></button>
+      <button class="icon" data-cmd="justifyCenter" title="Align center"><svg viewBox="0 0 24 24"><path d="M6 6h12M3 12h18M6 18h12"/></svg></button>
+      <button class="icon" data-cmd="justifyRight" title="Align right"><svg viewBox="0 0 24 24"><path d="M3 6h18M9 12h12M3 18h18"/></svg></button>
+      <button class="icon" data-cmd="justifyFull" title="Justify"><svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+
+      <div class="sep"></div>
+
+      <button class="icon" data-act="link" title="Insert link">🔗</button>
+      <button class="icon" data-act="embed" title="Insert embed/iframe"><svg viewBox="0 0 24 24"><path d="M16 6l6 6-6 6M8 6l-6 6 6 6"/></svg></button>
+    </div>
+  </div>
+
+  <div class="editor"><div id="editor" contenteditable="true" spellcheck="true"></div></div>
+
+  <!-- Link -->
+  <div id="linkModal" class="overlay hidden"><div class="panel">
+    <input id="linkInput" placeholder="https://example.com" autocomplete="off">
+    <div class="actions"><button data-ok="link">Insert</button><button data-cancel="link">Cancel</button></div>
+  </div></div>
+  <!-- Image URL -->
+  <div id="imageModal" class="overlay hidden"><div class="panel">
+    <input id="imageInput" placeholder="Image URL" autocomplete="off">
+    <div class="actions"><button data-ok="image">Insert</button><button data-cancel="image">Cancel</button></div>
+  </div></div>
+  <!-- Embed -->
+  <div id="embedModal" class="overlay hidden"><div class="panel">
+    <textarea id="embedInput" rows="4" placeholder="Paste full iframe or an embed URL"></textarea>
+    <div class="actions"><button data-ok="embed">Insert</button><button data-cancel="embed">Cancel</button></div>
+  </div></div>
+</div>
+
+<div id="palette" class="pop hidden"><div class="swatches" id="swatches"></div></div>
+
+<script>
+(function () {
+  const shell = document.getElementById('shell');
+  const ed = document.getElementById('editor');
+  const toolbar = document.getElementById('toolbar');
+  const undoBtn = toolbar.querySelector('[data-act="undo"]');
+  const redoBtn = toolbar.querySelector('[data-act="redo"]');
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  const COLORS = ['#000000', '#374151', '#6b7280', '#9ca3af', '#ffffff', '#ef4444', '#f97316', '#f59e0b',
+                  '#eab308', '#84cc16', '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6',
+                  '#a855f7', '#ec4899', '#f43f5e', '#7f1d1d', '#1e3a8a', '#064e3b', '#fde047', '#bbf7d0'];
+  let saved = null;
+  let timer = null;
+
+  document.execCommand('defaultParagraphSeparator', false, 'p');
+
+  function bridge(name, ...args) {
+    const b = window.flutter_inappwebview;
+    if (b && b.callHandler) return b.callHandler(name, ...args);
+    return Promise.resolve(null);
+  }
+
+  // The Flutter widget grows with the content, like the web component.
+  let lastHeight = 0;
+  function reportHeight() {
+    const h = Math.ceil(shell.getBoundingClientRect().height);
+    if (h !== lastHeight) { lastHeight = h; bridge('height', h); }
+  }
+  if (window.ResizeObserver) new ResizeObserver(reportHeight).observe(shell);
+
+  function isEmpty() {
+    return ed.textContent.trim() === '' && !ed.querySelector('img,iframe,video,hr,table');
+  }
+  function getHtml() { return isEmpty() ? '' : ed.innerHTML; }
+
+  // Tiptap's undo/redo buttons start disabled and follow editor.can().
+  function setHistory(canUndo, canRedo) { undoBtn.disabled = !canUndo; redoBtn.disabled = !canRedo; }
+
+  function changed() {
+    ed.classList.toggle('is-empty', isEmpty());
+    clearTimeout(timer);
+    timer = setTimeout(() => bridge('change', getHtml()), 120);
+    reportHeight();
+  }
+
+  function saveSel() {
+    const s = window.getSelection();
+    if (s.rangeCount && ed.contains(s.anchorNode)) saved = s.getRangeAt(0).cloneRange();
+  }
+  function restoreSel() {
+    ed.focus();
+    if (!saved) return;
+    const s = window.getSelection();
+    s.removeAllRanges();
+    s.addRange(saved);
+  }
+  function exec(cmd, val) {
+    restoreSel();
+    document.execCommand(cmd, false, val === undefined ? null : val);
+    saveSel();
+    if (cmd !== 'undo' && cmd !== 'redo') setHistory(true, false);
+    changed();
+    updateState();
+  }
+  function withCss(fn) {
+    document.execCommand('styleWithCSS', false, true);
+    try { fn(); } finally { document.execCommand('styleWithCSS', false, false); }
+  }
+  function closest(tag) {
+    const s = window.getSelection();
+    let n = s.rangeCount ? s.anchorNode : null;
+    while (n && n !== ed) {
+      if (n.nodeType === 1 && n.tagName === tag) return n;
+      n = n.parentNode;
+    }
+    return null;
+  }
+  function escAttr(v) { return String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+
+  function updateState() {
+    toolbar.querySelectorAll('[data-cmd]').forEach((b) => {
+      let on = false;
+      try { on = document.queryCommandState(b.dataset.cmd); } catch (e) {}
+      b.classList.toggle('active', on);
+    });
+    toolbar.querySelector('[data-act="codeblock"]').classList.toggle('active', !!closest('PRE'));
+    let block = '';
+    try { block = String(document.queryCommandValue('formatBlock') || '').toLowerCase(); } catch (e) {}
+    document.getElementById('block').value = /^h[1-6]$/.test(block) ? block : 'p';
+  }
+
+  // ── Toolbar (`@click.stop`) ──────────────────────────────────────────
+  toolbar.addEventListener('mousedown', (e) => {
+    // Keep the editor selection when clicking buttons (not the selects).
+    if (e.target.closest('button')) e.preventDefault();
+  });
+  toolbar.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b || b.disabled) return;
+    if (b.dataset.cmd) return exec(b.dataset.cmd);
+    switch (b.dataset.act) {
+      case 'undo':
+        exec('undo');
+        return setHistory(true, true);
+      case 'redo':
+        exec('redo');
+        return setHistory(true, true);
+      case 'codeblock': return exec('formatBlock', closest('PRE') ? '<p>' : '<pre>');
+      case 'upload':
+        return bridge('pickImage').then((url) => { if (url) insertImage(url); });
+      case 'imageurl': return openModal('image');
+      case 'link': return openModal('link');
+      case 'embed': return openModal('embed');
+    }
+  });
+  document.getElementById('block').addEventListener('change', (e) => exec('formatBlock', '<' + e.target.value + '>'));
+  document.getElementById('font').addEventListener('change', (e) => {
+    const v = e.target.value;
+    withCss(() => exec('fontName', v || 'inherit'));
+  });
+  document.getElementById('size').addEventListener('change', (e) => {
+    const px = e.target.value;
+    if (!px) return;
+    withCss(() => exec('fontSize', '7'));
+    ed.querySelectorAll('span[style*="xxx-large"], font[size="7"]').forEach((el) => {
+      if (el.tagName === 'FONT') {
+        const span = document.createElement('span');
+        span.style.fontSize = px + 'px';
+        while (el.firstChild) span.appendChild(el.firstChild);
+        el.replaceWith(span);
+      } else {
+        el.style.fontSize = px + 'px';
+      }
+    });
+    changed();
+  });
+
+  function insertImage(src) {
+    exec('insertHTML', '<img src="' + escAttr(src) + '">');
+  }
+
+  // ── Colour inputs ────────────────────────────────────────────────────
+  function applyColor(mode, c) { withCss(() => exec(mode === 'fore' ? 'foreColor' : 'hiliteColor', c)); }
+  [['foreColor', 'fore'], ['hiliteColor', 'hilite']].forEach(([id, mode]) => {
+    const input = document.getElementById(id);
+    input.addEventListener('mousedown', saveSel);
+    input.addEventListener('input', () => applyColor(mode, input.value));
+    if (isAndroid) {
+      input.addEventListener('click', (e) => { e.preventDefault(); openPalette(input, mode); });
+    }
+  });
+
+  const palette = document.getElementById('palette');
+  const swatches = document.getElementById('swatches');
+  let paletteMode = 'fore';
+  COLORS.forEach((c) => {
+    const s = document.createElement('button');
+    s.style.background = c;
+    s.title = c;
+    s.addEventListener('mousedown', (e) => e.preventDefault());
+    s.addEventListener('click', () => {
+      palette.classList.add('hidden');
+      document.getElementById(paletteMode === 'fore' ? 'foreColor' : 'hiliteColor').value = c;
+      applyColor(paletteMode, c);
+    });
+    swatches.appendChild(s);
+  });
+  function openPalette(el, mode) {
+    paletteMode = mode;
+    const r = el.getBoundingClientRect();
+    palette.style.left = Math.max(4, Math.min(r.left, window.innerWidth - 220)) + 'px';
+    palette.style.top = (r.bottom + 4) + 'px';
+    palette.classList.remove('hidden');
+  }
+  document.addEventListener('mousedown', (e) => {
+    if (!palette.contains(e.target) && !e.target.closest('.color')) palette.classList.add('hidden');
+  });
+
+  // ── Modals (link / image URL / embed) ────────────────────────────────
+  const modals = {
+    link: [document.getElementById('linkModal'), document.getElementById('linkInput')],
+    image: [document.getElementById('imageModal'), document.getElementById('imageInput')],
+    embed: [document.getElementById('embedModal'), document.getElementById('embedInput')],
+  };
+  function openModal(name) {
+    saveSel();
+    const [m, input] = modals[name];
+    input.value = '';
+    m.classList.remove('hidden');
+    setTimeout(() => input.focus(), 0);
+  }
+  function closeModal(name) {
+    const [m, input] = modals[name];
+    m.classList.add('hidden');
+    input.value = '';
+  }
+  function applyModal(name) {
+    const value = modals[name][1].value;
+    closeModal(name);
+    if (!value) return;
+    if (name === 'link') return applyLink(value);
+    if (name === 'image') return insertImage(value);
+    return applyEmbed(value);
+  }
+  shell.addEventListener('click', (e) => {
+    const ok = e.target.closest('[data-ok]');
+    const cancel = e.target.closest('[data-cancel]');
+    if (ok) applyModal(ok.dataset.ok);
+    if (cancel) closeModal(cancel.dataset.cancel);
+  });
+  ['link', 'image'].forEach((name) => {
+    modals[name][1].addEventListener('keyup', (e) => { if (e.key === 'Enter') applyModal(name); });
+  });
+
+  function applyLink(url) {
+    restoreSel();
+    const s = window.getSelection();
+    if (!s.rangeCount || s.isCollapsed) {
+      exec('insertHTML', '<a href="' + escAttr(url) + '" target="_blank" rel="noopener noreferrer">' +
+        escAttr(url) + '</a>');
+    } else {
+      exec('createLink', url);
+      const a = closest('A');
+      if (a) { a.setAttribute('target', '_blank'); a.setAttribute('rel', 'noopener noreferrer nofollow'); }
+    }
+  }
+
+  // applyEmbed(): an iframe's src (or the raw URL); javascript: is refused.
+  function applyEmbed(raw) {
+    raw = raw.trim();
+    const m = raw.match(/src=(?:"|')([^"']+)(?:"|')/);
+    const src = m ? m[1] : raw;
+    if (!src || /^\s*javascript:/i.test(src)) return;
+    exec('insertHTML', '<iframe frameborder="0" allowfullscreen="true" ' +
+      'style="width:100%;height:360px;border:0;border-radius:8px;margin:10px 0;" src="' + escAttr(src) +
+      '" width="100%" height="360"></iframe><p></p>');
+  }
+
+  // ── Editor events ────────────────────────────────────────────────────
+  ed.addEventListener('input', () => { setHistory(true, false); changed(); });
+  document.addEventListener('selectionchange', () => { saveSel(); updateState(); });
+  ed.addEventListener('click', (e) => {
+    // Don't navigate when clicking links inside the editor.
+    if (e.target.closest('a')) e.preventDefault();
+  });
+
+  // ── API for Flutter ──────────────────────────────────────────────────
+  window.editorApi = {
+    init(opts) {
+      opts = opts || {};
+      document.body.classList.toggle('dark', !!opts.dark);
+      ed.dataset.placeholder = opts.placeholder || '';
+      ed.innerHTML = opts.html || '';
+      this.setEditable(opts.editable !== false);
+      ed.classList.toggle('is-empty', isEmpty());
+      updateState();
+      reportHeight();
+    },
+    setHtml(html) {
+      ed.innerHTML = html || '';
+      ed.classList.toggle('is-empty', isEmpty());
+      reportHeight();
+    },
+    getHtml,
+    setDark(d) { document.body.classList.toggle('dark', !!d); },
+    setEditable(e) {
+      ed.contentEditable = e ? 'true' : 'false';
+      toolbar.classList.toggle('hidden', !e);
+      reportHeight();
+    },
+    focus() { ed.focus(); },
+  };
+  ed.classList.add('is-empty');
+  reportHeight();
+})();
+</script>
+</body>
+</html>

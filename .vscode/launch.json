@@ -1,0 +1,35 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "eLabs",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": ["--dart-define-from-file=.env"]
+    },
+    {
+      "name": "MathZoro",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": ["--dart-define-from-file=.env", "--dart-define=IS_MATHZORO=true"]
+    },
+    {
+      "name": "eLabs (Windows)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "deviceId": "windows",
+      "args": ["--dart-define-from-file=.env"]
+    },
+    {
+      "name": "MathZoro (Windows)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "deviceId": "windows",
+      "args": ["--dart-define-from-file=.env", "--dart-define=IS_MATHZORO=true"]
+    }
+  ]
+}
