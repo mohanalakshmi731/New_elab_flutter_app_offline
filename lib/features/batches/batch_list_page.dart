@@ -36,6 +36,7 @@ Map<String, dynamic> _emptyInstructor() => {
   'gender': '',
   'password': '',
   'enable_zoom': false,
+  'is_labadmin': false,
   'dob': '',
   'photo': null,
   'joiningDate': '',
@@ -274,6 +275,7 @@ class _AddInstructorDialogState extends State<_AddInstructorDialog> {
               ],
             ),
             gap,
+            LabeledCheckbox(value: _form['is_labadmin'] == true, label: 'Lab Admin', onChanged: (v) => setState(() => _form['is_labadmin'] = v)),
             Align(
               alignment: Alignment.centerLeft,
               child: LabeledCheckbox(

@@ -182,7 +182,16 @@ class AddInstructorDialog extends StatelessWidget {
         ),
       ),
       gap,
-      PhotoField(photo: f.photo, onPick: () => vm.run(vm.onNewInstructorPhoto)),
+        LabeledCheckbox(
+          value: f.isLabAdmin,
+          label: 'Lab Admin',
+          onChanged: (v) {
+            f.isLabAdmin = v;
+            vm.touch();
+          },
+        ),
+        gap,
+        PhotoField(photo: f.photo, onPick: () => vm.run(vm.onNewInstructorPhoto)),
       const SizedBox(height: 40),
       SplitFooter(
         splitAt: 640,
@@ -228,7 +237,16 @@ class UpdateInstructorDialog extends StatelessWidget {
         ),
       ],
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        // `gap-4` + the fields' `mt-4` (the frame adds 16).
+          LabeledCheckbox(
+            value: f.isLabAdmin,
+            label: 'Lab Admin',
+            onChanged: (v) {
+              f.isLabAdmin = v;
+              vm.touch();
+            },
+          ),
+          gap,
+          // `gap-4` + the fields' `mt-4` (the frame adds 16).
         gap,
         LabeledControl(label: 'First Name', child: AppTextField(controller: f.firstName, hint: 'First Name')),
         gap,

@@ -46,3 +46,6 @@ app.*.map.json
 
 # Environment file (server URLs and keys) — see README.md
 /.env
+
+# Local build tools (for example, the Windows NuGet CLI).
+/.tools/

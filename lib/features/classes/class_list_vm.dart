@@ -54,6 +54,7 @@ class InstructorForm {
   bool showConfirmPassword = false;
   bool status = false;
   bool enableZoom = false;
+  bool isLabAdmin = false;
   String gender = '';
   String dob = '';
 
@@ -71,6 +72,7 @@ class InstructorForm {
     String password = '',
     bool status = false,
     bool enableZoom = false,
+    bool isLabAdmin = false,
     String gender = '',
     String dob = '',
     Object? photo,
@@ -87,6 +89,7 @@ class InstructorForm {
     showConfirmPassword = false;
     this.status = status;
     this.enableZoom = enableZoom;
+    this.isLabAdmin = isLabAdmin;
     this.gender = gender;
     this.dob = dob;
     this.photo = photo;
@@ -1435,6 +1438,7 @@ class ClassListVm extends ChangeNotifier {
             joiningDate: str(orJs(instructor['joining_date'], '')),
             designation: str(orJs(instructor['designation'], '')),
             enableZoom: jsTruthy(instructor['enable_zoom']),
+            isLabAdmin: jsTruthy(instructor['is_labadmin']),
           ));
     } finally {
       _set(() => isLoading = false);
@@ -1452,6 +1456,7 @@ class ClassListVm extends ChangeNotifier {
         'country_code': newInstructor.countryCode,
         'phone': newInstructor.phone.text,
         'status': newInstructor.status,
+        'is_labadmin': newInstructor.isLabAdmin,
         'joining_date': newInstructor.joiningDate,
         'designation': newInstructor.designation.text,
       });
@@ -1480,6 +1485,7 @@ class ClassListVm extends ChangeNotifier {
         designation: f.designation.text,
         joiningDate: f.joiningDate,
         enableZoom: f.enableZoom,
+        isLabAdmin: f.isLabAdmin,
       );
       _set(() => newInstructor.assign());
       await changeInstructorPage(s.classInstructorPagination.currentPage);

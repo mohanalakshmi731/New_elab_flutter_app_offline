@@ -9,6 +9,7 @@ import '../core/storage/secure_store.dart';
 import '../data/models/session.dart';
 import '../data/services/auth_service.dart';
 import 'session_controller.dart';
+import 'lab_practice.dart';
 
 /// Core providers shared by the whole app.
 ///
@@ -30,6 +31,17 @@ final sessionProvider =
 /// Shared HTTP client (src/service/Axios.ts).
 final apiClientProvider = Provider<ApiClient>((ref) {
   return ApiClient(
+    prepareActivityPayload: (path, payload) {
+      final session = ref.read(sessionProvider);
+      final practice = ref.read(labPracticeProvider);
+      if (!session.isLabAdmin ||
+          practice == null ||
+          practice.token != session.token ||
+          !labIdentityPaths.contains(path)) {
+        return payload;
+      }
+      return practice.apply(payload);
+    },
     tokenReader: () => ref.read(sessionProvider).userInfo?.token,
     onUnauthorized: () => ref.read(sessionProvider.notifier).logout(callApi: false),
   );

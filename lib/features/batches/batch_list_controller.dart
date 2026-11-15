@@ -61,6 +61,7 @@ class BatchListController extends Notifier<BatchListState> {
       s('joiningDate'),
       s('designation'),
       payload['enable_zoom'] == true,
+      payload['is_labadmin'] == true,
     );
     state = state.copyWith(instructors: [...state.instructors, asMap(instructorRes) ?? const {}]);
   }

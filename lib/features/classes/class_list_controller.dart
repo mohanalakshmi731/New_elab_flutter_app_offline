@@ -516,13 +516,16 @@ class ClassListController extends Notifier<ClassListState> {
     required String designation,
     required String joiningDate,
     required bool enableZoom,
+    bool isLabAdmin = false,
   }) async {
     final svc = ref.read(instructorServiceProvider);
     final res = await svc.createUser(
         firstName, lastName, email, countryCode, phone, gender, dob, photo, password, designation, enableZoom);
     final userId = dig(res, ['data', 'id']);
     if (!jsTruthy(userId)) return;
-    final instructorRes = await svc.createInstructor(userId, joiningDate, designation, enableZoom);
+    final instructorRes = await svc.createInstructor(userId, joiningDate, designation, enableZoom,
+      isLabAdmin,
+    );
     state = state.copyWith(instructors: [...state.instructors, instructorRes]);
   }
 

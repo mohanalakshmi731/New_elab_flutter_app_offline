@@ -80,6 +80,7 @@ class SessionController extends Notifier<SessionState> {
       username: username,
       token: asString(res['token2'] ?? res['token']) ?? '',
       role: role,
+      isLabAdmin: asBool(instructor?['is_labadmin']) || role == Role.labAdmin,
       instituteId: instituteId,
       email: asString(user['email']) ?? '',
       studentId: studentId,

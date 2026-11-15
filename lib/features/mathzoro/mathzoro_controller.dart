@@ -413,6 +413,7 @@ class MathZoroController extends Notifier<MathZoroState> {
         username: u.username,
         token: u.token,
         role: u.role,
+    isLabAdmin: u.isLabAdmin,
         instituteId: u.instituteId,
         fullName: u.fullName,
         email: u.email,

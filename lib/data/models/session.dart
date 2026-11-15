@@ -6,6 +6,7 @@ class Role {
   static const admin = 'admin';
   static const institute = 'institute';
   static const instructor = 'instructor';
+  static const labAdmin = 'labadmin';
   static const student = 'student';
 }
 
@@ -27,6 +28,7 @@ class UserInfo {
     this.classesId,
     this.zslClassId,
     this.isMathZoro = false,
+    this.isLabAdmin = false,
     this.phone,
     this.mathzoroClassId,
   });
@@ -47,6 +49,7 @@ class UserInfo {
   final int? classesId;
   final int? zslClassId;
   final bool isMathZoro;
+  final bool isLabAdmin;
   final String? phone;
   final int? mathzoroClassId;
 
@@ -66,6 +69,7 @@ class UserInfo {
         classesId: classesId ?? this.classesId,
         zslClassId: zslClassId ?? this.zslClassId,
         isMathZoro: isMathZoro,
+        isLabAdmin: isLabAdmin,
         phone: phone,
         mathzoroClassId: mathzoroClassId ?? this.mathzoroClassId,
       );
@@ -85,6 +89,7 @@ class UserInfo {
         'classes_id': classesId,
         'zsl_class_id': zslClassId,
         'is_math_zoro': isMathZoro,
+    'is_labadmin': isLabAdmin,
         'phone': phone,
         'mathzoroclassid': mathzoroClassId,
       };
@@ -104,6 +109,7 @@ class UserInfo {
         classesId: asInt(j['classes_id']),
         zslClassId: asInt(j['zsl_class_id']),
         isMathZoro: asBool(j['is_math_zoro']),
+    isLabAdmin: asBool(j['is_labadmin']),
         phone: asString(j['phone']),
         mathzoroClassId: asInt(j['mathzoroclassid']),
       );
@@ -203,7 +209,9 @@ class SessionState {
   String get token => userInfo?.token ?? '';
   String get username => userInfo?.username ?? '';
   int? get userId => userInfo?.id;
-  String get role => userInfo?.role ?? '';
+  String get role => userInfo?.role == Role.labAdmin ? Role.instructor : userInfo?.role ?? '';
+  bool get isLabAdmin =>
+      userInfo?.isLabAdmin == true || userInfo?.role == Role.labAdmin;
   int? get instituteId => userInfo?.instituteId;
   int? get classId => classDetails?.id;
   String get className => classDetails?.name ?? '';

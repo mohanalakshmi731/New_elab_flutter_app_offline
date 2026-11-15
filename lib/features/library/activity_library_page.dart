@@ -15,6 +15,8 @@ import '../../data/models/session.dart';
 import '../../data/services/js_compat.dart';
 import '../../data/services/services.dart';
 import '../../state/providers.dart';
+import '../../state/lab_practice.dart';
+import '../lab_admin/lab_activity_host.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_loader.dart';
 import '../../widgets/form_fields.dart' show AppSelectItem;
@@ -22,6 +24,9 @@ import '../../widgets/web_content_view.dart';
 import '../institutes/institute_widgets.dart' show SpinIcon;
 import '../mathzoro/mz_ui.dart' show CssLinearGradient;
 import '../quiz/quiz_exam.dart';
+import '../quiz/bridged_web_view.dart';
+import '../student_activity/student_activity_logic.dart' show isXpSuccessMessage, isXpChannelSuccess;
+import '../student_activity/zsl_activity_controller.dart';
 import '../take_exam/exam_window.dart';
 import 'library_controller.dart';
 import 'library_logic.dart';
@@ -38,11 +43,11 @@ part 'activity_library_sidebar.dart';
 /// Reference Video / Teacher Guide / Learning Outcome / How to play / Quiz
 /// tabs. The folder button opens the chapter / topic / activity drawer and
 /// the "All Activities" popup.
-class ActivityLibraryPage extends ConsumerStatefulWidget {
-  const ActivityLibraryPage({super.key});
+class _ActivityLibraryPageContent extends ConsumerStatefulWidget {
+  const _ActivityLibraryPageContent({super.key});
 
   @override
-  ConsumerState<ActivityLibraryPage> createState() => _ActivityLibraryPageState();
+  ConsumerState<_ActivityLibraryPageContent> createState() => _ActivityLibraryPageState();
 }
 
 class _TabMeta {
@@ -61,7 +66,7 @@ const _tabMeta = <String, _TabMeta>{
   'quiz': _TabMeta('Quiz', BootstrapIcons.patch_question),
 };
 
-class _ActivityLibraryPageState extends ConsumerState<ActivityLibraryPage> {
+class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageContent> {
   // ── data(): quiz ──
   bool _quizSubmitted = false;
   dynamic _quizResult;
@@ -116,6 +121,29 @@ class _ActivityLibraryPageState extends ConsumerState<ActivityLibraryPage> {
   List<dynamic> _allactivities = [];
 
   Timer? _trackingInterval;
+  String? _completedUrl;
+  bool _recordingCompletion = false;
+
+  Future<void> _recordPracticeCompletion(dynamic data, {bool xpChannel = false}) async {
+    if (!mounted || _container.read(labPracticeProvider)?.practice != true ||
+        _recordingCompletion || _completedUrl == _signedUrl ||
+        !(xpChannel ? isXpChannelSuccess(data) : isXpSuccessMessage(data))) {
+      return;
+    }
+    final url = _signedUrl;
+    final id = _selectedActivityId ?? _activityIdFromRoute;
+    if (id == null) return;
+    _recordingCompletion = true;
+    try {
+      await _container.read(zslActivityProvider.notifier).recordZslActivityPerformance('$id', _classId);
+      _completedUrl = url;
+    } catch (error) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not record activity completion. Please try again.')));
+    } finally {
+      _recordingCompletion = false;
+    }
+  }
+
 
   /// Keeps the activity WebView alive when it moves into the fullscreen layer.
   final _activityViewKey = GlobalKey();
@@ -180,7 +208,7 @@ class _ActivityLibraryPageState extends ConsumerState<ActivityLibraryPage> {
   Future<void> _mounted() async {
     await _guard(_fetchAllChapters);
     if (!mounted) return;
-    _trackingInterval = Timer.periodic(const Duration(seconds: 5), (_) {
+    _trackingInterval = Timer.periodic(Duration(seconds: _container.read(labPracticeProvider)?.practice == true ? 10 : 5), (_) {
       if (jsTruthy(_trackingId)) _ctrl.trackActivity(jsString(_trackingId));
     });
   }
@@ -199,7 +227,9 @@ class _ActivityLibraryPageState extends ConsumerState<ActivityLibraryPage> {
 
   Object? get _instituteId => jsOr([_session.userInfo?.instituteId, '']);
 
-  bool get _isInstructorQuizMode => isInstructorQuizRole(_session.userInfo?.role);
+  bool get _isInstructorQuizMode =>
+      !(_container.read(labPracticeProvider)?.practice ?? false) &&
+      isInstructorQuizRole(_session.userInfo?.role);
 
   String get _quizSysScannerTitle {
     final label = jsOr([dig(_quizSysSession, ['batch_name']), _batchName, 'Batch']);
@@ -450,6 +480,7 @@ class _ActivityLibraryPageState extends ConsumerState<ActivityLibraryPage> {
   }
 
   Future<void> _onQuizSubmitted(Map<String, dynamic> payload) async {
+    if (!mounted) return;
     try {
       final activityId =
           jsString(jsOr([_selectedActivity?['id'], _selectedActivityId, _activityIdFromRoute]));
@@ -990,4 +1021,11 @@ class _ActivityLibraryPageState extends ConsumerState<ActivityLibraryPage> {
           ),
         ),
       );
+}
+
+class ActivityLibraryPage extends StatelessWidget {
+  const ActivityLibraryPage({super.key});
+  @override
+  Widget build(BuildContext context) =>
+      LabActivityHost(builder: (key) => _ActivityLibraryPageContent(key: key));
 }

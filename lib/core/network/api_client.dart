@@ -22,6 +22,7 @@ class ApiClient {
     required String? Function() tokenReader,
     required Future<void> Function() onUnauthorized,
     String? baseUrl,
+    this.prepareActivityPayload,
   }) : dio = Dio(
           BaseOptions(
             baseUrl: baseUrl ?? Env.apiEndpoint,
@@ -72,6 +73,9 @@ class ApiClient {
   static const _silentKey = 'silent';
 
   final Dio dio;
+  /// Applies the transient lab practice identity to recording requests.
+  final Map<String, dynamic> Function(String, Map<String, dynamic>)?
+      prepareActivityPayload;
 
   /// Extracts a user-facing message from any error thrown by this client.
   static String messageOf(Object error, {String fallback = 'Something went wrong'}) {
@@ -124,7 +128,9 @@ class ApiClient {
       bool silent = false,
       Options? options}) async {
     final res = await dio.post<dynamic>(path,
-        data: data, queryParameters: _clean(query), options: _opts(silent, options));
+        data: data is Map<String, dynamic>
+          ? (prepareActivityPayload?.call(path, data) ?? data)
+          : data, queryParameters: _clean(query), options: _opts(silent, options));
     return res.data;
   }
 

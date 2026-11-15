@@ -55,6 +55,8 @@ add_subdirectory("runner")
 
 # Generated plugin build rules, which manage building the plugins and adding
 # them to the application.
+# Allow a project-local NuGet executable when it is not installed on PATH.
+list(APPEND CMAKE_PROGRAM_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../.tools")
 include(flutter/generated_plugins.cmake)
 
 

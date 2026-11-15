@@ -41,12 +41,15 @@ class InstructorService {
   }
 
   Future<dynamic> createInstructor(Object userId,
-      [String? joiningDate, String? designation, bool enableZoom = false]) {
+      [String? joiningDate, String? designation, bool enableZoom = false,
+    bool isLabAdmin = false,
+  ]) {
     final session = _session();
     final payload = <String, dynamic>{
       'institute_id': session.instituteId,
       'user_id': userId,
       'enable_zoom': enableZoom,
+      'is_labadmin': isLabAdmin,
     };
 
     if (jsTruthy(session.classId)) payload['class_id'] = session.classId;
@@ -65,8 +68,8 @@ class InstructorService {
 
   Future<dynamic> getallInstructors(int page) => _api.get('/instructor', query: {
         'institute_id': _session().instituteId,
-        'page': page,
-      });
+        'page': page},
+  );
 
   Future<dynamic> assignInstructorToAdmin(Map<String, dynamic> payload) =>
       _api.post('/class/admin', data: payload);
@@ -76,8 +79,8 @@ class InstructorService {
       _api.get('/class/admin', query: {
         'institute_id': instituteId,
         'class_id': classId,
-        'page': page,
-      });
+        'page': page},
+  );
 
   Future<dynamic> getInstructorById(Object instructorId) =>
       _api.get('/instructor/$instructorId',

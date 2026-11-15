@@ -289,7 +289,11 @@ extension _StudentActivityView on _StudentActivityPageState {
   Widget _tabsSection(BuildContext context) {
     final dark = context.isDark;
     final sm = context.isSm;
-    final tabs = _tabs.where((t) => !(_isFromPlayZone && t.key == 'quiz')).toList();
+    final tabs = [
+      ..._tabs,
+      if (ref.read(labPracticeProvider)?.practice == true)
+        const _TabDef('quiz', 'Quiz', BootstrapIcons.patch_question),
+    ].where((t) => !(_isFromPlayZone && t.key == 'quiz')).toList();
     return Padding(
       padding: const EdgeInsets.only(top: 16),
       child: Column(

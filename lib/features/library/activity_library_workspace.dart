@@ -285,7 +285,9 @@ extension _ActivityWorkspace on _ActivityLibraryPageState {
     // ACTIVITY TAB
     if (_activeTab == 'activity') {
       if (_signedUrl.isNotEmpty) {
-        return KeyedSubtree(key: _activityViewKey, child: WebContentView(url: _signedUrl));
+        return KeyedSubtree(key: _activityViewKey, child: _container.read(labPracticeProvider)?.practice == true
+          ? BridgedWebView(url: _signedUrl, onMessage: _recordPracticeCompletion, onXpChannel: (data) => _recordPracticeCompletion(data, xpChannel: true))
+          : WebContentView(url: _signedUrl));
       }
       return centered(Column(mainAxisSize: MainAxisSize.min, children: [
         Icon(BootstrapIcons.hourglass_split, size: 36, color: muted),

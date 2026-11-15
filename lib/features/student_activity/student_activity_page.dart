@@ -17,6 +17,8 @@ import '../../core/utils/json.dart';
 import '../../data/models/session.dart';
 import '../../data/services/js_compat.dart';
 import '../../state/providers.dart';
+import '../../state/lab_practice.dart';
+import '../lab_admin/lab_activity_host.dart';
 import '../../widgets/form_fields.dart';
 import '../../widgets/web_content_view.dart';
 import '../institutes/institute_widgets.dart' show SpinIcon;
@@ -43,15 +45,15 @@ part 'student_activity_overlays.dart';
 /// topicId, topicName, topicImage, activityId, returnPath, … }`) which the
 /// launching screen stores via `mathZoroProvider.notifier
 /// .setSelectedActivityContext(...)` before navigating here.
-class StudentActivityPage extends ConsumerStatefulWidget {
-  const StudentActivityPage({super.key, this.fromPlayZone});
+class _StudentActivityPageContent extends ConsumerStatefulWidget {
+  const _StudentActivityPageContent({super.key, this.fromPlayZone});
 
   /// `$route.query.fromPlayZone` — `'1'` when opened from the Play Zone
   /// (hides the folder button and the quiz tab).
   final String? fromPlayZone;
 
   @override
-  ConsumerState<StudentActivityPage> createState() => _StudentActivityPageState();
+  ConsumerState<_StudentActivityPageContent> createState() => _StudentActivityPageState();
 }
 
 typedef _Json = Map<String, dynamic>;
@@ -82,7 +84,7 @@ class _ModalSlot {
   Route<void>? route;
 }
 
-class _StudentActivityPageState extends ConsumerState<StudentActivityPage> with WindowListener {
+class _StudentActivityPageState extends ConsumerState<_StudentActivityPageContent> with WindowListener {
   bool _ready = false;
 
   // ── Quiz ──
@@ -227,7 +229,7 @@ class _StudentActivityPageState extends ConsumerState<StudentActivityPage> with 
     // mounted()
     await _fetchAllChapters();
     if (!mounted) return;
-    _trackingInterval = Timer.periodic(const Duration(seconds: 5), (_) {
+    _trackingInterval = Timer.periodic(Duration(seconds: ref.read(labPracticeProvider)?.practice == true ? 10 : 5), (_) {
       if (jsTruthy(_trackingId)) _zsl.trackActivity(jsStr(_trackingId)!);
     });
   }
@@ -340,6 +342,7 @@ class _StudentActivityPageState extends ConsumerState<StudentActivityPage> with 
 
   // ← ONLY ONE onQuizSubmitted — calls submitZslQuiz store action
   Future<void> _onQuizSubmitted(Map<String, dynamic> payload) async {
+    if (!mounted) return;
     try {
       final activityId = jsTemplate(
           firstTruthy([_selectedActivity?['id'], _selectedActivityId, _activityIdFromRoute]));
@@ -812,6 +815,7 @@ class _StudentActivityPageState extends ConsumerState<StudentActivityPage> with 
   }
 
   void _recordPerformance() {
+    if (!mounted) return;
     final activityId = jsTruthy(_selectedActivityId) ? _selectedActivityId : _activityIdFromRoute;
     if (!jsTruthy(activityId)) return;
     _zsl.recordZslActivityPerformance(jsTemplate(activityId), _classId).then((res) {
@@ -840,4 +844,14 @@ class _StudentActivityPageState extends ConsumerState<StudentActivityPage> with 
     });
     return _buildPage(context);
   }
+}
+
+class StudentActivityPage extends StatelessWidget {
+  const StudentActivityPage({super.key, this.fromPlayZone});
+  final String? fromPlayZone;
+  @override
+  Widget build(BuildContext context) => LabActivityHost(
+    builder: (key) =>
+        _StudentActivityPageContent(key: key, fromPlayZone: fromPlayZone),
+  );
 }
