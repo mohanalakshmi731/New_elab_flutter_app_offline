@@ -166,17 +166,21 @@ class _RailItemState extends State<_RailItem> with SingleTickerProviderStateMixi
   final _link = LayerLink();
   final _tooltip = OverlayPortalController();
   final _dropdown = OverlayPortalController();
-  late final _anim = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 200),
-    reverseDuration: const Duration(milliseconds: 150),
-    value: widget.open ? 1 : 0,
-  );
+  // Created eagerly: a lazy `late final` initializer would first run in
+  // dispose() for items without children, and creating a ticker there looks
+  // up TickerMode on a deactivated element (FlutterError on logout).
+  late final AnimationController _anim;
   bool _hover = false;
 
   @override
   void initState() {
     super.initState();
+    _anim = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+      reverseDuration: const Duration(milliseconds: 150),
+      value: widget.open ? 1 : 0,
+    );
     _tooltip.show();
     _dropdown.show();
   }
@@ -538,17 +542,19 @@ class _BottomNavButton extends StatefulWidget {
 class _BottomNavButtonState extends State<_BottomNavButton> with SingleTickerProviderStateMixin {
   final _link = LayerLink();
   final _dropdown = OverlayPortalController();
-  late final _anim = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 200),
-    reverseDuration: const Duration(milliseconds: 150),
-    value: widget.open ? 1 : 0,
-  );
+  // Created eagerly — see _RailItemState._anim.
+  late final AnimationController _anim;
   bool _hover = false;
 
   @override
   void initState() {
     super.initState();
+    _anim = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+      reverseDuration: const Duration(milliseconds: 150),
+      value: widget.open ? 1 : 0,
+    );
     _dropdown.show();
   }
 
