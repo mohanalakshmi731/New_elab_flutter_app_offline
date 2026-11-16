@@ -51,6 +51,7 @@ void main() {
       student: {'id': 4, 'zsl_id': 40, 'zsl_class_id': 20}));
     for (final path in labIdentityPaths) {
       await client.post(path, data: {'instructor_id': 7, 'sub_user_id': 70});
+      expect(requests.last.data['institute_id'], 1, reason: path);
       expect(requests.last.data['student_id'], 4, reason: path);
       expect(requests.last.data['instructor_id'], isNull, reason: path);
       expect(requests.last.data['sub_user_id'], 40, reason: path);
@@ -60,6 +61,60 @@ void main() {
     container.read(labPracticeProvider.notifier).set(const LabPractice(token: 'old-session', practice: true));
     await client.post('/zsl/attempt-quiz', data: {'sub_user_id': 70});
     expect(requests.last.data, {'sub_user_id': 70});
+  });
+
+  test('presentation and other roles keep their original recording parameters', () async {
+    for (final role in [Role.instructor, Role.student]) {
+      final container = ProviderContainer(overrides: [
+        initialSessionProvider.overrideWithValue(SessionState(userInfo: UserInfo(
+          id: 7, username: 'User', token: 'session', role: role,
+          instituteId: 1, isLabAdmin: false))),
+      ]);
+      final client = container.read(apiClientProvider);
+      final requests = <RequestOptions>[];
+      client.dio.interceptors.add(InterceptorsWrapper(onRequest: (options, handler) {
+        requests.add(options);
+        handler.resolve(Response(requestOptions: options, statusCode: 200, data: {}));
+      }));
+      container.read(labPracticeProvider.notifier).set(const LabPractice(
+        token: 'session', practice: true, student: {'id': 4}));
+      await client.post('/tracking/activity', data: {'tracking_id': 'existing'});
+      expect(requests.single.data, {'tracking_id': 'existing'});
+      container.dispose();
+    }
+    final container = ProviderContainer(overrides: [
+      initialSessionProvider.overrideWithValue(const SessionState(userInfo: user)),
+    ]);
+    final client = container.read(apiClientProvider);
+    RequestOptions? captured;
+    client.dio.interceptors.add(InterceptorsWrapper(onRequest: (options, handler) {
+      captured = options;
+      handler.resolve(Response(requestOptions: options, statusCode: 200, data: {}));
+    }));
+    container.read(labPracticeProvider.notifier).set(const LabPractice(token: 'session'));
+    await client.post('/tracking/activity', data: {'tracking_id': 'presentation'});
+    expect(captured!.data, {'tracking_id': 'presentation'});
+    container.dispose();
+  });
+
+  testWidgets('lab admin wrapper gives a positioned activity workspace the full available width', (tester) async {
+    final container = ProviderContainer(overrides: [
+      initialSessionProvider.overrideWithValue(const SessionState(userInfo: user)),
+    ]);
+    addTearDown(container.dispose);
+    const workspace = ValueKey('positioned-workspace');
+    await tester.pumpWidget(UncontrolledProviderScope(container: container,
+      child: MaterialApp(home: Scaffold(body: LabActivityHost(builder: (key) =>
+        Stack(key: key, children: [
+          Positioned.fill(child: ColoredBox(key: workspace, color: Colors.blue)),
+          const SizedBox.shrink(),
+        ]))))));
+    final shellSize = tester.getSize(find.byType(LabActivityHost));
+    final workspaceSize = tester.getSize(find.byKey(workspace));
+    expect(workspaceSize.width, shellSize.width);
+    expect(workspaceSize.height, greaterThan(0));
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
   });
 
   testWidgets('mode gates activity, cascades selections, records student usage, and clears on exit', (tester) async {

@@ -37,10 +37,11 @@ final apiClientProvider = Provider<ApiClient>((ref) {
       if (!session.isLabAdmin ||
           practice == null ||
           practice.token != session.token ||
+          !practice.practice ||
           !labIdentityPaths.contains(path)) {
         return payload;
       }
-      return practice.apply(payload);
+      return practice.apply({...payload, 'institute_id': session.instituteId});
     },
     tokenReader: () => ref.read(sessionProvider).userInfo?.token,
     onUnauthorized: () => ref.read(sessionProvider.notifier).logout(callApi: false),

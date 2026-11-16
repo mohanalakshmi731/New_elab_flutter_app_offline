@@ -37,8 +37,13 @@ class _LabActivityHostState extends ConsumerState<LabActivityHost> {
       final session = _container.read(sessionProvider);
       if (!session.isLabAdmin || !_practice || _studentId == null) return;
       try {
-        await _container.read(apiClientProvider).post('/usage-tracking/record',
-          data: {'institute_id': session.instituteId}, silent: true);
+        await _container
+            .read(apiClientProvider)
+            .post(
+              '/usage-tracking/record',
+              data: {'institute_id': session.instituteId},
+              silent: true,
+            );
       } catch (_) {
         // A failed heartbeat must not interrupt the activity.
       }
@@ -129,7 +134,12 @@ class _LabActivityHostState extends ConsumerState<LabActivityHost> {
       initialValue: value,
       isExpanded: true,
       decoration: InputDecoration(
-        labelText: label,
+        hintText: 'Select ${label.toLowerCase()}',
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 14,
+        ),
         border: const OutlineInputBorder(),
       ),
       items: rows
@@ -153,6 +163,9 @@ class _LabActivityHostState extends ConsumerState<LabActivityHost> {
       return widget.builder(const ValueKey('activity'));
     }
     return Column(
+      // Routed activity pages use positioned stacks. Give them tight width
+      // constraints, otherwise the workspace can shrink to zero width.
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
           padding: const EdgeInsets.all(12),
@@ -167,7 +180,12 @@ class _LabActivityHostState extends ConsumerState<LabActivityHost> {
                   initialValue: _practice,
                   isExpanded: true,
                   decoration: const InputDecoration(
-                    labelText: 'Activity mode',
+                    hintText: 'Activity mode',
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 14,
+                    ),
                     border: OutlineInputBorder(),
                   ),
                   items: const [
