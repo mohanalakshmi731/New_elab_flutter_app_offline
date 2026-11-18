@@ -494,7 +494,7 @@ class _PopupActivityCard extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: jsTruthy(fp)
-                ? Image.network(jsString(fp),
+                ? contentImage(jsString(fp),
                     fit: BoxFit.contain, errorBuilder: (_, _, _) => const SizedBox.shrink())
                 : Icon(BootstrapIcons.play_circle, size: 30, color: dark ? Tw.gray600 : Tw.gray300),
           ),

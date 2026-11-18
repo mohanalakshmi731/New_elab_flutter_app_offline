@@ -1,3 +1,4 @@
+import '../../widgets/content_image.dart';
 import 'package:flutter/material.dart';
 
 /// Renders the small HTML subset found in ZSL question stems
@@ -129,7 +130,7 @@ List<InlineSpan> parseHtmlSpans(String html, TextStyle base) {
               alignment: PlaceholderAlignment.middle,
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxHeight: 220),
-                child: Image.network(
+                child: contentImage(
                   src,
                   fit: BoxFit.contain,
                   errorBuilder: (_, _, _) => const SizedBox.shrink(),

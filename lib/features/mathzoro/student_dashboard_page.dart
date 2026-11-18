@@ -1,3 +1,4 @@
+import '../../widgets/content_image.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
@@ -1154,7 +1155,7 @@ class _MathZoroStudentDashboardPageState extends ConsumerState<MathZoroStudentDa
         border: Border.all(color: dark ? Colors.white.withValues(alpha: 0.1) : Tw.slate200),
       ),
       child: path.isNotEmpty
-          ? Image.network(
+          ? contentImage(
               path,
               fit: BoxFit.cover,
               width: size,

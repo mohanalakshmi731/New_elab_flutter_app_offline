@@ -1,3 +1,4 @@
+import '../../widgets/content_image.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -308,7 +309,7 @@ class LibImage extends StatelessWidget {
   Widget build(BuildContext context) {
     final u = url;
     if (u == null || u.isEmpty) return fallback;
-    return Image.network(
+    return contentImage(
       u,
       fit: fit,
       width: double.infinity,

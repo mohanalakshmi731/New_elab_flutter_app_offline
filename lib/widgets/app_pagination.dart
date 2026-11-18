@@ -96,6 +96,7 @@ class _PageChipState extends State<_PageChip> {
   bool _hover = false;
 
   @override
+
   Widget build(BuildContext context) {
     final dark = context.isDark;
     final input = context.inputColor;

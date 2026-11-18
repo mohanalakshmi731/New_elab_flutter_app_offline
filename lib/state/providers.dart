@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../core/network/api_client.dart';
 import '../core/network/content_cache.dart';
 import '../core/realtime/echo_client.dart';
@@ -10,6 +9,8 @@ import '../data/models/session.dart';
 import '../data/services/auth_service.dart';
 import 'session_controller.dart';
 import 'lab_practice.dart';
+import '../features/offline/offline_runtime.dart';
+import '../features/offline/offline_service.dart';
 
 /// Core providers shared by the whole app.
 ///
@@ -19,18 +20,32 @@ import 'lab_practice.dart';
 final secureStoreProvider = Provider<SecureStore>((ref) => SecureStore());
 
 final sharedPreferencesProvider = Provider<SharedPreferences>(
-    (ref) => throw UnimplementedError('overridden in main()'));
+  (ref) => throw UnimplementedError('overridden in main()'),
+);
 
-final initialSessionProvider =
-    Provider<SessionState>((ref) => const SessionState());
+final initialSessionProvider = Provider<SessionState>(
+  (ref) => const SessionState(),
+);
 
 /// The logged-in session (Pinia `useUserStore` session fields).
-final sessionProvider =
-    NotifierProvider<SessionController, SessionState>(SessionController.new);
+final sessionProvider = NotifierProvider<SessionController, SessionState>(
+  SessionController.new,
+);
 
 /// Shared HTTP client (src/service/Axios.ts).
-final apiClientProvider = Provider<ApiClient>((ref) {
+final Provider<ApiClient> apiClientProvider = Provider<ApiClient>((ref) {
   return ApiClient(
+    isOffline: () =>
+        ref.exists(offlineRuntimeProvider) && ref.read(offlineBrowsingProvider),
+    readOffline: (path, query) async {
+      final service = ref.read(offlineServiceProvider);
+      if (path == '/lab-admin/practice-options') {
+        return service.practiceOptions(query);
+      }
+      return (await service.preparedCatalog()).response(path, query);
+    },
+    onReachabilityChanged: (reachable) =>
+        ref.read(offlineRuntimeProvider.notifier).reportReachability(reachable),
     prepareActivityPayload: (path, payload) {
       final session = ref.read(sessionProvider);
       final practice = ref.read(labPracticeProvider);
@@ -44,7 +59,8 @@ final apiClientProvider = Provider<ApiClient>((ref) {
       return practice.apply({...payload, 'institute_id': session.instituteId});
     },
     tokenReader: () => ref.read(sessionProvider).userInfo?.token,
-    onUnauthorized: () => ref.read(sessionProvider.notifier).logout(callApi: false),
+    onUnauthorized: () =>
+        ref.read(sessionProvider.notifier).logout(callApi: false),
   );
 });
 
@@ -52,13 +68,16 @@ final apiClientProvider = Provider<ApiClient>((ref) {
 /// Cleared on logout.
 final contentCacheProvider = Provider<ContentCache>((ref) => ContentCache());
 
-final authServiceProvider =
-    Provider<AuthService>((ref) => AuthService(ref.watch(apiClientProvider)));
+final authServiceProvider = Provider<AuthService>(
+  (ref) => AuthService(ref.watch(apiClientProvider)),
+);
 
 /// Laravel Echo / Reverb client (`app.config.globalProperties.$echo`).
 /// The socket opens lazily on the first channel subscription.
 final echoClientProvider = Provider<EchoClient>((ref) {
-  final echo = EchoClient(tokenReader: () => ref.read(sessionProvider).userInfo?.token);
+  final echo = EchoClient(
+    tokenReader: () => ref.read(sessionProvider).userInfo?.token,
+  );
   ref.onDispose(echo.disconnect);
   return echo;
 });
@@ -73,8 +92,10 @@ class ColorModeController extends Notifier<ColorModePref> {
   @override
   ColorModePref build() {
     final raw = ref.read(sharedPreferencesProvider).getString(_key);
-    return ColorModePref.values.firstWhere((m) => m.name == raw,
-        orElse: () => ColorModePref.system);
+    return ColorModePref.values.firstWhere(
+      (m) => m.name == raw,
+      orElse: () => ColorModePref.system,
+    );
   }
 
   void set(ColorModePref mode) {
@@ -84,18 +105,20 @@ class ColorModeController extends Notifier<ColorModePref> {
 
   /// Top bar button: light → dark → system → light.
   void cycle() => set(switch (state) {
-        ColorModePref.light => ColorModePref.dark,
-        ColorModePref.dark => ColorModePref.system,
-        ColorModePref.system => ColorModePref.light,
-      });
+    ColorModePref.light => ColorModePref.dark,
+    ColorModePref.dark => ColorModePref.system,
+    ColorModePref.system => ColorModePref.light,
+  });
 
   /// Sidebar button: toggles light ↔ dark only.
-  void toggleLightDark() =>
-      set(state == ColorModePref.dark ? ColorModePref.light : ColorModePref.dark);
+  void toggleLightDark() => set(
+    state == ColorModePref.dark ? ColorModePref.light : ColorModePref.dark,
+  );
 }
 
-final colorModeProvider =
-    NotifierProvider<ColorModeController, ColorModePref>(ColorModeController.new);
+final colorModeProvider = NotifierProvider<ColorModeController, ColorModePref>(
+  ColorModeController.new,
+);
 
 final themeModeProvider = Provider<ThemeMode>((ref) {
   return switch (ref.watch(colorModeProvider)) {

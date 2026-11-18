@@ -1,6 +1,5 @@
 part of 'quiz_exam.dart';
 
-
 /// The template of `QuizExam.vue`.
 extension _QuizExamUi on _QuizExamViewState {
   Widget _buildOverlay(BuildContext context) {
@@ -22,14 +21,16 @@ extension _QuizExamUi on _QuizExamViewState {
               style: TextStyle(color: dark ? Tw.slate100 : Tw.slate900),
               child: AnimatedBuilder(
                 animation: _shake,
-                builder: (context, child) =>
-                    Transform.translate(offset: Offset(_shakeOffset(), 0), child: child),
+                builder: (context, child) => Transform.translate(
+                  offset: Offset(_shakeOffset(), 0),
+                  child: child,
+                ),
                 child: SafeArea(
                   child: Stack(
                     children: [
                       Column(
                         children: [
-                          _header(context),
+                          if (!widget.embedded) _header(context),
                           if (!_isScannerPluginMode) _slimProgress(context),
                           Expanded(
                             child: _isScannerPluginMode
@@ -43,18 +44,24 @@ extension _QuizExamUi on _QuizExamViewState {
                         ],
                       ),
                       if (!_isScannerPluginMode) ...[
-                        _layer(_confirmOpen,
-                            barrier: Colors.black.withValues(alpha: 0.6),
-                            blur: 8,
-                            child: _confirmDialog(context)),
-                        _layer(_screenBlocked,
-                            barrier: Colors.black.withValues(alpha: 0.9),
-                            blur: 24,
-                            child: _graceBox(context)),
-                        _layer(_securityDialog,
-                            barrier: const Color.fromRGBO(30, 0, 0, 0.95),
-                            blur: 24,
-                            child: _terminatedBox(context)),
+                        _layer(
+                          _confirmOpen,
+                          barrier: Colors.black.withValues(alpha: 0.6),
+                          blur: 8,
+                          child: _confirmDialog(context),
+                        ),
+                        _layer(
+                          _screenBlocked,
+                          barrier: Colors.black.withValues(alpha: 0.9),
+                          blur: 24,
+                          child: _graceBox(context),
+                        ),
+                        _layer(
+                          _securityDialog,
+                          barrier: const Color.fromRGBO(30, 0, 0, 0.95),
+                          blur: 24,
+                          child: _terminatedBox(context),
+                        ),
                       ],
                     ],
                   ),
@@ -73,7 +80,11 @@ extension _QuizExamUi on _QuizExamViewState {
     const xs = [0.0, -6.0, 6.0, -4.0, 4.0, 0.0];
     final t = _shake.value * 5;
     final i = t.floor().clamp(0, 4);
-    return ui.lerpDouble(xs[i], xs[i + 1], Curves.ease.transform((t - i).clamp(0.0, 1.0)))!;
+    return ui.lerpDouble(
+      xs[i],
+      xs[i + 1],
+      Curves.ease.transform((t - i).clamp(0.0, 1.0)),
+    )!;
   }
 
   // ══════ TOPBAR ══════
@@ -93,7 +104,8 @@ extension _QuizExamUi on _QuizExamViewState {
                 : Colors.white.withValues(alpha: 0.9),
             border: Border(
               bottom: BorderSide(
-                  color: dark ? Tw.slate800.withValues(alpha: 0.8) : Tw.slate200),
+                color: dark ? Tw.slate800.withValues(alpha: 0.8) : Tw.slate200,
+              ),
             ),
           ),
           child: Row(
@@ -102,19 +114,27 @@ extension _QuizExamUi on _QuizExamViewState {
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: primary.withValues(alpha: 0.2)),
+                        border: Border.all(
+                          color: primary.withValues(alpha: 0.2),
+                        ),
                       ),
-                      child: Text('QUIZ',
-                          style: TextStyle(
-                              color: primary,
-                              fontSize: 10.4,
-                              height: 1.5,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1.04)),
+                      child: Text(
+                        'QUIZ',
+                        style: TextStyle(
+                          color: primary,
+                          fontSize: 10.4,
+                          height: 1.5,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.04,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Flexible(
@@ -136,9 +156,14 @@ extension _QuizExamUi on _QuizExamViewState {
                           const SizedBox(height: 2),
                           Opacity(
                             opacity: 0.6,
-                            child: Text('$_total questions',
-                                style: const TextStyle(
-                                    fontSize: 10.4, height: 1.25, fontWeight: FontWeight.w600)),
+                            child: Text(
+                              '$_total questions',
+                              style: const TextStyle(
+                                fontSize: 10.4,
+                                height: 1.25,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -219,7 +244,10 @@ extension _QuizExamUi on _QuizExamViewState {
     final sm = context.isSm;
     return SingleChildScrollView(
       controller: _scroll,
-      padding: EdgeInsets.symmetric(horizontal: sm ? 24 : 16, vertical: sm ? 32 : 24),
+      padding: EdgeInsets.symmetric(
+        horizontal: sm ? 24 : 16,
+        vertical: sm ? 32 : 24,
+      ),
       child: q == null ? const SizedBox.shrink() : _questionCard(context, q),
     );
   }
@@ -230,6 +258,10 @@ extension _QuizExamUi on _QuizExamViewState {
     final primary = context.colors.primary;
     final answered = _isAnswered(q);
     final options = quizOptions(q);
+    final selectedOption = options
+        .where((option) => _isChosen(q, option))
+        .firstOrNull;
+    final answerKeyAvailable = quizHasAnswerKey(q);
 
     final statusBadge = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -264,7 +296,10 @@ extension _QuizExamUi on _QuizExamViewState {
         color: dark ? Tw.slate900.withValues(alpha: 0.4) : Colors.white,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-            color: dark ? Tw.slate800.withValues(alpha: 0.8) : Tw.slate200.withValues(alpha: 0.8)),
+          color: dark
+              ? Tw.slate800.withValues(alpha: 0.8)
+              : Tw.slate200.withValues(alpha: 0.8),
+        ),
         // `shadow-xl` (the theme's; `shadow-slate-100` has no effect).
         boxShadow: AppShadows.xl,
       ),
@@ -279,17 +314,26 @@ extension _QuizExamUi on _QuizExamViewState {
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
                   children: [
-                    const Text('QUESTION',
-                        style: TextStyle(
-                            fontSize: 10.4,
-                            height: 1.5,
-                            letterSpacing: 1.04,
-                            fontWeight: FontWeight.w700,
-                            color: Tw.slate400)),
+                    const Text(
+                      'QUESTION',
+                      style: TextStyle(
+                        fontSize: 10.4,
+                        height: 1.5,
+                        letterSpacing: 1.04,
+                        fontWeight: FontWeight.w700,
+                        color: Tw.slate400,
+                      ),
+                    ),
                     const SizedBox(width: 8),
-                    Text(quizStepLabel(_currentStep),
-                        style: TextStyle(
-                            fontSize: 28, height: 1, fontWeight: FontWeight.w900, color: primary)),
+                    Text(
+                      quizStepLabel(_currentStep),
+                      style: TextStyle(
+                        fontSize: 28,
+                        height: 1,
+                        fontWeight: FontWeight.w900,
+                        color: primary,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -297,7 +341,10 @@ extension _QuizExamUi on _QuizExamViewState {
             ],
           ),
           const SizedBox(height: 24),
-          Container(height: 1, color: dark ? Tw.slate800.withValues(alpha: 0.8) : Tw.slate100),
+          Container(
+            height: 1,
+            color: dark ? Tw.slate800.withValues(alpha: 0.8) : Tw.slate100,
+          ),
           const SizedBox(height: 24),
           // Question text (v-html)
           MzHtmlText(
@@ -316,6 +363,28 @@ extension _QuizExamUi on _QuizExamViewState {
             _optionTile(context, q, options[i], i),
           ],
           const SizedBox(height: 40),
+          if (widget.offline && answered && selectedOption != null)
+            Semantics(
+              liveRegion: true,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Text(
+                  !answerKeyAvailable
+                      ? 'Answer saved. Grading will be available after sync.'
+                      : quizOptionIsCorrect(selectedOption)
+                      ? 'Correct answer!'
+                      : 'Wrong answer.',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: !answerKeyAvailable
+                        ? primary
+                        : quizOptionIsCorrect(selectedOption)
+                        ? Colors.green
+                        : Colors.red,
+                  ),
+                ),
+              ),
+            ),
           _navigation(context),
         ],
       ),
@@ -323,17 +392,22 @@ extension _QuizExamUi on _QuizExamViewState {
   }
 
   Widget _optionTile(
-      BuildContext context, Map<String, dynamic> q, Map<String, dynamic> option, int index) {
+    BuildContext context,
+    Map<String, dynamic> q,
+    Map<String, dynamic> option,
+    int index,
+  ) {
     final dark = context.isDark;
     final primary = context.colors.primary;
-    final answered = _isAnswered(q);
+    final locked = _isAnswered(q);
+    final answered = locked && (!widget.offline || quizHasAnswerKey(q));
     final correct = quizOptionIsCorrect(option);
     final chosen = _isChosen(q, option);
     final showRemarks = answered && (chosen || correct);
 
     return HoverBuilder(
-      onTap: answered ? null : () => _onOptionSelect(q, option),
-      cursor: answered ? SystemMouseCursors.basic : SystemMouseCursors.click,
+      onTap: locked ? null : () => _onOptionSelect(q, option),
+      cursor: locked ? SystemMouseCursors.basic : SystemMouseCursors.click,
       builder: (context, hovered) {
         Color border;
         Color bg;
@@ -350,7 +424,9 @@ extension _QuizExamUi on _QuizExamViewState {
             shadow = true;
           } else {
             border = dark ? Tw.slate800.withValues(alpha: 0.8) : Tw.slate200;
-            bg = dark ? Tw.slate900.withValues(alpha: 0.1) : Tw.slate50.withValues(alpha: 0.3);
+            bg = dark
+                ? Tw.slate900.withValues(alpha: 0.1)
+                : Tw.slate50.withValues(alpha: 0.3);
             opacity = 0.6;
           }
         } else if (chosen) {
@@ -362,7 +438,9 @@ extension _QuizExamUi on _QuizExamViewState {
           bg = Tw.slate900.withValues(alpha: hovered ? 0.3 : 0.2);
         } else {
           border = hovered ? Tw.slate300 : Tw.slate200;
-          bg = hovered ? Tw.slate100.withValues(alpha: 0.4) : Tw.slate50.withValues(alpha: 0.5);
+          bg = hovered
+              ? Tw.slate100.withValues(alpha: 0.4)
+              : Tw.slate50.withValues(alpha: 0.5);
         }
 
         // Letter badge
@@ -412,7 +490,10 @@ extension _QuizExamUi on _QuizExamViewState {
             : AnimatedOpacity(
                 duration: const Duration(milliseconds: 200),
                 opacity: chosen ? 1 : 0,
-                child: Text('✓', style: TextStyle(fontWeight: FontWeight.w700, color: primary)),
+                child: Text(
+                  '✓',
+                  style: TextStyle(fontWeight: FontWeight.w700, color: primary),
+                ),
               );
 
         return Opacity(
@@ -444,7 +525,12 @@ extension _QuizExamUi on _QuizExamViewState {
                     ),
                     child: Text(
                       quizOptionLabel(option, index),
-                      style: TextStyle(fontSize: 12, height: 16 / 12, fontWeight: FontWeight.w900, color: badgeFg),
+                      style: TextStyle(
+                        fontSize: 12,
+                        height: 16 / 12,
+                        fontWeight: FontWeight.w900,
+                        color: badgeFg,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -469,11 +555,13 @@ extension _QuizExamUi on _QuizExamViewState {
                               width: double.infinity,
                               padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                color: (correct ? Tw.emerald500 : Tw.red500).withValues(alpha: 0.1),
+                                color: (correct ? Tw.emerald500 : Tw.red500)
+                                    .withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                    color: (correct ? Tw.emerald500 : Tw.red500)
-                                        .withValues(alpha: 0.2)),
+                                  color: (correct ? Tw.emerald500 : Tw.red500)
+                                      .withValues(alpha: 0.2),
+                                ),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -481,7 +569,9 @@ extension _QuizExamUi on _QuizExamViewState {
                                   Opacity(
                                     opacity: 0.8,
                                     child: Text(
-                                      (correct ? 'Explanation (Correct)' : 'Explanation (Your Choice)')
+                                      (correct
+                                              ? 'Explanation (Correct)'
+                                              : 'Explanation (Your Choice)')
                                           .toUpperCase(),
                                       style: TextStyle(
                                         fontSize: 10,
@@ -537,7 +627,9 @@ extension _QuizExamUi on _QuizExamViewState {
           background: dark ? Tw.slate800 : Tw.slate100,
           hoverBackground: dark ? Tw.slate700 : Tw.slate200,
           foreground: dark ? Tw.slate300 : Tw.slate700,
-          border: dark ? Tw.slate800.withValues(alpha: 0.5) : Tw.slate200.withValues(alpha: 0.5),
+          border: dark
+              ? Tw.slate800.withValues(alpha: 0.5)
+              : Tw.slate200.withValues(alpha: 0.5),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           fontWeight: FontWeight.w900,
           disabledOpacity: 0.3,
@@ -557,7 +649,9 @@ extension _QuizExamUi on _QuizExamViewState {
                     height: 6,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: _currentStep == i ? primary : (dark ? Tw.slate800 : Tw.slate200),
+                      color: _currentStep == i
+                          ? primary
+                          : (dark ? Tw.slate800 : Tw.slate200),
                     ),
                   ),
               ],
@@ -600,26 +694,34 @@ extension _QuizExamUi on _QuizExamViewState {
       padding: EdgeInsets.symmetric(horizontal: sm ? 24 : 16, vertical: 16),
       decoration: BoxDecoration(
         color: dark ? Tw.slate900 : Colors.white,
-        border: Border(top: BorderSide(color: dark ? Tw.slate800 : Tw.slate200)),
+        border: Border(
+          top: BorderSide(color: dark ? Tw.slate800 : Tw.slate200),
+        ),
       ),
       child: Row(
         children: [
           Expanded(
             child: Text.rich(
-              TextSpan(children: [
-                TextSpan(
-                  text: '$_answeredCount',
-                  style: TextStyle(
-                      fontWeight: FontWeight.w900, color: dark ? Tw.emerald400 : Tw.emerald600),
-                ),
-                const TextSpan(text: ' of '),
-                TextSpan(
-                  text: '$_total',
-                  style: TextStyle(
-                      fontWeight: FontWeight.w900, color: dark ? Colors.white : Tw.slate800),
-                ),
-                const TextSpan(text: ' answered'),
-              ]),
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: '$_answeredCount',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      color: dark ? Tw.emerald400 : Tw.emerald600,
+                    ),
+                  ),
+                  const TextSpan(text: ' of '),
+                  TextSpan(
+                    text: '$_total',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      color: dark ? Colors.white : Tw.slate800,
+                    ),
+                  ),
+                  const TextSpan(text: ' answered'),
+                ],
+              ),
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
@@ -645,7 +747,12 @@ extension _QuizExamUi on _QuizExamViewState {
   // ══════ OVERLAYS ══════
 
   /// A `fixed inset-0 … backdrop-blur` layer that fades in/out (200/150ms).
-  Widget _layer(bool visible, {required Color barrier, required double blur, required Widget child}) {
+  Widget _layer(
+    bool visible, {
+    required Color barrier,
+    required double blur,
+    required Widget child,
+  }) {
     return Positioned.fill(
       child: IgnorePointer(
         ignoring: !visible,
@@ -674,7 +781,8 @@ extension _QuizExamUi on _QuizExamViewState {
   }
 
   /// `rounded-3xl border shadow-2xl` (the theme's `0 1px 3px rgb(0 0 0/.25)`).
-  BoxDecoration _boxDecoration({required Color color, required Color border}) => BoxDecoration(
+  BoxDecoration _boxDecoration({required Color color, required Color border}) =>
+      BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: border),
@@ -686,7 +794,10 @@ extension _QuizExamUi on _QuizExamViewState {
     final primary = context.colors.primary;
     final n = _total;
     final answered = _answeredCount;
-    final strong = TextStyle(fontWeight: FontWeight.w700, color: dark ? Colors.white : Tw.slate800);
+    final strong = TextStyle(
+      fontWeight: FontWeight.w700,
+      color: dark ? Colors.white : Tw.slate800,
+    );
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 384),
       child: Container(
@@ -701,45 +812,62 @@ extension _QuizExamUi on _QuizExamViewState {
           children: [
             const Text('⚠️', style: TextStyle(fontSize: 36, height: 40 / 36)),
             const SizedBox(height: 12),
-            Text('Submit Quiz?',
-                style: TextStyle(
-                    fontSize: 18,
-                    height: 1.55,
-                    fontWeight: FontWeight.w900,
-                    color: dark ? Colors.white : Tw.slate900)),
+            Text(
+              'Submit Quiz?',
+              style: TextStyle(
+                fontSize: 18,
+                height: 1.55,
+                fontWeight: FontWeight.w900,
+                color: dark ? Colors.white : Tw.slate900,
+              ),
+            ),
             const SizedBox(height: 8),
             Text.rich(
-              TextSpan(children: [
-                const TextSpan(text: "You've answered "),
-                TextSpan(text: '$answered', style: strong),
-                const TextSpan(text: ' of '),
-                TextSpan(text: '$n', style: strong),
-                const TextSpan(text: ' questions.'),
-              ]),
+              TextSpan(
+                children: [
+                  const TextSpan(text: "You've answered "),
+                  TextSpan(text: '$answered', style: strong),
+                  const TextSpan(text: ' of '),
+                  TextSpan(text: '$n', style: strong),
+                  const TextSpan(text: ' questions.'),
+                ],
+              ),
               textAlign: TextAlign.center,
               // `text-slate-505` isn't a Tailwind colour → inherited.
-              style: TextStyle(fontSize: 12, height: 1.625, color: dark ? Tw.slate400 : Tw.slate900),
+              style: TextStyle(
+                fontSize: 12,
+                height: 1.625,
+                color: dark ? Tw.slate400 : Tw.slate900,
+              ),
             ),
             const SizedBox(height: 8),
             if (answered < n)
-              Text('${n - answered} question(s) still unanswered.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      fontSize: 12,
-                      height: 16 / 12,
-                      fontWeight: FontWeight.w700,
-                      color: dark ? Tw.amber400 : Tw.amber600))
+              Text(
+                '${n - answered} question(s) still unanswered.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  height: 16 / 12,
+                  fontWeight: FontWeight.w700,
+                  color: dark ? Tw.amber400 : Tw.amber600,
+                ),
+              )
             else
-              Text('All questions answered ✓',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      fontSize: 12,
-                      height: 16 / 12,
-                      fontWeight: FontWeight.w700,
-                      color: dark ? Tw.emerald400 : Tw.emerald600)),
+              Text(
+                'All questions answered ✓',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  height: 16 / 12,
+                  fontWeight: FontWeight.w700,
+                  color: dark ? Tw.emerald400 : Tw.emerald600,
+                ),
+              ),
             const SizedBox(height: 8),
-            const Text('This action cannot be undone.',
-                style: TextStyle(fontSize: 10, height: 1.5, color: Tw.slate400)),
+            const Text(
+              'This action cannot be undone.',
+              style: TextStyle(fontSize: 10, height: 1.5, color: Tw.slate400),
+            ),
             const SizedBox(height: 24),
             Row(
               children: [
@@ -754,7 +882,10 @@ extension _QuizExamUi on _QuizExamViewState {
                     hoverBackground: Tw.slate50,
                     foreground: Tw.slate700,
                     border: dark ? Tw.slate800 : Tw.slate200,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
                     fontWeight: FontWeight.w700,
                     expand: true,
                   ),
@@ -767,7 +898,10 @@ extension _QuizExamUi on _QuizExamViewState {
                     background: primary,
                     hoverBackground: primary.withValues(alpha: 0.9),
                     foreground: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
                     fontWeight: FontWeight.w700,
                     shadow: true,
                     disabledOpacity: 0.6,
@@ -782,19 +916,30 @@ extension _QuizExamUi on _QuizExamViewState {
     );
   }
 
-  Widget _countdownCircle(int value, {required Color border, required Color text}) => _Pulse(
-        child: Container(
-          width: 64,
-          height: 64,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: border, width: 3),
-          ),
-          child: Text('$value',
-              style: TextStyle(fontSize: 24, height: 32 / 24, fontWeight: FontWeight.w900, color: text)),
+  Widget _countdownCircle(
+    int value, {
+    required Color border,
+    required Color text,
+  }) => _Pulse(
+    child: Container(
+      width: 64,
+      height: 64,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: border, width: 3),
+      ),
+      child: Text(
+        '$value',
+        style: TextStyle(
+          fontSize: 24,
+          height: 32 / 24,
+          fontWeight: FontWeight.w900,
+          color: text,
         ),
-      );
+      ),
+    ),
+  );
 
   Widget _graceBox(BuildContext context) {
     final primary = context.colors.primary;
@@ -809,26 +954,52 @@ extension _QuizExamUi on _QuizExamViewState {
           children: [
             const Text('⚠️', style: TextStyle(fontSize: 48, height: 1)),
             const SizedBox(height: 16),
-            const Text('Tab Switch Detected!',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 20, height: 28 / 20, fontWeight: FontWeight.w800, color: Colors.white)),
+            const Text(
+              'Tab Switch Detected!',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 20,
+                height: 28 / 20,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+              ),
+            ),
             const SizedBox(height: 12),
             const Text.rich(
-              TextSpan(children: [
-                TextSpan(text: 'You left the quiz window.\nReturn now or the quiz will be '),
-                TextSpan(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text:
+                        'You left the quiz window.\nReturn now or the quiz will be ',
+                  ),
+                  TextSpan(
                     text: 'auto-submitted.',
-                    style: TextStyle(color: Tw.red400, fontWeight: FontWeight.w700)),
-              ]),
+                    style: TextStyle(
+                      color: Tw.red400,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 14, height: 1.625, color: Tw.slate400),
             ),
             const SizedBox(height: 24),
-            _countdownCircle(_graceCountdown, border: Tw.amber400, text: Tw.amber300),
+            _countdownCircle(
+              _graceCountdown,
+              border: Tw.amber400,
+              text: Tw.amber300,
+            ),
             const SizedBox(height: 8),
-            Text('Auto-submitting in ${_graceCountdown}s…',
-                style: const TextStyle(
-                    fontSize: 12, height: 16 / 12, fontWeight: FontWeight.w600, color: Tw.amber400)),
+            Text(
+              'Auto-submitting in ${_graceCountdown}s…',
+              style: const TextStyle(
+                fontSize: 12,
+                height: 16 / 12,
+                fontWeight: FontWeight.w600,
+                color: Tw.amber400,
+              ),
+            ),
             const SizedBox(height: 24),
             _QuizButton(
               label: "I'm Back — Resume Quiz",
@@ -843,9 +1014,11 @@ extension _QuizExamUi on _QuizExamViewState {
               expand: true,
             ),
             const SizedBox(height: 16),
-            const Text('This is your only warning. Next violation = instant submission.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 10, height: 1.5, color: Tw.slate500)),
+            const Text(
+              'This is your only warning. Next violation = instant submission.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 10, height: 1.5, color: Tw.slate500),
+            ),
           ],
         ),
       ),
@@ -853,34 +1026,50 @@ extension _QuizExamUi on _QuizExamViewState {
   }
 
   Widget _terminatedBox(BuildContext context) => ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 384),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(32),
-          decoration: _boxDecoration(color: Tw.slate900, border: Tw.red900.withValues(alpha: 0.4)),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('🚫', style: TextStyle(fontSize: 48, height: 1)),
-              const SizedBox(height: 16),
-              const Text('Quiz Terminated',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 20, height: 28 / 20, fontWeight: FontWeight.w800, color: Tw.red400)),
-              const SizedBox(height: 12),
-              const Text(
-                'Multiple security violations detected.\nYour attempt has been automatically submitted.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, height: 1.625, color: Tw.slate400),
-              ),
-              const SizedBox(height: 24),
-              _countdownCircle(_exitCountdown, border: Tw.red500, text: Tw.red400),
-              const SizedBox(height: 8 + 12),
-              Text('Closing in ${_exitCountdown}s…',
-                  style: const TextStyle(fontSize: 10, height: 1.5, color: Tw.slate500)),
-            ],
+    constraints: const BoxConstraints(maxWidth: 384),
+    child: Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(32),
+      decoration: _boxDecoration(
+        color: Tw.slate900,
+        border: Tw.red900.withValues(alpha: 0.4),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('🚫', style: TextStyle(fontSize: 48, height: 1)),
+          const SizedBox(height: 16),
+          const Text(
+            'Quiz Terminated',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 20,
+              height: 28 / 20,
+              fontWeight: FontWeight.w800,
+              color: Tw.red400,
+            ),
           ),
-        ),
-      );
+          const SizedBox(height: 12),
+          const Text(
+            'Multiple security violations detected.\nYour attempt has been automatically submitted.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14, height: 1.625, color: Tw.slate400),
+          ),
+          const SizedBox(height: 24),
+          _countdownCircle(_exitCountdown, border: Tw.red500, text: Tw.red400),
+          const SizedBox(height: 8 + 12),
+          Text(
+            'Closing in ${_exitCountdown}s…',
+            style: const TextStyle(
+              fontSize: 10,
+              height: 1.5,
+              color: Tw.slate500,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 /// A `rounded-xl text-xs` button with a hover colour, `active:scale-95`,
@@ -980,8 +1169,10 @@ class _Pulse extends StatefulWidget {
 }
 
 class _PulseState extends State<_Pulse> with SingleTickerProviderStateMixin {
-  late final AnimationController _c =
-      AnimationController(vsync: this, duration: const Duration(seconds: 2))..repeat();
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 2),
+  )..repeat();
 
   @override
   void dispose() {
@@ -991,18 +1182,25 @@ class _PulseState extends State<_Pulse> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-        animation: _c,
-        builder: (context, child) {
-          final t = _c.value;
-          final v = t < 0.5 ? t * 2 : (1 - t) * 2;
-          return Opacity(opacity: 1 - 0.5 * Curves.easeInOut.transform(v), child: child);
-        },
-        child: widget.child,
+    animation: _c,
+    builder: (context, child) {
+      final t = _c.value;
+      final v = t < 0.5 ? t * 2 : (1 - t) * 2;
+      return Opacity(
+        opacity: 1 - 0.5 * Curves.easeInOut.transform(v),
+        child: child,
       );
+    },
+    child: widget.child,
+  );
 }
 
 class _QuizRingPainter extends CustomPainter {
-  _QuizRingPainter({required this.fraction, required this.track, required this.color});
+  _QuizRingPainter({
+    required this.fraction,
+    required this.track,
+    required this.color,
+  });
   final double fraction;
   final Color track;
   final Color color;

@@ -13,15 +13,19 @@ class InstructorService {
   final SessionState Function() _session;
 
   /// multipart `POST /user` (always multipart, unlike StudentService).
-  Future<dynamic> createUser(String firstName, String lastName, String email,
-      [Object? countryCode,
-      String? phone,
-      String? gender,
-      String? dob,
-      UploadFile? photo,
-      String? password,
-      String? designation,
-      bool enableZoom = false]) {
+  Future<dynamic> createUser(
+    String firstName,
+    String lastName,
+    String email, [
+    Object? countryCode,
+    String? phone,
+    String? gender,
+    String? dob,
+    UploadFile? photo,
+    String? password,
+    String? designation,
+    bool enableZoom = false,
+  ]) {
     final hasPassword = password != null && password.trim().isNotEmpty;
     return _api.postMultipart('/user', {
       'enable_zoom': enableZoom ? '1' : '0',
@@ -40,8 +44,11 @@ class InstructorService {
     });
   }
 
-  Future<dynamic> createInstructor(Object userId,
-      [String? joiningDate, String? designation, bool enableZoom = false,
+  Future<dynamic> createInstructor(
+    Object userId, [
+    String? joiningDate,
+    String? designation,
+    bool enableZoom = false,
     bool isLabAdmin = false,
   ]) {
     final session = _session();
@@ -59,57 +66,76 @@ class InstructorService {
     return _api.post('/instructor', data: payload);
   }
 
-  Future<dynamic> getInstructors(Object classId, int page) =>
-      _api.get('/instructor', query: {
-        'class_id': classId,
-        'institute_id': _session().instituteId,
-        'page': page,
-      });
+  Future<dynamic> getInstructors(Object classId, int page) => _api.get(
+    '/instructor',
+    query: {
+      'class_id': classId,
+      'institute_id': _session().instituteId,
+      'page': page,
+    },
+  );
 
-  Future<dynamic> getallInstructors(int page) => _api.get('/instructor', query: {
-        'institute_id': _session().instituteId,
-        'page': page},
+  Future<dynamic> getallInstructors(int page) => _api.get(
+    '/instructor',
+    query: {'institute_id': _session().instituteId, 'page': page},
   );
 
   Future<dynamic> assignInstructorToAdmin(Map<String, dynamic> payload) =>
       _api.post('/class/admin', data: payload);
 
-  Future<dynamic> getAssignedInstructors(Object instituteId, Object classId,
-          [int page = 1]) =>
-      _api.get('/class/admin', query: {
-        'institute_id': instituteId,
-        'class_id': classId,
-        'page': page},
+  Future<dynamic> getAssignedInstructors(
+    Object instituteId,
+    Object classId, [
+    int page = 1,
+  ]) => _api.get(
+    '/class/admin',
+    query: {'institute_id': instituteId, 'class_id': classId, 'page': page},
   );
 
-  Future<dynamic> getInstructorById(Object instructorId) =>
-      _api.get('/instructor/$instructorId',
-          query: {'institute_id': _session().instituteId});
+  Future<dynamic> getInstructorById(Object instructorId) => _api.get(
+    '/instructor/$instructorId',
+    query: {'institute_id': _session().instituteId},
+  );
 
   Future<dynamic> updateInstructor(
-          Object instructorId, Map<String, dynamic> payload) =>
-      _api.put('/instructor/$instructorId',
-          data: payload, query: {'institute_id': _session().instituteId});
+    Object instructorId,
+    Map<String, dynamic> payload,
+  ) => _api.put(
+    '/instructor/$instructorId',
+    data: payload,
+    query: {'institute_id': _session().instituteId},
+  );
 
   Future<dynamic> deleteClassAdmin(
-          Object id, Object instituteId, Object classId) =>
-      _api.delete('/class/admin/$id',
-          data: {'institute_id': instituteId, 'class_id': classId});
+    Object id,
+    Object instituteId,
+    Object classId,
+  ) => _api.delete(
+    '/class/admin/$id',
+    data: {'institute_id': instituteId, 'class_id': classId},
+  );
 
-  Future<dynamic> searchInstructors(Object instituteId, String term,
-          [Object? classId]) =>
-      _api.get('/search/instructor', query: {
-        'institute_id': instituteId,
-        'term': term,
-        if (jsTruthy(classId)) 'class_id': classId,
-      });
+  Future<dynamic> searchInstructors(
+    Object instituteId,
+    String term, [
+    Object? classId,
+  ]) => _api.get(
+    '/search/instructor',
+    query: {
+      'institute_id': instituteId,
+      'term': term,
+      if (jsTruthy(classId)) 'class_id': classId,
+    },
+  );
 
   /// Web returned the full AxiosResponse (callers used res.data); this returns the body.
   Future<dynamic> importBulkInstructors(
-          Object instituteId, Object classId, UploadFile file) =>
-      _api.postMultipart('/instructor/import', {
-        'institute_id': instituteId,
-        'class_id': classId,
-        'file': file,
-      });
+    Object instituteId,
+    Object classId,
+    UploadFile file,
+  ) => _api.postMultipart('/instructor/import', {
+    'institute_id': instituteId,
+    'class_id': classId,
+    'file': file,
+  });
 }

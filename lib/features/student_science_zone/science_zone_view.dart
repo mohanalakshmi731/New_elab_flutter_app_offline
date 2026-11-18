@@ -873,7 +873,7 @@ extension _ScienceZoneView on _StudentScienceZonePageState {
                                 child: AnimatedOpacity(
                                   duration: const Duration(milliseconds: 500),
                                   opacity: hovered ? 1 : 0.8,
-                                  child: Image.network(
+                                  child: contentImage(
                                     filePath,
                                     fit: BoxFit.cover,
                                     errorBuilder: (_, _, _) => const SizedBox.shrink(),

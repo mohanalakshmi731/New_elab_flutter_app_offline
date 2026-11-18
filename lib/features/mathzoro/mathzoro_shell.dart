@@ -19,6 +19,7 @@ import '../../state/providers.dart';
 import '../shell/dashboard_shell.dart' show AppFooter;
 import 'mathzoro_controller.dart';
 import 'mz_ui.dart';
+import '../offline/offline_runtime.dart';
 
 /// Port of `newdashboardlayout.vue` — the `/newlayout` shell.
 ///
@@ -57,19 +58,53 @@ class MzNavItem {
 
 const _navTeacher = [
   MzNavItem('dashboard', 'Dashboard', BootstrapIcons.grid_fill, '/dashboard'),
-  MzNavItem('activity-library', 'Activity Library', BootstrapIcons.journal_bookmark_fill,
-      '/activitylibrary'),
+  MzNavItem(
+    'activity-library',
+    'Activity Library',
+    BootstrapIcons.journal_bookmark_fill,
+    '/activitylibrary',
+  ),
 ];
 
 const _navAdmin = [
   MzNavItem('dashboard', 'Dashboard', BootstrapIcons.grid_fill, '/dashboard'),
   MzNavItem('user-list', 'Users List', BootstrapIcons.people_fill, '/userlist'),
-  MzNavItem('user-activity', 'User Activity Log', BootstrapIcons.clock_history, '/useractivitylog'),
-  MzNavItem('institute-list', 'Institute List', BootstrapIcons.building, '/instituteslist'),
-  MzNavItem('invitations', 'Invitation List', BootstrapIcons.envelope_fill, '/Invitationslist'),
-  MzNavItem('plans', 'Subscription Plans', BootstrapIcons.credit_card_fill, '/institutesplanCreate'),
-  MzNavItem('subscriptions', 'Role Subscriptions', BootstrapIcons.person_badge_fill, '/subscription'),
-  MzNavItem('zsl-plan', 'Class Access Types', BootstrapIcons.shield_lock_fill, '/zslplan'),
+  MzNavItem(
+    'user-activity',
+    'User Activity Log',
+    BootstrapIcons.clock_history,
+    '/useractivitylog',
+  ),
+  MzNavItem(
+    'institute-list',
+    'Institute List',
+    BootstrapIcons.building,
+    '/instituteslist',
+  ),
+  MzNavItem(
+    'invitations',
+    'Invitation List',
+    BootstrapIcons.envelope_fill,
+    '/Invitationslist',
+  ),
+  MzNavItem(
+    'plans',
+    'Subscription Plans',
+    BootstrapIcons.credit_card_fill,
+    '/institutesplanCreate',
+  ),
+  MzNavItem(
+    'subscriptions',
+    'Role Subscriptions',
+    BootstrapIcons.person_badge_fill,
+    '/subscription',
+  ),
+  MzNavItem(
+    'zsl-plan',
+    'Class Access Types',
+    BootstrapIcons.shield_lock_fill,
+    '/zslplan',
+  ),
 ];
 
 const _navInstitute = [
@@ -77,28 +112,84 @@ const _navInstitute = [
   MzNavItem('class-list', 'Classes', BootstrapIcons.book, '/classlist'),
   MzNavItem('course-list', 'Courses', BootstrapIcons.pc_display, '/courselist'),
   MzNavItem('exams', 'Exams', BootstrapIcons.pencil_square, '/exams'),
-  MzNavItem('questions', 'Question Bank', BootstrapIcons.question_circle_fill, '/questions'),
-  MzNavItem('library', 'Activity Library', BootstrapIcons.journal_bookmark_fill, '/library'),
+  MzNavItem(
+    'questions',
+    'Question Bank',
+    BootstrapIcons.question_circle_fill,
+    '/questions',
+  ),
+  MzNavItem(
+    'library',
+    'Activity Library',
+    BootstrapIcons.journal_bookmark_fill,
+    '/library',
+  ),
 ];
 
 const _navStudentMathZoro = [
-  MzNavItem('dashboard', 'Dashboard', BootstrapIcons.grid_fill, '/newlayout/studentdashboard'),
-  MzNavItem('math-zone', 'Math Zone', BootstrapIcons.calculator_fill, '/newlayout/newmathzone'),
-  MzNavItem('play-zone', 'Play Zone', BootstrapIcons.controller, '/newlayout/playzone'),
-  MzNavItem('reports', 'Reports', BootstrapIcons.bar_chart_line_fill, '/newlayout/reports'),
+  MzNavItem(
+    'dashboard',
+    'Dashboard',
+    BootstrapIcons.grid_fill,
+    '/newlayout/studentdashboard',
+  ),
+  MzNavItem(
+    'math-zone',
+    'Math Zone',
+    BootstrapIcons.calculator_fill,
+    '/newlayout/newmathzone',
+  ),
+  MzNavItem(
+    'play-zone',
+    'Play Zone',
+    BootstrapIcons.controller,
+    '/newlayout/playzone',
+  ),
+  MzNavItem(
+    'reports',
+    'Reports',
+    BootstrapIcons.bar_chart_line_fill,
+    '/newlayout/reports',
+  ),
 ];
 
 const _navStudentNormal = [
-  MzNavItem('dashboard', 'Dashboard', BootstrapIcons.grid_fill, '/newlayout/studentdashboardlayout'),
-  MzNavItem('math-zone', 'Math Zone', BootstrapIcons.calculator_fill, '/newlayout/newmathzone'),
-  MzNavItem('science-zone', 'Science Zone', BootstrapIcons.eyedropper, '/newlayout/studentsciencezone'),
-  MzNavItem('exams', 'Exams', BootstrapIcons.check2_square, '/newlayout/newexams'),
-  MzNavItem('reports', 'Reports', BootstrapIcons.bar_chart_line_fill, '/newlayout/reports'),
+  MzNavItem(
+    'dashboard',
+    'Dashboard',
+    BootstrapIcons.grid_fill,
+    '/newlayout/studentdashboardlayout',
+  ),
+  MzNavItem(
+    'math-zone',
+    'Math Zone',
+    BootstrapIcons.calculator_fill,
+    '/newlayout/newmathzone',
+  ),
+  MzNavItem(
+    'science-zone',
+    'Science Zone',
+    BootstrapIcons.eyedropper,
+    '/newlayout/studentsciencezone',
+  ),
+  MzNavItem(
+    'exams',
+    'Exams',
+    BootstrapIcons.check2_square,
+    '/newlayout/newexams',
+  ),
+  MzNavItem(
+    'reports',
+    'Reports',
+    BootstrapIcons.bar_chart_line_fill,
+    '/newlayout/reports',
+  ),
 ];
 
 List<MzNavItem> _currentNavItems(String role, bool isMathZoro) {
   final r = role.toLowerCase();
-  if (r == 'student') return isMathZoro ? _navStudentMathZoro : _navStudentNormal;
+  if (r == 'student')
+    return isMathZoro ? _navStudentMathZoro : _navStudentNormal;
   if (r == 'instructor' || r == 'teacher') return _navTeacher;
   if (r == 'admin') return _navAdmin;
   if (r == 'institute') return _navInstitute;
@@ -125,7 +216,8 @@ class _MathZoroShellState extends ConsumerState<MathZoroShell> {
   MathZoroController get _mz => ref.read(mathZoroProvider.notifier);
 
   bool get _isStudent => _session.role.toLowerCase() == 'student';
-  bool get _isInstructor => ['instructor', 'teacher'].contains(_session.role.toLowerCase());
+  bool get _isInstructor =>
+      ['instructor', 'teacher'].contains(_session.role.toLowerCase());
   bool get _isMathZoro => _session.userInfo?.isMathZoro ?? false;
 
   @override
@@ -169,7 +261,9 @@ class _MathZoroShellState extends ConsumerState<MathZoroShell> {
   Future<void> _loadTickets() async {
     setState(() => _loadingTickets = true);
     try {
-      debugPrint('STORE MATHZORO CLASS ID => ${_session.userInfo?.mathzoroClassId}');
+      debugPrint(
+        'STORE MATHZORO CLASS ID => ${_session.userInfo?.mathzoroClassId}',
+      );
       final res = await _mz.getZslTickets();
       final inner = asMap(res)?['data'];
       if (mounted) setState(() => _tickets = jsTruthy(inner) ? inner : res);
@@ -186,7 +280,8 @@ class _MathZoroShellState extends ConsumerState<MathZoroShell> {
     try {
       final res = await _mz.getZslTickets();
       final data = asMap(asMap(res)?['data'] ?? res);
-      final points = data?['points'] ??
+      final points =
+          data?['points'] ??
           data?['total_points'] ??
           data?['score'] ??
           data?['xp'] ??
@@ -210,10 +305,9 @@ class _MathZoroShellState extends ConsumerState<MathZoroShell> {
     try {
       final res = await _mz.getZslLanguages();
       final inner = asMap(res)?['data'];
-      final list = asList(jsTruthy(inner) ? inner : res)
-          .map(asMap)
-          .whereType<Map<String, dynamic>>()
-          .toList();
+      final list = asList(
+        jsTruthy(inner) ? inner : res,
+      ).map(asMap).whereType<Map<String, dynamic>>().toList();
       if (!mounted) return;
       setState(() => _languages = list);
       if (list.isNotEmpty) {
@@ -240,7 +334,8 @@ class _MathZoroShellState extends ConsumerState<MathZoroShell> {
     setState(() => _loadingClasses = true);
     try {
       await _mz.getClasses();
-      if (mounted) setState(() => _teacherClasses = ref.read(mathZoroProvider).institutes);
+      if (mounted)
+        setState(() => _teacherClasses = ref.read(mathZoroProvider).institutes);
     } catch (e) {
       debugPrint('Failed to load teacher classes: $e');
     } finally {
@@ -268,7 +363,9 @@ class _MathZoroShellState extends ConsumerState<MathZoroShell> {
   void _upgradePlan() {
     var target = '/upgradeplan';
     if (_isStudent) {
-      target = _isMathZoro ? '/newlayout/studentupgradeplan' : '/studentpayment';
+      target = _isMathZoro
+          ? '/newlayout/studentupgradeplan'
+          : '/studentpayment';
     }
     context.go(target);
   }
@@ -278,32 +375,39 @@ class _MathZoroShellState extends ConsumerState<MathZoroShell> {
   @override
   Widget build(BuildContext context) {
     // window.addEventListener('tickets-updated', this.loadTickets)
-    ref.listen<int>(mathZoroProvider.select((s) => s.ticketsUpdatedTick), (_, _) {
+    ref.listen<int>(mathZoroProvider.select((s) => s.ticketsUpdatedTick), (
+      _,
+      _,
+    ) {
       _loadTickets();
     });
 
     final dark = context.isDark;
     final mobile = _isMobileOrMedium;
+    final learning = ref.watch(offlineWorkspaceOwnerProvider) != null;
     final session = ref.watch(sessionProvider);
     final isStudent = session.role.toLowerCase() == 'student';
-    final items = _currentNavItems(session.role, session.userInfo?.isMathZoro ?? false);
+    final items = _currentNavItems(
+      session.role,
+      session.userInfo?.isMathZoro ?? false,
+    );
 
     Widget sidebar() => _MzSidebar(
-          items: items,
-          location: widget.location,
-          open: _sidebarOpen,
-          mobileOrMedium: mobile,
-          isStudent: isStudent,
-          username: session.username,
-          role: session.role,
-          // lg+: the logo is painted by the overlay below.
-          showLogo: mobile,
-          onNavigate: (item) {
-            context.go(item.route);
-            if (mobile) setState(() => _sidebarOpen = false);
-          },
-        );
-    final desktopSidebar = !_hideSidebar && !mobile;
+      items: items,
+      location: widget.location,
+      open: _sidebarOpen,
+      mobileOrMedium: mobile,
+      isStudent: isStudent,
+      username: session.username,
+      role: session.role,
+      // lg+: the logo is painted by the overlay below.
+      showLogo: mobile,
+      onNavigate: (item) {
+        context.go(item.route);
+        if (mobile) setState(() => _sidebarOpen = false);
+      },
+    );
+    final desktopSidebar = !_hideSidebar && !mobile && !learning;
     // Built here (it ref.watch-es) rather than inside the width tween's builder.
     final header = _header(session);
 
@@ -330,83 +434,93 @@ class _MathZoroShellState extends ConsumerState<MathZoroShell> {
               duration: const Duration(milliseconds: 300),
               curve: Curves.fastOutSlowIn,
               builder: (context, sw, _) => Stack(
-              children: [
-                Positioned.fill(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (desktopSidebar) SizedBox(width: sw, child: sidebar()),
-                      Expanded(
-                        // Keeps the routed page's state when the sidebar
-                        // comes and goes (breakpoint, upgrade-plan page).
-                        key: const ValueKey('mz-main'),
-                        child: Column(
-                          children: [
-                            header,
-                            Expanded(
-                              child: Container(
-                                color: dark ? Mz.gray950 : Colors.transparent,
-                                padding: const EdgeInsets.symmetric(horizontal: 8),
-                                child: widget.child,
-                              ),
-                            ),
-                            const AppFooter(),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // lg+ logo (`h-15 w-auto`, 160×60): centred on the sidebar and,
-                // like on the web, overflowing the 68 px strip over the header
-                // (the <aside> is z-40). Click-through here so ☰ stays usable.
-                if (desktopSidebar)
-                  Positioned(
-                    left: sw / 2 - 80,
-                    top: 6,
-                    width: 160,
-                    height: 60,
-                    child: IgnorePointer(
-                      child: Image.asset(
-                        'assets/images/zsl_logo.png',
-                        fit: BoxFit.contain,
-                        semanticLabel: 'Zero Science Lab',
-                      ),
-                    ),
-                  ),
-                // Below lg: backdrop (bg-black/50 backdrop-blur-sm) …
-                Positioned.fill(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    child: _sidebarOpen && mobile
-                        ? GestureDetector(
-                            onTap: () => setState(() => _sidebarOpen = false),
-                            child: SizedBox.expand(
-                              child: ClipRect(
-                                child: BackdropFilter(
-                                  filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                                  child: ColoredBox(
-                                      color: Colors.black.withValues(alpha: 0.5)),
+                children: [
+                  Positioned.fill(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (desktopSidebar)
+                          SizedBox(width: sw, child: sidebar()),
+                        Expanded(
+                          // Keeps the routed page's state when the sidebar
+                          // comes and goes (breakpoint, upgrade-plan page).
+                          key: const ValueKey('mz-main'),
+                          child: Column(
+                            children: [
+                              if (!learning) header,
+                              Expanded(
+                                key: const ValueKey('mz-page-content'),
+                                child: Container(
+                                  color: dark ? Mz.gray950 : Colors.transparent,
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: learning ? 0 : 8,
+                                  ),
+                                  child: widget.child,
                                 ),
                               ),
-                            ),
-                          )
-                        : const SizedBox.shrink(),
+                              if (!learning) const AppFooter(),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                // … and the 260 px drawer sliding in from the left.
-                if (!_hideSidebar && mobile)
-                  AnimatedPositioned(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.fastOutSlowIn,
-                    left: _sidebarOpen ? 0 : -260,
-                    top: 0,
-                    bottom: 0,
-                    width: 260,
-                    child: sidebar(),
+                  // lg+ logo (`h-15 w-auto`, 160×60): centred on the sidebar and,
+                  // like on the web, overflowing the 68 px strip over the header
+                  // (the <aside> is z-40). Click-through here so ☰ stays usable.
+                  if (desktopSidebar)
+                    Positioned(
+                      left: sw / 2 - 80,
+                      top: 6,
+                      width: 160,
+                      height: 60,
+                      child: IgnorePointer(
+                        child: Image.asset(
+                          'assets/images/zsl_logo.png',
+                          fit: BoxFit.contain,
+                          semanticLabel: 'Zero Science Lab',
+                        ),
+                      ),
+                    ),
+                  // Below lg: backdrop (bg-black/50 backdrop-blur-sm) …
+                  Positioned.fill(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      child: _sidebarOpen && mobile && !learning
+                          ? GestureDetector(
+                              onTap: () => setState(() => _sidebarOpen = false),
+                              child: SizedBox.expand(
+                                child: ClipRect(
+                                  child: BackdropFilter(
+                                    filter: ImageFilter.blur(
+                                      sigmaX: 8,
+                                      sigmaY: 8,
+                                    ),
+                                    child: ColoredBox(
+                                      color: Colors.black.withValues(
+                                        alpha: 0.5,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
                   ),
-              ],
-            ),
+                  // … and the 260 px drawer sliding in from the left.
+                  if (!_hideSidebar && mobile && !learning)
+                    AnimatedPositioned(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.fastOutSlowIn,
+                      left: _sidebarOpen ? 0 : -260,
+                      top: 0,
+                      bottom: 0,
+                      width: 260,
+                      child: sidebar(),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
@@ -416,8 +530,12 @@ class _MathZoroShellState extends ConsumerState<MathZoroShell> {
 
   Widget _header(SessionState session) {
     final isStudent = session.role.toLowerCase() == 'student';
-    final courses = ref.watch(mathZoroProvider.select((s) => s.mathZoroCourses));
-    final className = courses.isNotEmpty ? jsDisplay(courses.first['class_name']) : '';
+    final courses = ref.watch(
+      mathZoroProvider.select((s) => s.mathZoroCourses),
+    );
+    final className = courses.isNotEmpty
+        ? jsDisplay(courses.first['class_name'])
+        : '';
     final daysLeft = _daysUntilExpiry(session.expiresOn);
     final dark = context.isDark;
 
@@ -439,14 +557,18 @@ class _MathZoroShellState extends ConsumerState<MathZoroShell> {
                         width: 32,
                         height: 32,
                         decoration: BoxDecoration(
-                          color: hover ? (dark ? Tw.gray800 : Tw.gray100) : Colors.transparent,
+                          color: hover
+                              ? (dark ? Tw.gray800 : Tw.gray100)
+                              : Colors.transparent,
                           // rounded-md → calc(var(--radius) - 2px) = 14 px.
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: Icon(
                           BootstrapIcons.list,
                           size: 20,
-                          color: dark ? (hover ? Colors.white : Tw.gray400) : Tw.gray500,
+                          color: dark
+                              ? (hover ? Colors.white : Tw.gray400)
+                              : Tw.gray500,
                         ),
                       ),
                     ),
@@ -457,17 +579,28 @@ class _MathZoroShellState extends ConsumerState<MathZoroShell> {
                     const SizedBox(width: 10),
                   ],
                   if (className.isNotEmpty) ...[
-                    const Icon(BootstrapIcons.mortarboard_fill, size: 14, color: Tw.green500),
+                    const Icon(
+                      BootstrapIcons.mortarboard_fill,
+                      size: 14,
+                      color: Tw.green500,
+                    ),
                     const SizedBox(width: 8),
                     Flexible(
-                      child: Text(className,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                      child: Text(
+                        className,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 10),
                   ],
-                  if (session.role == Role.institute && daysLeft != null && daysLeft <= 3)
+                  if (session.role == Role.institute &&
+                      daysLeft != null &&
+                      daysLeft <= 3)
                     _ExpiryBadge(daysLeft: daysLeft),
                 ],
               ),
@@ -476,7 +609,9 @@ class _MathZoroShellState extends ConsumerState<MathZoroShell> {
             // RIGHT
             Row(
               mainAxisSize: MainAxisSize.min,
-              children: isStudent ? _studentRight(session) : _staffRight(session),
+              children: isStudent
+                  ? _studentRight(session)
+                  : _staffRight(session),
             ),
           ],
         ),
@@ -506,11 +641,28 @@ class _MathZoroShellState extends ConsumerState<MathZoroShell> {
       _UserMenu(
         header: name.toUpperCase(),
         entries: [
-          _MenuEntry('upgrade', 'Upgrade Plan', BootstrapIcons.arrow_up_circle, Tw.green500,
-              _upgradePlan),
-          _MenuEntry('profile', 'Profile', BootstrapIcons.person_fill, null, _profile),
+          _MenuEntry(
+            'upgrade',
+            'Upgrade Plan',
+            BootstrapIcons.arrow_up_circle,
+            Tw.green500,
+            _upgradePlan,
+          ),
+          _MenuEntry(
+            'profile',
+            'Profile',
+            BootstrapIcons.person_fill,
+            null,
+            _profile,
+          ),
           null,
-          _MenuEntry('logout', 'Logout', BootstrapIcons.box_arrow_right, Tw.red500, _logout),
+          _MenuEntry(
+            'logout',
+            'Logout',
+            BootstrapIcons.box_arrow_right,
+            Tw.red500,
+            _logout,
+          ),
         ],
         // `hover:bg-gray-55` is not a Tailwind colour → no light hover.
         hoverColor: dark ? Tw.gray800 : null,
@@ -540,7 +692,9 @@ class _MathZoroShellState extends ConsumerState<MathZoroShell> {
                     // `<p hidden>{{ studentClass || 'CLASS 10' }}</p>`
                     Visibility(
                       visible: false,
-                      child: Text(_studentClass.isNotEmpty ? _studentClass : 'CLASS 10'),
+                      child: Text(
+                        _studentClass.isNotEmpty ? _studentClass : 'CLASS 10',
+                      ),
                     ),
                   ],
                 ),
@@ -578,7 +732,9 @@ class _MathZoroShellState extends ConsumerState<MathZoroShell> {
         _TeacherClassSelect(
           classes: _teacherClasses,
           loading: _loadingClasses,
-          selectedClass: ref.watch(mathZoroProvider.select((s) => s.selectedClass)),
+          selectedClass: ref.watch(
+            mathZoroProvider.select((s) => s.selectedClass),
+          ),
           onSelect: _onClassSelect,
         ),
         const SizedBox(width: 6),
@@ -593,12 +749,29 @@ class _MathZoroShellState extends ConsumerState<MathZoroShell> {
         header: name,
         entries: [
           if (role != Role.admin)
-            _MenuEntry('profile', 'Profile', BootstrapIcons.person_fill, null, _profile),
+            _MenuEntry(
+              'profile',
+              'Profile',
+              BootstrapIcons.person_fill,
+              null,
+              _profile,
+            ),
           if (role == Role.institute)
-            _MenuEntry('upgrade', 'Upgrade Plan', BootstrapIcons.arrow_up_circle, null,
-                _upgradePlan),
+            _MenuEntry(
+              'upgrade',
+              'Upgrade Plan',
+              BootstrapIcons.arrow_up_circle,
+              null,
+              _upgradePlan,
+            ),
           if (role != Role.admin) null,
-          _MenuEntry('logout', 'Logout', BootstrapIcons.box_arrow_right, Tw.red500, _logout),
+          _MenuEntry(
+            'logout',
+            'Logout',
+            BootstrapIcons.box_arrow_right,
+            Tw.red500,
+            _logout,
+          ),
         ],
         hoverColor: dark ? Tw.gray800 : Tw.gray100,
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -606,21 +779,26 @@ class _MathZoroShellState extends ConsumerState<MathZoroShell> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (context.isSm) ...[
-              Text(name,
-                  style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: dark ? Colors.white : Tw.gray800)),
+              Text(
+                name,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: dark ? Colors.white : Tw.gray800,
+                ),
+              ),
               const SizedBox(width: 8),
             ],
-            Icon(BootstrapIcons.person_circle,
-                size: 20, color: dark ? Colors.white : Tw.gray600),
+            Icon(
+              BootstrapIcons.person_circle,
+              size: 20,
+              color: dark ? Colors.white : Tw.gray600,
+            ),
           ],
         ),
       ),
     ];
   }
-
 }
 
 /// Points badge — rendered with the `hidden` attribute on the web.
@@ -638,19 +816,26 @@ class _PointsBadge extends StatelessWidget {
         color: dark ? Tw.yellow500.withValues(alpha: 0.1) : Mz.yellow50,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-            color: dark ? Tw.yellow500.withValues(alpha: 0.3) : Mz.yellow200),
+          color: dark ? Tw.yellow500.withValues(alpha: 0.3) : Mz.yellow200,
+        ),
       ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        const Text('⭐', style: TextStyle(fontSize: 16)),
-        const SizedBox(width: 6),
-        Text(
-          loading ? '...' : '${NumberFormat.decimalPattern().format(points)} pts',
-          style: TextStyle(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('⭐', style: TextStyle(fontSize: 16)),
+          const SizedBox(width: 6),
+          Text(
+            loading
+                ? '...'
+                : '${NumberFormat.decimalPattern().format(points)} pts',
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: dark ? Tw.yellow400 : Mz.yellow600),
-        ),
-      ]),
+              color: dark ? Tw.yellow400 : Mz.yellow600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -666,7 +851,8 @@ class _TicketsBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final dark = context.isDark;
     final t = asMap(tickets);
-    final count = t?['total_tickets'] ?? t?['total_tokens'] ?? t?['tokens'] ?? 0;
+    final count =
+        t?['total_tickets'] ?? t?['total_tokens'] ?? t?['tokens'] ?? 0;
     return HoverBuilder(
       builder: (context, hover) => AnimatedContainer(
         duration: const Duration(milliseconds: 150),
@@ -681,19 +867,31 @@ class _TicketsBadge extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(BootstrapIcons.ticket_perforated, size: 14, color: Tw.blue500),
+            const Icon(
+              BootstrapIcons.ticket_perforated,
+              size: 14,
+              color: Tw.blue500,
+            ),
             const SizedBox(width: 6),
             if (!loading)
-              Text(jsDisplay(count),
-                  style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: dark ? Colors.white : Tw.gray800))
+              Text(
+                jsDisplay(count),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: dark ? Colors.white : Tw.gray800,
+                ),
+              )
             else
               const _Pulse(
-                child: Text('...',
-                    style: TextStyle(
-                        fontSize: 14, fontWeight: FontWeight.w600, color: Tw.gray400)),
+                child: Text(
+                  '...',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Tw.gray400,
+                  ),
+                ),
               ),
           ],
         ),
@@ -713,8 +911,10 @@ class _Pulse extends StatefulWidget {
 
 class _PulseState extends State<_Pulse> with SingleTickerProviderStateMixin {
   late final AnimationController _c = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 1000), lowerBound: 0.5)
-    ..repeat(reverse: true);
+    vsync: this,
+    duration: const Duration(milliseconds: 1000),
+    lowerBound: 0.5,
+  )..repeat(reverse: true);
 
   @override
   void dispose() {
@@ -723,7 +923,8 @@ class _PulseState extends State<_Pulse> with SingleTickerProviderStateMixin {
   }
 
   @override
-  Widget build(BuildContext context) => FadeTransition(opacity: _c, child: widget.child);
+  Widget build(BuildContext context) =>
+      FadeTransition(opacity: _c, child: widget.child);
 }
 
 class _ExpiryBadge extends StatelessWidget {
@@ -736,8 +937,8 @@ class _ExpiryBadge extends StatelessWidget {
     final text = d > 0
         ? 'Expires in $d day${d == 1 ? '' : 's'}'
         : d == 0
-            ? 'Expires today'
-            : 'Expired';
+        ? 'Expires today'
+        : 'Expired';
     final dark = context.isDark;
     final fg = dark ? Tw.red300 : Tw.red600;
     return _Pulse(
@@ -747,11 +948,21 @@ class _ExpiryBadge extends StatelessWidget {
           color: dark ? Tw.red900.withValues(alpha: 0.4) : Tw.red100,
           borderRadius: BorderRadius.circular(999),
         ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(BootstrapIcons.clock_history, size: 12, color: fg),
-          const SizedBox(width: 4),
-          Text(text, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: fg)),
-        ]),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(BootstrapIcons.clock_history, size: 12, color: fg),
+            const SizedBox(width: 4),
+            Text(
+              text,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: fg,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -776,7 +987,11 @@ class _BellButton extends StatelessWidget {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            Icon(BootstrapIcons.bell_fill, size: 15, color: dark ? Tw.gray400 : Tw.gray500),
+            Icon(
+              BootstrapIcons.bell_fill,
+              size: 15,
+              color: dark ? Tw.gray400 : Tw.gray500,
+            ),
             Positioned(
               top: 8,
               right: 8,
@@ -786,7 +1001,10 @@ class _BellButton extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Tw.red500,
                   shape: BoxShape.circle,
-                  border: Border.all(color: dark ? Tw.gray900 : Colors.white, width: 2),
+                  border: Border.all(
+                    color: dark ? Tw.gray900 : Colors.white,
+                    width: 2,
+                  ),
                 ),
               ),
             ),
@@ -838,7 +1056,10 @@ class _UserMenu extends StatelessWidget {
               if (!anchor.isSm)
                 MzMenuItem<String>(
                   textStyle: const TextStyle(
-                      fontSize: 12, height: 16 / 12, fontWeight: FontWeight.w700),
+                    fontSize: 12,
+                    height: 16 / 12,
+                    fontWeight: FontWeight.w700,
+                  ),
                   child: Text(header),
                 ),
               for (final e in entries)
@@ -848,11 +1069,13 @@ class _UserMenu extends StatelessWidget {
                   MzMenuItem<String>(
                     value: e.key,
                     // `<i class="bi … mr-2" />` inside the item's `gap-2`.
-                    child: Row(children: [
-                      Icon(e.icon, color: e.iconColor),
-                      const SizedBox(width: 16),
-                      Flexible(child: Text(e.label)),
-                    ]),
+                    child: Row(
+                      children: [
+                        Icon(e.icon, color: e.iconColor),
+                        const SizedBox(width: 16),
+                        Flexible(child: Text(e.label)),
+                      ],
+                    ),
                   ),
             ],
           );
@@ -862,7 +1085,9 @@ class _UserMenu extends StatelessWidget {
           duration: const Duration(milliseconds: 150),
           padding: padding,
           decoration: BoxDecoration(
-            color: hover && hoverColor != null ? hoverColor : Colors.transparent,
+            color: hover && hoverColor != null
+                ? hoverColor
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(16),
           ),
           child: child,
@@ -906,7 +1131,9 @@ class _SelectTrigger extends StatelessWidget {
           constraints: BoxConstraints(minWidth: minWidth, maxWidth: maxWidth),
           padding: const EdgeInsets.only(left: 8, right: 6),
           decoration: BoxDecoration(
-            color: dark ? input.withValues(alpha: hover ? 0.5 : 0.3) : Colors.white,
+            color: dark
+                ? input.withValues(alpha: hover ? 0.5 : 0.3)
+                : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: dark ? Tw.gray700 : Tw.gray200),
             boxShadow: MzShadow.xs,
@@ -916,14 +1143,19 @@ class _SelectTrigger extends StatelessWidget {
             child: IconTheme.merge(
               data: IconThemeData(size: 14, color: fg),
               child: Row(
-                mainAxisSize: width == null ? MainAxisSize.min : MainAxisSize.max,
+                mainAxisSize: width == null
+                    ? MainAxisSize.min
+                    : MainAxisSize.max,
                 children: [
                   ...children,
                   const SizedBox(width: 4),
                   Opacity(
                     opacity: 0.5,
-                    child: Icon(Icons.keyboard_arrow_down_rounded,
-                        size: 16, color: Mz.mutedForeground(dark)),
+                    child: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      size: 16,
+                      color: Mz.mutedForeground(dark),
+                    ),
                   ),
                 ],
               ),
@@ -934,6 +1166,7 @@ class _SelectTrigger extends StatelessWidget {
     );
   }
 }
+
 class _TeacherClassSelect extends StatelessWidget {
   const _TeacherClassSelect({
     required this.classes,
@@ -957,7 +1190,9 @@ class _TeacherClassSelect extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // selectedClassId = String(selectedClass?.id || '')
-    final selectedId = jsTruthy(selectedClass?['id']) ? jsStr(selectedClass!['id'])! : '';
+    final selectedId = jsTruthy(selectedClass?['id'])
+        ? jsStr(selectedClass!['id'])!
+        : '';
     var selectedName = '';
     if (selectedId.isNotEmpty) {
       for (final c in classes) {
@@ -983,21 +1218,28 @@ class _TeacherClassSelect extends StatelessWidget {
               MzMenuItem<int>(
                 value: i,
                 checked: jsStr(classes[i]['id']) == selectedId,
-                child: Row(children: [
-                  const Icon(BootstrapIcons.journal_text, color: Tw.sky500),
-                  const SizedBox(width: 8),
-                  Flexible(child: Text(_label(classes[i]))),
-                ]),
+                child: Row(
+                  children: [
+                    const Icon(BootstrapIcons.journal_text, color: Tw.sky500),
+                    const SizedBox(width: 8),
+                    Flexible(child: Text(_label(classes[i]))),
+                  ],
+                ),
               ),
             if (classes.isEmpty && !loading)
               const MzMenuNote<int>(
-                child: Text('No classes found',
-                    style: TextStyle(fontSize: 12, color: Tw.gray400)),
+                child: Text(
+                  'No classes found',
+                  style: TextStyle(fontSize: 12, color: Tw.gray400),
+                ),
               ),
             if (loading)
               const MzMenuNote<int>(
                 child: _Pulse(
-                  child: Text('Loading...', style: TextStyle(fontSize: 12, color: Tw.gray400)),
+                  child: Text(
+                    'Loading...',
+                    style: TextStyle(fontSize: 12, color: Tw.gray400),
+                  ),
                 ),
               ),
           ],
@@ -1020,6 +1262,7 @@ class _TeacherClassSelect extends StatelessWidget {
     );
   }
 }
+
 class _LanguageSelect extends ConsumerWidget {
   const _LanguageSelect({required this.languages});
   final List<Map<String, dynamic>> languages;
@@ -1035,7 +1278,8 @@ class _LanguageSelect extends ConsumerWidget {
         break;
       }
     }
-    final code = (jsTruthy(found?['code']) ? asString(found!['code'])! : 'EN').toUpperCase();
+    final code = (jsTruthy(found?['code']) ? asString(found!['code'])! : 'EN')
+        .toUpperCase();
 
     return _SelectTrigger(
       width: 64, // w-16
@@ -1047,20 +1291,26 @@ class _LanguageSelect extends ConsumerWidget {
           items: [
             for (final l in languages)
               MzMenuItem<String>(
-                value: jsTruthy(l['code']) ? asString(l['code']) : jsStr(l['id']),
+                value: jsTruthy(l['code'])
+                    ? asString(l['code'])
+                    : jsStr(l['id']),
                 checked: asString(l['code']) == selectedCode,
-                child: Row(children: [
-                  const Icon(BootstrapIcons.translate),
-                  const SizedBox(width: 4),
-                  Flexible(child: Text(jsDisplay(l['name']))),
-                ]),
+                child: Row(
+                  children: [
+                    const Icon(BootstrapIcons.translate),
+                    const SizedBox(width: 4),
+                    Flexible(child: Text(jsDisplay(l['name']))),
+                  ],
+                ),
               ),
           ],
         );
         if (val == null) return;
         for (final l in languages) {
           if (asString(l['code']) == val) {
-            ref.read(mathZoroProvider.notifier).setLanguage(AppLanguage.fromJson(l));
+            ref
+                .read(mathZoroProvider.notifier)
+                .setLanguage(AppLanguage.fromJson(l));
             return;
           }
         }
@@ -1068,12 +1318,15 @@ class _LanguageSelect extends ConsumerWidget {
       children: [
         const Icon(BootstrapIcons.translate),
         const SizedBox(width: 4),
-        Text(code.length > 2 ? code.substring(0, 2) : code,
-            style: const TextStyle(fontWeight: FontWeight.w600)),
+        Text(
+          code.length > 2 ? code.substring(0, 2) : code,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
       ],
     );
   }
 }
+
 /// 3-way color mode toggle (light → dark → system).
 class _ColorModeButton extends ConsumerWidget {
   const _ColorModeButton();
@@ -1083,9 +1336,17 @@ class _ColorModeButton extends ConsumerWidget {
     final mode = ref.watch(colorModeProvider);
     final dark = context.isDark;
     final (icon, color, label) = switch (mode) {
-      ColorModePref.light => (BootstrapIcons.sun_fill, Tw.yellow500, 'Light Mode'),
+      ColorModePref.light => (
+        BootstrapIcons.sun_fill,
+        Tw.yellow500,
+        'Light Mode',
+      ),
       ColorModePref.dark => (BootstrapIcons.moon_fill, Tw.blue400, 'Dark Mode'),
-      ColorModePref.system => (BootstrapIcons.laptop, Tw.gray400, 'System Mode'),
+      ColorModePref.system => (
+        BootstrapIcons.laptop,
+        Tw.gray400,
+        'System Mode',
+      ),
     };
     return MzTooltip(
       message: label,
@@ -1097,7 +1358,9 @@ class _ColorModeButton extends ConsumerWidget {
           height: 36,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: hover ? (dark ? Tw.gray800 : Tw.gray100) : Colors.transparent,
+            color: hover
+                ? (dark ? Tw.gray800 : Tw.gray100)
+                : Colors.transparent,
           ),
           child: Icon(icon, size: 15, color: color),
         ),
@@ -1146,7 +1409,9 @@ class _MzSidebar extends ConsumerWidget {
       clipBehavior: Clip.hardEdge,
       decoration: BoxDecoration(
         color: dark ? Tw.gray900 : Colors.white,
-        border: Border(right: BorderSide(color: dark ? Tw.gray800 : Tw.gray200)),
+        border: Border(
+          right: BorderSide(color: dark ? Tw.gray800 : Tw.gray200),
+        ),
       ),
       child: LayoutBuilder(
         builder: (context, c) {
@@ -1168,7 +1433,9 @@ class _MzSidebar extends ConsumerWidget {
                   Container(
                     height: 72,
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    decoration: BoxDecoration(border: Border(bottom: BorderSide(color: divider))),
+                    decoration: BoxDecoration(
+                      border: Border(bottom: BorderSide(color: divider)),
+                    ),
                     child: showLogo
                         ? Center(
                             child: Image.asset(
@@ -1183,7 +1450,10 @@ class _MzSidebar extends ConsumerWidget {
                   // Nav links
                   Expanded(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 20,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -1206,26 +1476,38 @@ class _MzSidebar extends ConsumerWidget {
                     // Student: Appearance toggle at bottom
                     Container(
                       padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(border: Border(top: BorderSide(color: divider))),
+                      decoration: BoxDecoration(
+                        border: Border(top: BorderSide(color: divider)),
+                      ),
                       child: _SidebarButton(
                         icon: BootstrapIcons.sun_fill,
                         iconColor: Tw.amber400,
                         label: open ? 'Appearance' : null,
                         isStudent: isStudent,
-                        onTap: () => ref.read(colorModeProvider.notifier).cycle(),
+                        onTap: () =>
+                            ref.read(colorModeProvider.notifier).cycle(),
                       ),
                     )
                   else
                     // Teacher/Admin/Institute: user profile at bottom
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                      decoration: BoxDecoration(border: Border(top: BorderSide(color: divider))),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border(top: BorderSide(color: divider)),
+                      ),
                       child: collapsedDesktop
                           // justify-center: the 40 px avatar overflows the
                           // 27 px strip evenly on both sides.
                           ? const SizedBox(
                               height: 40,
-                              child: OverflowBox(minWidth: 40, maxWidth: 40, child: _SidebarAvatar()),
+                              child: OverflowBox(
+                                minWidth: 40,
+                                maxWidth: 40,
+                                child: _SidebarAvatar(),
+                              ),
                             )
                           : Row(
                               children: [
@@ -1235,7 +1517,8 @@ class _MzSidebar extends ConsumerWidget {
                                   Expanded(
                                     child: Column(
                                       mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           username,
@@ -1245,7 +1528,9 @@ class _MzSidebar extends ConsumerWidget {
                                             fontSize: 13,
                                             fontWeight: FontWeight.w700,
                                             height: 1.25,
-                                            color: dark ? Colors.white : Tw.gray800,
+                                            color: dark
+                                                ? Colors.white
+                                                : Tw.gray800,
                                           ),
                                         ),
                                         const SizedBox(height: 2),
@@ -1288,7 +1573,9 @@ class _SidebarAvatar extends StatelessWidget {
       height: 40,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        boxShadow: [BoxShadow(color: Mz.sky400.withValues(alpha: 0.3), spreadRadius: 2)],
+        boxShadow: [
+          BoxShadow(color: Mz.sky400.withValues(alpha: 0.3), spreadRadius: 2),
+        ],
       ),
       child: ClipOval(
         child: Image.network(
@@ -1343,7 +1630,9 @@ class _SidebarButton extends StatelessWidget {
               ? Colors.transparent
               : (dark ? Tw.sky500.withValues(alpha: 0.1) : Tw.sky50);
         } else {
-          fg = dark ? (hover ? Tw.gray200 : Tw.gray400) : (hover ? Tw.gray700 : Tw.gray500);
+          fg = dark
+              ? (hover ? Tw.gray200 : Tw.gray400)
+              : (hover ? Tw.gray700 : Tw.gray500);
           bg = hover ? (dark ? Tw.gray800 : Tw.gray50) : Colors.transparent;
         }
         return Stack(
@@ -1354,7 +1643,10 @@ class _SidebarButton extends StatelessWidget {
               // strip on the web; only the left padding is kept here.
               padding: EdgeInsets.fromLTRB(20, 14, label != null ? 20 : 0, 14),
               // rounded-xl → calc(var(--radius) + 4px) = 20 px in this theme.
-              decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+              decoration: BoxDecoration(
+                color: bg,
+                borderRadius: BorderRadius.circular(20),
+              ),
               child: SizedBox(
                 height: 28,
                 child: Row(
@@ -1403,4 +1695,3 @@ class _SidebarButton extends StatelessWidget {
     return tooltip == null ? button : Tooltip(message: tooltip, child: button);
   }
 }
-

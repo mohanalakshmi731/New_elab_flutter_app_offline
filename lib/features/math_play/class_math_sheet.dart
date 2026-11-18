@@ -331,7 +331,7 @@ class _SheetActivityCardState extends State<_SheetActivityCard> with SingleTicke
                           scale: hover ? 1.05 : 1,
                           duration: const Duration(milliseconds: 300),
                           curve: kTwEase,
-                          child: Image.network(
+                          child: contentImage(
                             filePath,
                             fit: BoxFit.cover,
                             errorBuilder: (_, _, _) => const SizedBox.shrink(),

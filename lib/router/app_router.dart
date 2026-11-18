@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../features/offline/offline_runtime.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -80,31 +81,67 @@ class AppRoutes {
 
   static String homeFor(SessionState s) {
     if (Env.isMathzoro) return mathzoroHome;
-    if (s.role == Role.student && (s.userInfo?.isMathZoro ?? false)) return mathzoroHome;
+    if (s.role == Role.student && (s.userInfo?.isMathZoro ?? false)) {
+      return mathzoroHome;
+    }
     return dashboard;
   }
 }
 
 /// A ported screen inside a shell (no transition, like the web's router-view).
-GoRoute _page(String path, Widget Function(GoRouterState state) build) => GoRoute(
+GoRoute _page(String path, Widget Function(GoRouterState state) build) =>
+    GoRoute(
       path: path,
-      pageBuilder: (context, state) => NoTransitionPage(key: state.pageKey, child: build(state)),
+      pageBuilder: (context, state) => NoTransitionPage(
+        key: state.pageKey,
+        child: Consumer(
+          builder: (context, ref, _) {
+            const catalogs = {
+              '/library',
+              '/newlibrary',
+              '/elabsmathzone',
+              '/elabssciencezone',
+              '/classmath',
+              '/studentsciencezone',
+              '/newmathzone',
+            };
+            final offline =
+                catalogs.contains(path) && ref.watch(offlineBrowsingProvider);
+            final revision = offline
+                ? ref.watch(offlineRuntimeProvider.select((s) => s.revision))
+                : 0;
+            final language = catalogs.contains(path)
+                ? ref.watch(sessionProvider.select((s) => s.language.id))
+                : 0;
+            return KeyedSubtree(
+              key: ValueKey((offline, revision, language)),
+              child: build(state),
+            );
+          },
+        ),
+      ),
     );
-
 
 final _rootKey = GlobalKey<NavigatorState>();
 
 final routerProvider = Provider<GoRouter>((ref) {
   // Re-run redirects whenever the user logs in/out (or a 401 clears the session).
   final authChanged = ValueNotifier<bool>(ref.read(sessionProvider).isLoggedIn);
-  ref.listen<bool>(sessionProvider.select((s) => s.isLoggedIn),
-      (_, loggedIn) => authChanged.value = loggedIn);
+  ref.listen<bool>(
+    sessionProvider.select((s) => s.isLoggedIn),
+    (_, loggedIn) => authChanged.value = loggedIn,
+  );
   ref.onDispose(authChanged.dispose);
 
   final isMathzoro = Env.isMathzoro;
 
   final routes = <RouteBase>[
     GoRoute(path: '/', redirect: (_, _) => AppRoutes.loginPath),
+    GoRoute(
+      path: '/offline',
+      redirect: (_, _) =>
+          Env.isMathzoro ? '/newlayout/newmathzone' : '/library',
+    ),
 
     if (isMathzoro) ...[
       GoRoute(
@@ -123,16 +160,26 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: 'studentdashboard',
                 pageBuilder: (_, state) => NoTransitionPage(
-                    key: state.pageKey, child: const MathZoroStudentDashboardPage()),
+                  key: state.pageKey,
+                  child: const MathZoroStudentDashboardPage(),
+                ),
               ),
               _page('MyProfile', (_) => const UserProfilePage()),
               _page('newmathzone', (_) => const StudentMathZonePage()),
               _page('playzone', (_) => const PlayZonePage()),
-              _page('studentupgradeplan',
-                  (s) => StudentPaymentPage(classId: s.uri.queryParameters['class_id'])),
+              _page(
+                'studentupgradeplan',
+                (s) => StudentPaymentPage(
+                  classId: s.uri.queryParameters['class_id'],
+                ),
+              ),
               _page('reports', (_) => const StudentReportsPage()),
-              _page('studentactivitypage',
-                  (s) => StudentActivityPage(fromPlayZone: s.uri.queryParameters['fromPlayZone'])),
+              _page(
+                'studentactivitypage',
+                (s) => StudentActivityPage(
+                  fromPlayZone: s.uri.queryParameters['fromPlayZone'],
+                ),
+              ),
             ],
           ),
         ],
@@ -153,8 +200,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       routes: [
         GoRoute(
           path: ':code',
-          builder: (_, s) =>
-              SignupPage(code: s.pathParameters['code'] ?? s.uri.queryParameters['code']),
+          builder: (_, s) => SignupPage(
+            code: s.pathParameters['code'] ?? s.uri.queryParameters['code'],
+          ),
         ),
       ],
     ),
@@ -175,29 +223,47 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: AppRoutes.dashboard,
-            pageBuilder: (_, state) =>
-                NoTransitionPage(key: state.pageKey, child: const DashboardPage()),
+            pageBuilder: (_, state) => NoTransitionPage(
+              key: state.pageKey,
+              child: const DashboardPage(),
+            ),
           ),
-          GoRoute(path: '/courselist', redirect: (_, _) => '/classlist?tab=courses'),
+          GoRoute(
+            path: '/courselist',
+            redirect: (_, _) => '/classlist?tab=courses',
+          ),
           // Phase 2 — users, institutes & plans
           _page('/userlist', (_) => const UserListPage()),
           _page('/userscreate', (_) => const UserCreatePage()),
           _page('/useractivitylog', (_) => const UserActivityLogPage()),
           _page('/MyProfile', (_) => const UserProfilePage()),
-          _page('/studentslistplanwise',
-              (s) => PlanwiseStudentListPage(query: s.uri.queryParameters)),
+          _page(
+            '/studentslistplanwise',
+            (s) => PlanwiseStudentListPage(query: s.uri.queryParameters),
+          ),
           _page('/instituteslist', (_) => const InstituteListPage()),
           _page('/Institutescreate', (_) => const InstituteCreatePage()),
-          _page('/Invitationslist', (s) => InvitationListPage(query: s.uri.queryParameters)),
+          _page(
+            '/Invitationslist',
+            (s) => InvitationListPage(query: s.uri.queryParameters),
+          ),
           _page('/institutesplanList', (_) => const InstitutePlanListPage()),
-          _page('/institutesplanCreate', (_) => const InstitutePlanCreatePage()),
-          _page('/institutesplanupdate/:id',
-              (s) => InstitutePlanUpdatePage(id: s.pathParameters['id'] ?? '')),
+          _page(
+            '/institutesplanCreate',
+            (_) => const InstitutePlanCreatePage(),
+          ),
+          _page(
+            '/institutesplanupdate/:id',
+            (s) => InstitutePlanUpdatePage(id: s.pathParameters['id'] ?? ''),
+          ),
           _page('/zslplan', (_) => const ZslPlanPage()),
           _page('/zslplanlist', (_) => const ZslPlanListPage()),
           _page('/subscription', (_) => const SubscriptionPage()),
           // Phase 3 — classes & courses
-          _page('/classlist', (s) => ClassListPage(tab: s.uri.queryParameters['tab'])),
+          _page(
+            '/classlist',
+            (s) => ClassListPage(tab: s.uri.queryParameters['tab']),
+          ),
           // Web registers /instructorlist twice; vue-router matches the first (Batchlist).
           _page('/instructorlist', (_) => const BatchListPage()),
           _page('/coursecreate', (_) => const CourseCreatePage()),
@@ -208,17 +274,38 @@ final routerProvider = Provider<GoRouter>((ref) {
           _page('/schedules', (_) => const SchedulesPage()),
           _page('/teachersdashboardpage', (_) => const TeachersDashboardPage()),
           _page('/teacherschedules', (_) => const TeacherSchedulesPage()),
-          _page('/zoom-full',
-              (s) => ZoomFullPage(meeting: s.extra is Map ? Map<String, dynamic>.from(s.extra as Map) : null)),
+          _page(
+            '/zoom-full',
+            (s) => ZoomFullPage(
+              meeting: s.extra is Map
+                  ? Map<String, dynamic>.from(s.extra as Map)
+                  : null,
+            ),
+          ),
           // Phase 5 — exams & question bank
           _page('/exams', (_) => const ExamPage()),
           _page('/exams/createexam', (_) => const CreateQuestionPage()),
-          _page('/exams/question/edit/:id', (s) => CreateQuestionPage(id: s.pathParameters['id'])),
-          _page('/editexams/:id', (s) => EditExamPage(id: s.pathParameters['id'] ?? '')),
-          _page('/viewexams/:id', (s) => ViewExamPage(id: s.pathParameters['id'] ?? '')),
-          _page('/examattempts/:id', (s) => ExamAttemptsPage(id: s.pathParameters['id'] ?? '')),
-          _page('/results/:attemptId',
-              (s) => ExamResultsPage(attemptId: s.pathParameters['attemptId'] ?? '')),
+          _page(
+            '/exams/question/edit/:id',
+            (s) => CreateQuestionPage(id: s.pathParameters['id']),
+          ),
+          _page(
+            '/editexams/:id',
+            (s) => EditExamPage(id: s.pathParameters['id'] ?? ''),
+          ),
+          _page(
+            '/viewexams/:id',
+            (s) => ViewExamPage(id: s.pathParameters['id'] ?? ''),
+          ),
+          _page(
+            '/examattempts/:id',
+            (s) => ExamAttemptsPage(id: s.pathParameters['id'] ?? ''),
+          ),
+          _page(
+            '/results/:attemptId',
+            (s) =>
+                ExamResultsPage(attemptId: s.pathParameters['attemptId'] ?? ''),
+          ),
           _page('/newexams', (_) => const NewExamsPage()),
           _page('/questions', (_) => const QuestionsListPage()),
           _page('/newquestions', (_) => const NewQuestionsPage()),
@@ -228,17 +315,31 @@ final routerProvider = Provider<GoRouter>((ref) {
           _page('/newlibrary', (_) => const NewLibraryPage()),
           _page('/classmath', (_) => const ClassMathPage()),
           _page('/mathplay', (_) => const MathPlayPage()),
-          _page('/studentactivitypage',
-              (s) => StudentActivityPage(fromPlayZone: s.uri.queryParameters['fromPlayZone'])),
+          _page(
+            '/studentactivitypage',
+            (s) => StudentActivityPage(
+              fromPlayZone: s.uri.queryParameters['fromPlayZone'],
+            ),
+          ),
           _page('/studentsciencezone', (_) => const StudentScienceZonePage()),
-          _page('/studentupgradeplan',
-              (s) => StudentPaymentPage(classId: s.uri.queryParameters['class_id'])),
-          _page('/studentdashboardlayout', (_) => const StudentDashboardLayoutPage()),
+          _page(
+            '/studentupgradeplan',
+            (s) =>
+                StudentPaymentPage(classId: s.uri.queryParameters['class_id']),
+          ),
+          _page(
+            '/studentdashboardlayout',
+            (_) => const StudentDashboardLayoutPage(),
+          ),
           _page('/activityreport', (_) => const ActivityReportsPage()),
           _page('/elabsmathzone', (_) => const ElabsMathZonePage()),
           _page('/elabssciencezone', (_) => const ElabsScienceZonePage()),
-          _page('/upgradeplan',
-              (s) => UpgradePlanPage(transactionId: s.uri.queryParameters['transaction_id'])),
+          _page(
+            '/upgradeplan',
+            (s) => UpgradePlanPage(
+              transactionId: s.uri.queryParameters['transaction_id'],
+            ),
+          ),
         ],
       ),
   ];
@@ -248,29 +349,34 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/',
     refreshListenable: authChanged,
     routes: routes,
-    errorBuilder: (context, state) => Scaffold(
-      body: Center(child: Text('Page not found: ${state.uri}')),
-    ),
+    errorBuilder: (context, state) =>
+        Scaffold(body: Center(child: Text('Page not found: ${state.uri}'))),
     redirect: (context, state) {
       final session = ref.read(sessionProvider);
       final path = state.uri.path;
       final loginPath = AppRoutes.loginPath;
-      final isPublic = path == loginPath ||
+      final isPublic =
+          path == loginPath ||
           path == '/signup' ||
           path.startsWith('/signup/') ||
           path == '/selfsignup' ||
           path == '/startexam';
 
       if (!session.isLoggedIn) {
-        return isPublic || path == '/' ? (path == '/' ? loginPath : null) : loginPath;
+        return isPublic || path == '/'
+            ? (path == '/' ? loginPath : null)
+            : loginPath;
       }
 
       if (path == '/') return AppRoutes.homeFor(session);
       if (path == '/startexam') return null;
 
       // MathZoro students must stay inside /newlayout (router.beforeEach).
-      if (session.role == Role.student && (session.userInfo?.isMathZoro ?? false)) {
-        final allowed = path.startsWith('/newlayout') ||
+      if (session.role == Role.student &&
+          (session.userInfo?.isMathZoro ?? false)) {
+        final allowed =
+            path == '/offline' ||
+            path.startsWith('/newlayout') ||
             path == AppRoutes.classChange ||
             path == loginPath;
         if (!allowed) return AppRoutes.mathzoroHome;

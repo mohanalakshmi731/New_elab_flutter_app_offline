@@ -1,9 +1,11 @@
+import '../../widgets/content_image.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:bootstrap_icons/bootstrap_icons.dart';
 import 'package:flutter/material.dart';
+import '../offline/offline_runtime.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -42,7 +44,8 @@ class StudentMathZonePage extends ConsumerStatefulWidget {
   const StudentMathZonePage({super.key});
 
   @override
-  ConsumerState<StudentMathZonePage> createState() => _StudentMathZonePageState();
+  ConsumerState<StudentMathZonePage> createState() =>
+      _StudentMathZonePageState();
 }
 
 /// `whyModal`.
@@ -61,14 +64,18 @@ class _WhyModal {
   final String contentType;
   final bool loading;
 
-  _WhyModal copyWith({bool? open, String? content, String? contentType, bool? loading}) =>
-      _WhyModal(
-        open: open ?? this.open,
-        activity: activity,
-        content: content ?? this.content,
-        contentType: contentType ?? this.contentType,
-        loading: loading ?? this.loading,
-      );
+  _WhyModal copyWith({
+    bool? open,
+    String? content,
+    String? contentType,
+    bool? loading,
+  }) => _WhyModal(
+    open: open ?? this.open,
+    activity: activity,
+    content: content ?? this.content,
+    contentType: contentType ?? this.contentType,
+    loading: loading ?? this.loading,
+  );
 }
 
 /// `chapterRefModal`.
@@ -89,14 +96,18 @@ class _ChapterRefModal {
   /// `activeChapter?.name` shown in the header.
   final String chapterName;
 
-  _ChapterRefModal copyWith({bool? open, bool? loading, String? url, Object? htmlContent}) =>
-      _ChapterRefModal(
-        open: open ?? this.open,
-        loading: loading ?? this.loading,
-        url: url ?? this.url,
-        htmlContent: htmlContent ?? this.htmlContent,
-        chapterName: chapterName,
-      );
+  _ChapterRefModal copyWith({
+    bool? open,
+    bool? loading,
+    String? url,
+    Object? htmlContent,
+  }) => _ChapterRefModal(
+    open: open ?? this.open,
+    loading: loading ?? this.loading,
+    url: url ?? this.url,
+    htmlContent: htmlContent ?? this.htmlContent,
+    chapterName: chapterName,
+  );
 }
 
 /// `noQuestionsModal`.
@@ -128,8 +139,12 @@ class _StudentMathZonePageState extends ConsumerState<StudentMathZonePage> {
   String _resolvedSubjectId = '';
 
   final _whyModal = ValueNotifier<_WhyModal>(const _WhyModal());
-  final _chapterRefModal = ValueNotifier<_ChapterRefModal>(const _ChapterRefModal());
-  final _noQuestionsModal = ValueNotifier<_NoQuestionsModal>(const _NoQuestionsModal());
+  final _chapterRefModal = ValueNotifier<_ChapterRefModal>(
+    const _ChapterRefModal(),
+  );
+  final _noQuestionsModal = ValueNotifier<_NoQuestionsModal>(
+    const _NoQuestionsModal(),
+  );
 
   Json? _quizActivity;
 
@@ -147,11 +162,18 @@ class _StudentMathZonePageState extends ConsumerState<StudentMathZonePage> {
   /// `data()` — the class / subject of the last activity context.
   void _initFromContext() {
     final ctx =
-        ref.read(zslActivityProvider.notifier).selectedActivityContext ?? const <String, dynamic>{};
+        ref.read(zslActivityProvider.notifier).selectedActivityContext ??
+        const <String, dynamic>{};
     _selectedClassId = jsTruthy(ctx['classId']) ? jsStr(ctx['classId'])! : '';
-    _selectedSubjectId = jsTruthy(ctx['subjectId']) ? jsStr(ctx['subjectId'])! : '';
-    _selectedClassName = jsTruthy(ctx['className']) ? jsDisplay(ctx['className']) : '';
-    _selectedSubjectName = jsTruthy(ctx['subjectName']) ? jsDisplay(ctx['subjectName']) : '';
+    _selectedSubjectId = jsTruthy(ctx['subjectId'])
+        ? jsStr(ctx['subjectId'])!
+        : '';
+    _selectedClassName = jsTruthy(ctx['className'])
+        ? jsDisplay(ctx['className'])
+        : '';
+    _selectedSubjectName = jsTruthy(ctx['subjectName'])
+        ? jsDisplay(ctx['subjectName'])
+        : '';
   }
 
   Future<void> _mounted() async {
@@ -179,10 +201,13 @@ class _StudentMathZonePageState extends ConsumerState<StudentMathZonePage> {
   }
 
   bool get _isMath => mzIsMath(_selectedSubjectName);
-  Color get _accent => _isMath ? const Color(0xFFFFDE3B) : const Color(0xFF4ADE80);
-  Color get _accentSecondary => _isMath ? const Color(0xFFF59E0B) : const Color(0xFF06B6D4);
+  Color get _accent =>
+      _isMath ? const Color(0xFFFFDE3B) : const Color(0xFF4ADE80);
+  Color get _accentSecondary =>
+      _isMath ? const Color(0xFFF59E0B) : const Color(0xFF06B6D4);
 
-  Map<String, Json> get _perfMap => mzChapterPerformanceMap(_subjectPerformance);
+  Map<String, Json> get _perfMap =>
+      mzChapterPerformanceMap(_subjectPerformance);
 
   Json? _chapterPerfByIndex(Map<String, Json> perfMap, int i) {
     if (i < 0 || i >= _chapters.length) return null;
@@ -218,7 +243,11 @@ class _StudentMathZonePageState extends ConsumerState<StudentMathZonePage> {
       _selectedChapterIndex = index;
       _activeChapter = chapter;
     });
-    _mz.setLastOpenedChapter({'id': chapter['id'], 'name': chapter['name'], 'chapterIndex': index});
+    _mz.setLastOpenedChapter({
+      'id': chapter['id'],
+      'name': chapter['name'],
+      'chapterIndex': index,
+    });
     await _loadChapterActivities(chapter['id']);
   }
 
@@ -250,17 +279,29 @@ class _StudentMathZonePageState extends ConsumerState<StudentMathZonePage> {
     _whyModal.value = _WhyModal(open: true, activity: activity, loading: true);
     _showWhyModal();
     try {
-      final topics = await _mz.getZslLinks(_instituteId, activity['chapter_id'], _langId);
+      final topics = await _mz.getZslLinks(
+        _instituteId,
+        activity['chapter_id'],
+        _langId,
+      );
       // topics?.find(t => String(t.id) === String(activity.topic_id))
-      if (jsTruthy(topics) && topics is! List) throw StateError('topics.find is not a function');
+      if (jsTruthy(topics) && topics is! List)
+        throw StateError('topics.find is not a function');
       final topicLink = asList(topics)
           .map(asMap)
-          .firstWhere((t) => jsStr(t?['id']) == jsStr(activity['topic_id']), orElse: () => null);
+          .firstWhere(
+            (t) => jsStr(t?['id']) == jsStr(activity['topic_id']),
+            orElse: () => null,
+          );
       final acts = topicLink?['activities'];
-      if (jsTruthy(acts) && acts is! List) throw StateError('activities.find is not a function');
-      final act = asList(
-        acts,
-      ).map(asMap).firstWhere((a) => jsStr(a?['id']) == jsStr(activity['id']), orElse: () => null);
+      if (jsTruthy(acts) && acts is! List)
+        throw StateError('activities.find is not a function');
+      final act = asList(acts)
+          .map(asMap)
+          .firstWhere(
+            (a) => jsStr(a?['id']) == jsStr(activity['id']),
+            orElse: () => null,
+          );
       final desc = asMap(act?['description']);
 
       var content = jsTruthy(desc?['content'])
@@ -269,7 +310,9 @@ class _StudentMathZonePageState extends ConsumerState<StudentMathZonePage> {
       var contentType = 'html';
 
       if (content.isEmpty && jsTruthy(desc?['content_path'])) {
-        final descId = jsTruthy(desc!['description_id']) ? desc['description_id'] : desc['id'];
+        final descId = jsTruthy(desc!['description_id'])
+            ? desc['description_id']
+            : desc['id'];
         if (jsTruthy(descId)) {
           final r = asMap(await _mz.getWhyToLearnSignedUrl(jsStr(descId)!));
           final url = jsTruthy(r?['signed_url']) ? r!['signed_url'] : r?['url'];
@@ -279,10 +322,16 @@ class _StudentMathZonePageState extends ConsumerState<StudentMathZonePage> {
           }
         }
       }
-      _whyModal.value = _whyModal.value.copyWith(content: content, contentType: contentType);
+      _whyModal.value = _whyModal.value.copyWith(
+        content: content,
+        contentType: contentType,
+      );
     } catch (e) {
       debugPrint('$e');
-      _whyModal.value = _whyModal.value.copyWith(content: '', contentType: 'html');
+      _whyModal.value = _whyModal.value.copyWith(
+        content: '',
+        contentType: 'html',
+      );
     } finally {
       _whyModal.value = _whyModal.value.copyWith(loading: false);
     }
@@ -307,10 +356,14 @@ class _StudentMathZonePageState extends ConsumerState<StudentMathZonePage> {
       }
       if (jsTruthy(chapter['chapter_reference_url'])) {
         final res = asMap(
-          await _mz.getChapterReferenceSignedLink(jsStr(chapter['id']) ?? 'undefined'),
+          await _mz.getChapterReferenceSignedLink(
+            jsStr(chapter['id']) ?? 'undefined',
+          ),
         );
         if (jsTruthy(res?['url'])) {
-          _chapterRefModal.value = _chapterRefModal.value.copyWith(url: jsDisplay(res!['url']));
+          _chapterRefModal.value = _chapterRefModal.value.copyWith(
+            url: jsDisplay(res!['url']),
+          );
         }
       }
     } catch (e) {
@@ -322,18 +375,28 @@ class _StudentMathZonePageState extends ConsumerState<StudentMathZonePage> {
 
   String _activityTitle(Json activity) {
     if (jsTruthy(activity['name'])) return jsDisplay(activity['name']);
-    if (jsTruthy(activity['topic_name'])) return jsDisplay(activity['topic_name']);
+    if (jsTruthy(activity['topic_name']))
+      return jsDisplay(activity['topic_name']);
     return '';
   }
 
   void _showNoQuestions(Json activity) {
-    _noQuestionsModal.value = _NoQuestionsModal(open: true, activityName: _activityTitle(activity));
+    _noQuestionsModal.value = _NoQuestionsModal(
+      open: true,
+      activityName: _activityTitle(activity),
+    );
     _showNoQuestionsModal();
   }
 
   Future<void> _openQuiz(Json activity) async {
+    if (ref.read(offlineBrowsingProvider)) {
+      _launchActivity({...activity, 'offlineQuiz': true});
+      return;
+    }
     try {
-      final res = await _mz.getZslQuestions(jsStr(activity['id']) ?? 'undefined');
+      final res = await _mz.getZslQuestions(
+        jsStr(activity['id']) ?? 'undefined',
+      );
       final questions = dataOr(res, const []);
       if (questions is! List || questions.isEmpty) {
         if (mounted) _showNoQuestions(activity);
@@ -354,7 +417,9 @@ class _StudentMathZonePageState extends ConsumerState<StudentMathZonePage> {
     }
   }
 
-  Future<void> _onQuizSubmitted(List<Map<String, String>> answersPayload) async {
+  Future<void> _onQuizSubmitted(
+    List<Map<String, String>> answersPayload,
+  ) async {
     final mz = _mz;
     try {
       await mz.submitZslQuiz(
@@ -374,7 +439,10 @@ class _StudentMathZonePageState extends ConsumerState<StudentMathZonePage> {
   Future<void> _refreshPerformance() async {
     if (_resolvedSubjectId.isEmpty || _resolvedClassId.isEmpty) return;
     try {
-      final perf = await _mz.getSubjectPerformance(_resolvedSubjectId, _resolvedClassId);
+      final perf = await _mz.getSubjectPerformance(
+        _resolvedSubjectId,
+        _resolvedClassId,
+      );
       if (!mounted) return;
       setState(() {
         _subjectPerformance = dataOr(perf, null);
@@ -400,8 +468,12 @@ class _StudentMathZonePageState extends ConsumerState<StudentMathZonePage> {
       'chapterId': activity['chapter_id'],
       'topicId': activity['topic_id'],
       'topicName': activity['topic_name'],
-      'topicImage': jsTruthy(activity['file_path']) ? activity['file_path'] : '',
+      'topicImage': jsTruthy(activity['file_path'])
+          ? activity['file_path']
+          : '',
       'activityId': activity['id'],
+      'offlineQuiz': activity['offlineQuiz'] == true,
+      'fromRoute': GoRouterState.of(context).uri.path,
       'returnPath': '/newlayout/newmathzone',
     });
     context.go('/newlayout/studentactivitypage');
@@ -438,7 +510,8 @@ class _StudentMathZonePageState extends ConsumerState<StudentMathZonePage> {
         final fallbackClassId = jsTruthy(ui?.mathzoroClassId)
             ? ui?.mathzoroClassId
             : ui?.zslClassId;
-        if (jsTruthy(fallbackClassId)) selectedClass = {'zsl_class_id': fallbackClassId};
+        if (jsTruthy(fallbackClassId))
+          selectedClass = {'zsl_class_id': fallbackClassId};
       }
 
       if (!jsTruthy(selectedClass?['zsl_class_id'])) {
@@ -469,7 +542,10 @@ class _StudentMathZonePageState extends ConsumerState<StudentMathZonePage> {
         return;
       }
 
-      final selectedSubject = findZoneSubject(subjects, mathZoneCourse!['zsl_subject_id']);
+      final selectedSubject = findZoneSubject(
+        subjects,
+        mathZoneCourse!['zsl_subject_id'],
+      );
       if (selectedSubject == null) {
         _error =
             'MathZone subject not found. Subject Id = ${jsDisplay(mathZoneCourse['zsl_subject_id'])}';
@@ -503,7 +579,9 @@ class _StudentMathZonePageState extends ConsumerState<StudentMathZonePage> {
   }
 
   Future<void> _fetchAllChaptersAndPerformance() async {
-    if (!jsTruthy(_instituteId) || _selectedClassId.isEmpty || _selectedSubjectId.isEmpty) {
+    if (!jsTruthy(_instituteId) ||
+        _selectedClassId.isEmpty ||
+        _selectedSubjectId.isEmpty) {
       setState(() => _error = 'Missing context.');
       return;
     }
@@ -514,8 +592,16 @@ class _StudentMathZonePageState extends ConsumerState<StudentMathZonePage> {
       });
 
       final results = await Future.wait([
-        _settle(_mz.getSubjectPerformance(_resolvedSubjectId, _resolvedClassId)),
-        _settle(_mz.getallchpaters(_instituteId, _selectedClassId, _selectedSubjectId)),
+        _settle(
+          _mz.getSubjectPerformance(_resolvedSubjectId, _resolvedClassId),
+        ),
+        _settle(
+          _mz.getallchpaters(
+            _instituteId,
+            _selectedClassId,
+            _selectedSubjectId,
+          ),
+        ),
       ]);
       if (!mounted) return;
       final (perfOk, perf) = results[0];
@@ -538,7 +624,9 @@ class _StudentMathZonePageState extends ConsumerState<StudentMathZonePage> {
       if (_chapters.isNotEmpty) {
         final saved = ref.read(mathZoroProvider).lastOpenedChapter;
         final savedIndex = saved != null
-            ? _chapters.indexWhere((ch) => jsStr(ch['id']) == jsStr(saved['id']))
+            ? _chapters.indexWhere(
+                (ch) => jsStr(ch['id']) == jsStr(saved['id']),
+              )
             : -1;
 
         final targetIndex = savedIndex != -1 ? savedIndex : 0;
@@ -649,7 +737,13 @@ class _StudentMathZonePageState extends ConsumerState<StudentMathZonePage> {
           opacity: 0.5,
           child: Text(
             'Loading chapters…',
-            style: _t(14, FontWeight.w700, null, height: 20 / 14, spacing: 0.35),
+            style: _t(
+              14,
+              FontWeight.w700,
+              null,
+              height: 20 / 14,
+              spacing: 0.35,
+            ),
           ),
         ),
       ],
@@ -672,10 +766,18 @@ class _StudentMathZonePageState extends ConsumerState<StudentMathZonePage> {
             onTap: _autoSelectAndLoad,
             builder: (context, _, _) => Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(color: _accent, borderRadius: BorderRadius.circular(999)),
+              decoration: BoxDecoration(
+                color: _accent,
+                borderRadius: BorderRadius.circular(999),
+              ),
               child: Text(
                 'Retry',
-                style: _t(14, FontWeight.w700, const Color(0xFF1A1200), height: 20 / 14),
+                style: _t(
+                  14,
+                  FontWeight.w700,
+                  const Color(0xFF1A1200),
+                  height: 20 / 14,
+                ),
               ),
             ),
           ),

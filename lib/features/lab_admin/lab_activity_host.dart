@@ -7,11 +7,20 @@ import '../../core/network/api_client.dart';
 import '../../core/utils/json.dart';
 import '../../state/lab_practice.dart';
 import '../../state/providers.dart';
+import '../offline/offline_runtime.dart';
 
 /// Owns mode and selection for either activity player. A new identity gets a
 /// fresh player, signed link, tracking key, and quiz state.
 class LabActivityHost extends ConsumerStatefulWidget {
-  const LabActivityHost({super.key, required this.builder});
+  const LabActivityHost({
+    super.key,
+    required this.builder,
+    this.optionsLoader,
+    this.recordUsage = true,
+  });
+  final Future<Map<String, dynamic>> Function(Map<String, dynamic>)?
+  optionsLoader;
+  final bool recordUsage;
   final Widget Function(Key key) builder;
   @override
   ConsumerState<LabActivityHost> createState() => _LabActivityHostState();
@@ -35,7 +44,11 @@ class _LabActivityHostState extends ConsumerState<LabActivityHost> {
     _container = ProviderScope.containerOf(context, listen: false);
     _usageTimer = Timer.periodic(const Duration(seconds: 10), (_) async {
       final session = _container.read(sessionProvider);
-      if (!session.isLabAdmin || !_practice || _studentId == null) return;
+      if (!widget.recordUsage ||
+          !session.isLabAdmin ||
+          !_practice ||
+          _studentId == null)
+        return;
       try {
         await _container
             .read(apiClientProvider)
@@ -84,22 +97,19 @@ class _LabActivityHostState extends ConsumerState<LabActivityHost> {
       _error = null;
     });
     try {
-      final result =
-          asMap(
-            await _container
-                .read(apiClientProvider)
-                .get(
-                  '/lab-admin/practice-options',
-                  query: {
-                    'institute_id': _container
-                        .read(sessionProvider)
-                        .instituteId,
-                    if (_classId != null) 'class_id': _classId,
-                    if (_batchId != null) 'batch_id': _batchId,
-                  },
-                ),
-          ) ??
-          {};
+      final query = <String, dynamic>{
+        'institute_id': _container.read(sessionProvider).instituteId,
+        if (_classId != null) 'class_id': _classId,
+        if (_batchId != null) 'batch_id': _batchId,
+      };
+      final result = widget.optionsLoader != null
+          ? await widget.optionsLoader!(query)
+          : asMap(
+                  await _container
+                      .read(apiClientProvider)
+                      .get('/lab-admin/practice-options', query: query),
+                ) ??
+                {};
       if (!mounted || request != _request) return;
       List<Map<String, dynamic>> rows(String key) => asList(
         result[key],
@@ -167,108 +177,115 @@ class _LabActivityHostState extends ConsumerState<LabActivityHost> {
       // constraints, otherwise the workspace can shrink to zero width.
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.all(12),
-          child: Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              SizedBox(
-                width: 230,
-                child: DropdownButtonFormField<bool>(
-                  initialValue: _practice,
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    hintText: 'Activity mode',
-                    isDense: true,
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 14,
+        if (!ref.watch(offlineWorkspaceFocusProvider))
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                SizedBox(
+                  width: 230,
+                  child: DropdownButtonFormField<bool>(
+                    initialValue: _practice,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      hintText: 'Activity mode',
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 14,
+                      ),
+                      border: OutlineInputBorder(),
                     ),
-                    border: OutlineInputBorder(),
+                    items: const [
+                      DropdownMenuItem(
+                        value: false,
+                        child: Text('Presentation mode'),
+                      ),
+                      DropdownMenuItem(
+                        value: true,
+                        child: Text('Practice mode'),
+                      ),
+                    ],
+                    onChanged: (v) {
+                      if (v == null || v == _practice) return;
+                      setState(() {
+                        _request++;
+                        _loading = false;
+                        _error = null;
+                        _practice = v;
+                        _classId = null;
+                        _batchId = null;
+                        _studentId = null;
+                        _classes = [];
+                        _batches = [];
+                        _students = [];
+                        _publish();
+                      });
+                      if (v) _load();
+                    },
                   ),
-                  items: const [
-                    DropdownMenuItem(
-                      value: false,
-                      child: Text('Presentation mode'),
-                    ),
-                    DropdownMenuItem(value: true, child: Text('Practice mode')),
-                  ],
-                  onChanged: (v) {
-                    if (v == null || v == _practice) return;
+                ),
+                if (_practice) ...[
+                  _select('Assigned class', _classId, _classes, (id) {
                     setState(() {
-                      _request++;
-                      _loading = false;
-                      _error = null;
-                      _practice = v;
-                      _classId = null;
+                      _classId = id;
                       _batchId = null;
                       _studentId = null;
-                      _classes = [];
                       _batches = [];
-                      _students = [];
-                      _publish();
-                    });
-                    if (v) _load();
-                  },
-                ),
-              ),
-              if (_practice) ...[
-                _select('Assigned class', _classId, _classes, (id) {
-                  setState(() {
-                    _classId = id;
-                    _batchId = null;
-                    _studentId = null;
-                    _batches = [];
-                    _students = [];
-                    _publish();
-                  });
-                  _load();
-                }),
-                if (_classId != null)
-                  _select('Batch', _batchId, _batches, (id) {
-                    setState(() {
-                      _batchId = id;
-                      _studentId = null;
                       _students = [];
                       _publish();
                     });
                     _load();
                   }),
-                if (_batchId != null)
-                  _select('Student', _studentId, _students, (id) {
-                    setState(() {
-                      _studentId = id;
-                      _publish();
-                    });
-                  }),
-                if (_loading)
-                  const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(),
-                  ),
-                if (_error != null)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(_error!),
-                      TextButton(onPressed: _load, child: const Text('Retry')),
-                    ],
-                  ),
-                if (!_loading &&
-                    _error == null &&
-                    ((_classId == null && _classes.isEmpty) ||
-                        (_classId != null &&
-                            _batchId == null &&
-                            _batches.isEmpty) ||
-                        (_batchId != null && _students.isEmpty)))
-                  const Text('No assigned options available.'),
+                  if (_classId != null)
+                    _select('Batch', _batchId, _batches, (id) {
+                      setState(() {
+                        _batchId = id;
+                        _studentId = null;
+                        _students = [];
+                        _publish();
+                      });
+                      _load();
+                    }),
+                  if (_batchId != null)
+                    _select('Student', _studentId, _students, (id) {
+                      setState(() {
+                        _studentId = id;
+                        _publish();
+                      });
+                    }),
+                  if (_loading)
+                    const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(),
+                    ),
+                  if (_error != null)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(_error!),
+                        TextButton(
+                          onPressed: _load,
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  if (!_loading &&
+                      _error == null &&
+                      ((_classId == null && _classes.isEmpty) ||
+                          (_classId != null &&
+                              _batchId == null &&
+                              _batches.isEmpty) ||
+                          (_batchId != null && _students.isEmpty)))
+                    const Text('No assigned options available.'),
+                ],
               ],
-            ],
+            ),
           ),
-        ),
         Expanded(
           child: _practice && _studentId == null
               ? const Center(

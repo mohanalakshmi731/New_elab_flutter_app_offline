@@ -81,7 +81,7 @@ class _ActivityCard extends StatelessWidget {
     final tickets = jsDisplay(activity['required_tickets_to_unlock']);
 
     Widget image = filePath.isNotEmpty
-        ? Image.network(filePath, fit: BoxFit.cover, errorBuilder: (_, _, _) => const SizedBox.shrink())
+        ? contentImage(filePath, fit: BoxFit.cover, errorBuilder: (_, _, _) => const SizedBox.shrink())
         : DecoratedBox(
             decoration: BoxDecoration(
               // bg-gradient-to-br on a 16:10 box

@@ -6,6 +6,7 @@ import 'dart:ui' as ui;
 import 'package:bootstrap_icons/bootstrap_icons.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../offline/offline_activity_entry.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -24,7 +25,8 @@ import '../../widgets/web_content_view.dart';
 import '../institutes/institute_widgets.dart' show SpinIcon;
 import '../mathzoro/mathzoro_controller.dart';
 import '../mathzoro/mz_html_text.dart';
-import '../mathzoro/mz_ui.dart' show CssLinearGradient, HoverBuilder, cssBackdrop, jsStr, jsDisplay;
+import '../mathzoro/mz_ui.dart'
+    show CssLinearGradient, HoverBuilder, cssBackdrop, jsStr, jsDisplay;
 import '../quiz/bridged_web_view.dart';
 import '../quiz/quiz_exam.dart';
 import 'student_activity_logic.dart';
@@ -53,7 +55,8 @@ class _StudentActivityPageContent extends ConsumerStatefulWidget {
   final String? fromPlayZone;
 
   @override
-  ConsumerState<_StudentActivityPageContent> createState() => _StudentActivityPageState();
+  ConsumerState<_StudentActivityPageContent> createState() =>
+      _StudentActivityPageState();
 }
 
 typedef _Json = Map<String, dynamic>;
@@ -84,7 +87,9 @@ class _ModalSlot {
   Route<void>? route;
 }
 
-class _StudentActivityPageState extends ConsumerState<_StudentActivityPageContent> with WindowListener {
+class _StudentActivityPageState
+    extends ConsumerState<_StudentActivityPageContent>
+    with WindowListener {
   bool _ready = false;
 
   // ── Quiz ──
@@ -177,7 +182,8 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
 
   List<_Json> get _filteredChapters {
     final key = jsStr(_selectedSubjectId) ?? '';
-    if (!jsTruthy(_selectedSubjectId) || _chaptersCache[key] == null) return const [];
+    if (!jsTruthy(_selectedSubjectId) || _chaptersCache[key] == null)
+      return const [];
     return _chaptersCache[key]!;
   }
 
@@ -188,9 +194,11 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
     return null;
   }
 
-  List<_Json> get _topicsForSelectedChapter => _maps(_selectedChapter?['topics']);
+  List<_Json> get _topicsForSelectedChapter =>
+      _maps(_selectedChapter?['topics']);
 
-  static List<_Json> _maps(dynamic v) => asList(v).map(asMap).whereType<_Json>().toList();
+  static List<_Json> _maps(dynamic v) =>
+      asList(v).map(asMap).whereType<_Json>().toList();
 
   /// Throws like `x.length` / `x.find` on a value that isn't an array.
   static List<dynamic> _requireList(dynamic v, String what) {
@@ -214,14 +222,22 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
 
     // data()
     _chapterId = jsTruthy(ctx['chapterId']) ? ctx['chapterId'] : '';
-    _chapterName = jsTruthy(ctx['chapterName']) ? jsDisplay(ctx['chapterName']) : 'Unknown Chapter';
+    _chapterName = jsTruthy(ctx['chapterName'])
+        ? jsDisplay(ctx['chapterName'])
+        : 'Unknown Chapter';
     _topicId = jsTruthy(ctx['topicId']) ? jsStr(ctx['topicId']) : '';
-    _topicName = jsTruthy(ctx['topicName']) ? jsDisplay(ctx['topicName']) : 'Unknown Topic';
+    _topicName = jsTruthy(ctx['topicName'])
+        ? jsDisplay(ctx['topicName'])
+        : 'Unknown Topic';
     _classId = jsTruthy(ctx['classId']) ? ctx['classId'] : '';
     _subjectId = jsTruthy(ctx['subjectId']) ? ctx['subjectId'] : '';
-    _subjectName = jsTruthy(ctx['subjectName']) ? jsDisplay(ctx['subjectName']) : 'Unknown Subject';
+    _subjectName = jsTruthy(ctx['subjectName'])
+        ? jsDisplay(ctx['subjectName'])
+        : 'Unknown Subject';
     _activityIdFromRoute = jsTruthy(ctx['activityId']) ? ctx['activityId'] : '';
-    _selectedChapterId = jsTruthy(ctx['chapterId']) ? jsStr(ctx['chapterId'])! : '';
+    _selectedChapterId = jsTruthy(ctx['chapterId'])
+        ? jsStr(ctx['chapterId'])!
+        : '';
     _selectedSubjectId = jsTruthy(ctx['subjectId']) ? ctx['subjectId'] : '';
     _selectedClassId = jsTruthy(ctx['classId']) ? ctx['classId'] : '';
     _set(() => _ready = true);
@@ -229,9 +245,14 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
     // mounted()
     await _fetchAllChapters();
     if (!mounted) return;
-    _trackingInterval = Timer.periodic(Duration(seconds: ref.read(labPracticeProvider)?.practice == true ? 10 : 5), (_) {
-      if (jsTruthy(_trackingId)) _zsl.trackActivity(jsStr(_trackingId)!);
-    });
+    _trackingInterval = Timer.periodic(
+      Duration(
+        seconds: ref.read(labPracticeProvider)?.practice == true ? 10 : 5,
+      ),
+      (_) {
+        if (jsTruthy(_trackingId)) _zsl.trackActivity(jsStr(_trackingId)!);
+      },
+    );
   }
 
   @override
@@ -242,8 +263,14 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
     if (_isDesktop) windowManager.removeListener(this);
     final fullscreen = _fullscreenRoute;
     _fullscreenRoute = null;
-    if (fullscreen != null && fullscreen.isActive) fullscreen.navigator?.removeRoute(fullscreen);
-    for (final slot in [_sidebarSlot, _popupSlot, _learningSlot, _performanceSlot]) {
+    if (fullscreen != null && fullscreen.isActive)
+      fullscreen.navigator?.removeRoute(fullscreen);
+    for (final slot in [
+      _sidebarSlot,
+      _popupSlot,
+      _learningSlot,
+      _performanceSlot,
+    ]) {
       final r = slot.route;
       slot.route = null;
       if (r != null && r.isActive) r.navigator?.removeRoute(r);
@@ -255,8 +282,10 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
   /// `watch: language` (deep).
   void _onLanguageChanged(AppLanguage newLang) {
     if (!_ready || newLang.id == 0) return;
-    if (jsTruthy(_chapterId) && jsTruthy(_topicId)) _fetchChapterLinks(newLang.id);
-    if (_activeTab != null && _activeTab != 'quiz') _loadTabContent(_activeTab!);
+    if (jsTruthy(_chapterId) && jsTruthy(_topicId))
+      _fetchChapterLinks(newLang.id);
+    if (_activeTab != null && _activeTab != 'quiz')
+      _loadTabContent(_activeTab!);
   }
 
   /// `this.selectedActivity = a` + its watcher (which runs after the
@@ -273,7 +302,8 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
       _selectedActivitySeen = current;
       if (current != null) {
         _set(() => _selectedActivityId = current['id']);
-        if (_activeTab != null && _activeTab != 'quiz') _loadTabContent(_activeTab!);
+        if (_activeTab != null && _activeTab != 'quiz')
+          _loadTabContent(_activeTab!);
       } else {
         _set(() => _selectedActivityId = null);
       }
@@ -293,10 +323,10 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
   // ── Quiz ─────────────────────────────────────────────────────────────────
 
   void _resetQuiz() => _set(() {
-        _quizSubmitted = false;
-        _quizResult = null;
-        _quizStarted = false;
-      });
+    _quizSubmitted = false;
+    _quizResult = null;
+    _quizStarted = false;
+  });
 
   Future<void> _startQuiz() async {
     try {
@@ -305,8 +335,11 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
         _quizStarted = true;
       });
 
-      final activityId =
-          firstTruthy([_selectedActivity?['id'], _selectedActivityId, _activityIdFromRoute]);
+      final activityId = firstTruthy([
+        _selectedActivity?['id'],
+        _selectedActivityId,
+        _activityIdFromRoute,
+      ]);
 
       if (!jsTruthy(activityId)) {
         debugPrint('❌ Activity ID missing');
@@ -324,13 +357,17 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
       // Hand off to fullscreen QuizExam component
       _set(() => _quizExamQuestions = questions);
       if (mounted) {
-        unawaited(showQuizExam(
-          context,
-          questions: _quizExamQuestions,
-          quizTitle: _selectedActivity != null ? activityTitle(_selectedActivity) : _topicName,
-          onSubmitted: _onQuizSubmitted,
-          onClose: _onQuizClose,
-        ));
+        unawaited(
+          showQuizExam(
+            context,
+            questions: _quizExamQuestions,
+            quizTitle: _selectedActivity != null
+                ? activityTitle(_selectedActivity)
+                : _topicName,
+            onSubmitted: _onQuizSubmitted,
+            onClose: _onQuizClose,
+          ),
+        );
       }
     } catch (error) {
       debugPrint('Quiz load failed: $error');
@@ -345,12 +382,20 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
     if (!mounted) return;
     try {
       final activityId = jsTemplate(
-          firstTruthy([_selectedActivity?['id'], _selectedActivityId, _activityIdFromRoute]));
-      final answers = asList(payload['answersPayload'])
-          .map((e) => Map<String, String>.from(asMap(e) ?? const {}))
-          .toList();
+        firstTruthy([
+          _selectedActivity?['id'],
+          _selectedActivityId,
+          _activityIdFromRoute,
+        ]),
+      );
+      final answers = asList(
+        payload['answersPayload'],
+      ).map((e) => Map<String, String>.from(asMap(e) ?? const {})).toList();
 
-      final res = await _zsl.submitZslQuiz(activityId: activityId, answers: answers);
+      final res = await _zsl.submitZslQuiz(
+        activityId: activityId,
+        answers: answers,
+      );
 
       _set(() {
         _quizSubmitted = true;
@@ -367,10 +412,10 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
 
   // ← ONLY ONE onQuizClose
   void _onQuizClose() => _set(() {
-        _quizExamQuestions = [];
-        _quizStarted = false;
-        _quizLoading = false;
-      });
+    _quizExamQuestions = [];
+    _quizStarted = false;
+    _quizLoading = false;
+  });
 
   // ── Tabs ─────────────────────────────────────────────────────────────────
 
@@ -397,12 +442,18 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
       List<dynamic> links = [];
 
       if (jsTruthy(_instituteId) && jsTruthy(_chapterId)) {
-        links = _requireList(await _mz.getZslLinks(_instituteId, _chapterId, langId), 'links');
+        links = _requireList(
+          await _mz.getZslLinks(_instituteId, _chapterId, langId),
+          'links',
+        );
       }
 
-      final topicLink = _maps(links).where((l) => sameId(l['id'], _topicId)).firstOrNull;
+      final topicLink = _maps(
+        links,
+      ).where((l) => sameId(l['id'], _topicId)).firstOrNull;
       final acts = _maps(topicLink?['activities']);
-      final activity = acts.where((a) => sameId(a['id'], _selectedActivityId)).firstOrNull ??
+      final activity =
+          acts.where((a) => sameId(a['id'], _selectedActivityId)).firstOrNull ??
           acts.firstOrNull;
 
       if (activity == null) {
@@ -414,7 +465,9 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
         final desc = asMap(activity['description']);
         _set(() => _activeTabContent.text = descriptionText(desc));
         if (jsTruthy(desc?['content_path'])) {
-          final id = jsTruthy(desc!['description_id']) ? desc['description_id'] : desc['id'];
+          final id = jsTruthy(desc!['description_id'])
+              ? desc['description_id']
+              : desc['id'];
           if (jsTruthy(id)) {
             final r = await _zsl.getWhyToLearnSignedUrl(jsStr(id)!);
             _set(() => _activeTabContent.url = signedUrlOf(r));
@@ -425,7 +478,9 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
         final inst = list is List && list.isNotEmpty ? asMap(list.first) : null;
         _set(() => _activeTabContent.text = joinItemTexts(list));
         if (jsTruthy(inst?['content_path'])) {
-          final id = jsTruthy(inst!['instruction_id']) ? inst['instruction_id'] : inst['id'];
+          final id = jsTruthy(inst!['instruction_id'])
+              ? inst['instruction_id']
+              : inst['id'];
           if (jsTruthy(id)) {
             final r = await _zsl.getTeacherGuideSignedUrl(jsStr(id)!);
             _set(() => _activeTabContent.url = signedUrlOf(r));
@@ -436,7 +491,9 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
         final obs = list is List && list.isNotEmpty ? asMap(list.first) : null;
         _set(() => _activeTabContent.text = joinItemTexts(list));
         if (jsTruthy(obs?['content_path'])) {
-          final id = jsTruthy(obs!['observation_id']) ? obs['observation_id'] : obs['id'];
+          final id = jsTruthy(obs!['observation_id'])
+              ? obs['observation_id']
+              : obs['id'];
           if (jsTruthy(id)) {
             final r = await _zsl.getLearningOutcomeSignedUrl(jsStr(id)!);
             _set(() => _activeTabContent.url = signedUrlOf(r));
@@ -457,11 +514,14 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
     try {
       final langId = _languageId;
       final results = await Future.wait(
-          chapters.map((ch) => _mz.getZslLinks(_instituteId, ch['id'], langId)));
+        chapters.map((ch) => _mz.getZslLinks(_instituteId, ch['id'], langId)),
+      );
       final all = <_Json>[];
       for (var i = 0; i < chapters.length; i++) {
         final ch = chapters[i];
-        final topics = results[i] == null ? const [] : _requireList(results[i], 'topics');
+        final topics = results[i] == null
+            ? const []
+            : _requireList(results[i], 'topics');
         all.add({
           'id': ch['id'],
           'name': ch['name'],
@@ -470,7 +530,9 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
               {
                 'id': topic['id'],
                 'name': topic['name'],
-                'file_path': jsTruthy(topic['file_path']) ? topic['file_path'] : '',
+                'file_path': jsTruthy(topic['file_path'])
+                    ? topic['file_path']
+                    : '',
                 'chapter_id': topic['chapter_id'],
                 'activities': topic['activities'] ?? const [],
               },
@@ -484,20 +546,33 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
   }
 
   Future<void> _fetchAllChapters() async {
-    if (!jsTruthy(_instituteId) || !jsTruthy(_selectedClassId) || !jsTruthy(_selectedSubjectId)) {
+    if (!jsTruthy(_instituteId) ||
+        !jsTruthy(_selectedClassId) ||
+        !jsTruthy(_selectedSubjectId)) {
       return;
     }
     try {
       _set(() => _loading = true);
-      final chapters = _maps(_requireList(
-          await _mz.getallchpaters(_instituteId, _selectedClassId, _selectedSubjectId),
-          'chapters'));
+      final chapters = _maps(
+        _requireList(
+          await _mz.getallchpaters(
+            _instituteId,
+            _selectedClassId,
+            _selectedSubjectId,
+          ),
+          'chapters',
+        ),
+      );
       _chaptersCache[jsStr(_selectedSubjectId)!] = chapters;
       unawaited(_fetchAllChaptersWithActivities(chapters));
       if (chapters.isNotEmpty) {
         if (jsTruthy(_chapterId)) {
-          final queryChapter = chapters.where((ch) => sameId(ch['id'], _chapterId)).firstOrNull;
-          _selectedChapterId = jsStr(queryChapter != null ? _chapterId : chapters[0]['id']) ?? '';
+          final queryChapter = chapters
+              .where((ch) => sameId(ch['id'], _chapterId))
+              .firstOrNull;
+          _selectedChapterId =
+              jsStr(queryChapter != null ? _chapterId : chapters[0]['id']) ??
+              '';
         } else {
           _selectedChapterId = jsStr(chapters[0]['id']) ?? '';
         }
@@ -524,8 +599,15 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
     _set(() => _pageLoading = true);
     final langId = languageId ?? _languageId;
     try {
-      final links = _maps(_requireList(await _mz.getZslLinks(_instituteId, _chapterId, langId), 'links'));
-      final topicLink = links.where((l) => sameId(l['id'], _topicId)).firstOrNull;
+      final links = _maps(
+        _requireList(
+          await _mz.getZslLinks(_instituteId, _chapterId, langId),
+          'links',
+        ),
+      );
+      final topicLink = links
+          .where((l) => sameId(l['id'], _topicId))
+          .firstOrNull;
       final acts = _maps(topicLink?['activities']);
       if (topicLink == null || acts.isEmpty) {
         _set(_clearActivities);
@@ -534,7 +616,9 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
       _set(() => _allactivities = acts);
 
       if (jsTruthy(_activityIdFromRoute)) {
-        final forced = acts.where((a) => sameId(a['id'], _activityIdFromRoute)).firstOrNull;
+        final forced = acts
+            .where((a) => sameId(a['id'], _activityIdFromRoute))
+            .firstOrNull;
         if (forced != null) {
           _set(() {
             _setSelectedActivity(forced);
@@ -587,7 +671,12 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
         signedUrl = _signedUrls[cacheKey];
       } else {
         signedUrl = await _zsl.generateSignedUrl(
-            _instituteId, _subjectId, _chapterId, _topicId, activityId ?? '');
+          _instituteId,
+          _subjectId,
+          _chapterId,
+          _topicId,
+          activityId ?? '',
+        );
         _signedUrls[cacheKey] = signedUrl;
         final tracking = _property(signedUrl, 'tracking_id');
         if (jsTruthy(tracking)) _trackingId = tracking;
@@ -614,7 +703,9 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
 
   Future<void> _onActivityChange() async {
     if (!jsTruthy(_selectedActivityId)) return;
-    final activity = _allactivities.where((a) => sameId(a['id'], _selectedActivityId)).firstOrNull;
+    final activity = _allactivities
+        .where((a) => sameId(a['id'], _selectedActivityId))
+        .firstOrNull;
     if (activity == null) return;
     _set(() => _setSelectedActivity(activity));
     _patchActivityContext({'activityId': activity['id']});
@@ -625,8 +716,9 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
   }
 
   Future<void> _handleChapterChange() async {
-    final selectedChapter =
-        _filteredChapters.where((ch) => sameId(ch['id'], _selectedChapterId)).firstOrNull;
+    final selectedChapter = _filteredChapters
+        .where((ch) => sameId(ch['id'], _selectedChapterId))
+        .firstOrNull;
     if (selectedChapter == null) return;
     final isChapterChanging = !sameId(_chapterId, selectedChapter['id']);
     _set(() {
@@ -637,11 +729,15 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
     _patchActivityContext({
       'chapterId': selectedChapter['id'],
       'chapterName': selectedChapter['name'],
-      'activityId': isChapterChanging ? null : _zsl.selectedActivityContext?['activityId'],
+      'activityId': isChapterChanging
+          ? null
+          : _zsl.selectedActivityContext?['activityId'],
     });
     final topics = _maps(selectedChapter['topics']);
     if (topics.isNotEmpty) {
-      final isCurrentTopicInNewChapter = topics.any((t) => sameId(t['id'], _topicId));
+      final isCurrentTopicInNewChapter = topics.any(
+        (t) => sameId(t['id'], _topicId),
+      );
       if (!jsTruthy(_topicId) || !isCurrentTopicInNewChapter) {
         await _handleTopicClick(topics[0]);
       } else {
@@ -671,7 +767,9 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
       'topicId': topic['id'],
       'topicName': topic['name'],
       'topicImage': jsTruthy(topic['file_path']) ? topic['file_path'] : '',
-      'activityId': isTopicChanging ? null : _zsl.selectedActivityContext?['activityId'],
+      'activityId': isTopicChanging
+          ? null
+          : _zsl.selectedActivityContext?['activityId'],
     });
     await _fetchChapterLinks();
   }
@@ -682,7 +780,10 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
       _topicName = jsDisplay(topic['name']);
       _activityIdFromRoute = jsStr(activity['id']);
       final parentChapter = _allChapters
-          .where((ch) => _maps(ch['topics']).any((t) => sameId(t['id'], topic['id'])))
+          .where(
+            (ch) =>
+                _maps(ch['topics']).any((t) => sameId(t['id'], topic['id'])),
+          )
           .firstOrNull;
       if (parentChapter != null && !sameId(parentChapter['id'], _chapterId)) {
         _chapterId = parentChapter['id'];
@@ -722,11 +823,13 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
           await windowManager.setFullScreen(true);
         } else {
           windowManager.removeListener(this);
-          if (await windowManager.isFullScreen()) await windowManager.setFullScreen(false);
+          if (await windowManager.isFullScreen())
+            await windowManager.setFullScreen(false);
         }
       } else if (!kIsWeb) {
         await SystemChrome.setEnabledSystemUIMode(
-            on ? SystemUiMode.immersiveSticky : SystemUiMode.edgeToEdge);
+          on ? SystemUiMode.immersiveSticky : SystemUiMode.edgeToEdge,
+        );
       }
     } catch (_) {
       // Fullscreen may be unavailable; the in-app layer still covers the shell.
@@ -798,7 +901,10 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
         builder: (ctx) => AlertDialog(
           content: Text('[xpChannel Message] Received: ${jsTemplate(message)}'),
           actions: [
-            TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('OK')),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('OK'),
+            ),
           ],
         ),
       );
@@ -816,42 +922,61 @@ class _StudentActivityPageState extends ConsumerState<_StudentActivityPageConten
 
   void _recordPerformance() {
     if (!mounted) return;
-    final activityId = jsTruthy(_selectedActivityId) ? _selectedActivityId : _activityIdFromRoute;
+    final activityId = jsTruthy(_selectedActivityId)
+        ? _selectedActivityId
+        : _activityIdFromRoute;
     if (!jsTruthy(activityId)) return;
-    _zsl.recordZslActivityPerformance(jsTemplate(activityId), _classId).then((res) {
-      final m = asMap(res);
-      _showPerformanceModal(
-        'Success!',
-        jsTruthy(m?['msg'])
-            ? jsDisplay(m!['msg'])
-            : jsTruthy(m?['message'])
+    _zsl
+        .recordZslActivityPerformance(jsTemplate(activityId), _classId)
+        .then((res) {
+          final m = asMap(res);
+          _showPerformanceModal(
+            'Success!',
+            jsTruthy(m?['msg'])
+                ? jsDisplay(m!['msg'])
+                : jsTruthy(m?['message'])
                 ? jsDisplay(m!['message'])
                 : 'Your performance has been successfully recorded!',
-      );
-    }).catchError((Object err) {
-      debugPrint('Failed to record performance: $err');
-      _showPerformanceModal('Failed to Record',
-          zslErrorMessage(err, 'Failed to record performance. Please try again.'));
-    });
+          );
+        })
+        .catchError((Object err) {
+          debugPrint('Failed to record performance: $err');
+          _showPerformanceModal(
+            'Failed to Record',
+            zslErrorMessage(
+              err,
+              'Failed to record performance. Please try again.',
+            ),
+          );
+        });
   }
 
   // ── build ────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<AppLanguage>(sessionProvider.select((s) => s.language), (_, next) {
+    ref.listen<AppLanguage>(sessionProvider.select((s) => s.language), (
+      _,
+      next,
+    ) {
       _onLanguageChanged(next);
     });
     return _buildPage(context);
   }
 }
 
-class StudentActivityPage extends StatelessWidget {
+class StudentActivityPage extends ConsumerWidget {
   const StudentActivityPage({super.key, this.fromPlayZone});
   final String? fromPlayZone;
   @override
-  Widget build(BuildContext context) => LabActivityHost(
-    builder: (key) =>
-        _StudentActivityPageContent(key: key, fromPlayZone: fromPlayZone),
-  );
+  Widget build(BuildContext context, WidgetRef ref) {
+    return OfflineAwareActivity(
+      readContext: (ref) =>
+          ref.read(zslActivityProvider.notifier).selectedActivityContext ?? {},
+      onlineBuilder: (_) => LabActivityHost(
+        builder: (key) =>
+            _StudentActivityPageContent(key: key, fromPlayZone: fromPlayZone),
+      ),
+    );
+  }
 }

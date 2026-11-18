@@ -98,7 +98,14 @@ class InstructorForm {
   }
 
   void dispose() {
-    for (final c in [firstName, lastName, email, phone, password, designation]) {
+    for (final c in [
+      firstName,
+      lastName,
+      email,
+      phone,
+      password,
+      designation,
+    ]) {
       c.dispose();
     }
   }
@@ -118,7 +125,14 @@ class StudentForm {
   UploadFile? photo;
 
   void reset() {
-    for (final c in [firstName, lastName, email, password, confirmpassword, phone]) {
+    for (final c in [
+      firstName,
+      lastName,
+      email,
+      password,
+      confirmpassword,
+      phone,
+    ]) {
       c.text = '';
     }
     countryCode = '91';
@@ -128,7 +142,14 @@ class StudentForm {
   }
 
   void dispose() {
-    for (final c in [firstName, lastName, email, password, confirmpassword, phone]) {
+    for (final c in [
+      firstName,
+      lastName,
+      email,
+      password,
+      confirmpassword,
+      phone,
+    ]) {
       c.dispose();
     }
   }
@@ -202,28 +223,48 @@ class ClassListVm extends ChangeNotifier {
     });
 
     // Store / session watchers (immediate ones run once now).
-    _wAssigned = _Watcher(() => s.assignedInstructors, (v) => _set(() => adminCount = v.length));
-    _wInstrPage = _Watcher(() => s.classInstructorPagination, (v) => _set(() => instructorCount = v.total));
-    _wClassDetails = _Watcher(() => session.classDetails, (_) => _set(() => courseCount = _coursesLength()));
+    _wAssigned = _Watcher(
+      () => s.assignedInstructors,
+      (v) => _set(() => adminCount = v.length),
+    );
+    _wInstrPage = _Watcher(
+      () => s.classInstructorPagination,
+      (v) => _set(() => instructorCount = v.total),
+    );
+    _wClassDetails = _Watcher(
+      () => session.classDetails,
+      (_) => _set(() => courseCount = _coursesLength()),
+    );
     _wCurriculum = _Watcher(() => classDetails?['c_id'], (v) {
       if (jsTruthy(v) && jsTruthy(session.userInfo?.instituteId)) {
         _set(() => isLoading = true);
-        store.fetchClassCourse().whenComplete(() => _set(() => isLoading = false));
+        store.fetchClassCourse().whenComplete(
+          () => _set(() => isLoading = false),
+        );
       }
     });
     adminCount = s.assignedInstructors.length;
     instructorCount = s.classInstructorPagination.total;
     courseCount = _coursesLength();
-    _subs.add(_container.listen(classListControllerProvider, (_, _) {
-      _wAssigned.poke();
-      _wInstrPage.poke();
-    }));
-    _subs.add(_container.listen(sessionProvider, (_, _) {
-      _wClassDetails.poke();
-      _wCurriculum.poke();
-    }));
+    _subs.add(
+      _container.listen(classListControllerProvider, (_, _) {
+        _wAssigned.poke();
+        _wInstrPage.poke();
+      }),
+    );
+    _subs.add(
+      _container.listen(sessionProvider, (_, _) {
+        _wClassDetails.poke();
+        _wCurriculum.poke();
+      }),
+    );
 
-    for (final c in [searchQuery, globalQuery, studentQuery, studentGlobalQuery]) {
+    for (final c in [
+      searchQuery,
+      globalQuery,
+      studentQuery,
+      studentGlobalQuery,
+    ]) {
       c.addListener(_n);
     }
   }
@@ -253,11 +294,13 @@ class ClassListVm extends ChangeNotifier {
   Future<void> Function(String message) alert = (_) async {};
 
   /// Shows `window.prompt(message, initial)`; set by the page.
-  Future<String?> Function(String message, String initial) prompt = (_, _) async => null;
+  Future<String?> Function(String message, String initial) prompt =
+      (_, _) async => null;
 
   // ── store / session access ───────────────────────────────────────────────
 
-  ClassListController get store => _container.read(classListControllerProvider.notifier);
+  ClassListController get store =>
+      _container.read(classListControllerProvider.notifier);
   ClassListState get s => _container.read(classListControllerProvider);
   SessionState get session => _container.read(sessionProvider);
 
@@ -275,14 +318,17 @@ class ClassListVm extends ChangeNotifier {
 
   String get role => session.role;
   bool get isAdminOrInstitute => role == Role.institute || role == Role.admin;
-  bool get canManageClass => role == Role.institute || role == Role.admin || isClassAdmin;
+  bool get canManageClass =>
+      role == Role.institute || role == Role.admin || isClassAdmin;
   bool get showAdminsTab => role != Role.instructor && canManageClass;
   bool get isExistingUser => jsTruthy(foundUser.id);
   bool get isExistingStudent => jsTruthy(foundStudent.id);
 
   /// `studentStatusString` (get/set on `selectedStudent.status`).
-  String get studentStatusString => jsTruthy(selectedStudent['status']) ? 'true' : 'false';
-  set studentStatusString(String v) => _set(() => selectedStudent = {...selectedStudent, 'status': v == 'true'});
+  String get studentStatusString =>
+      jsTruthy(selectedStudent['status']) ? 'true' : 'false';
+  set studentStatusString(String v) =>
+      _set(() => selectedStudent = {...selectedStudent, 'status': v == 'true'});
 
   /// `statusString` (get/set on `newInstructor.status`).
   String get statusString => newInstructor.status ? 'true' : 'false';
@@ -418,19 +464,19 @@ class ClassListVm extends ChangeNotifier {
   }
 
   void setLmsTab(String tab) => _set(() {
-        currentLmsTab = tab;
-        _wLmsTab.poke();
-      });
+    currentLmsTab = tab;
+    _wLmsTab.poke();
+  });
 
   void setActiveTab(String tab) => _set(() {
-        activeTab = tab;
-        _wActiveTab.poke();
-      });
+    activeTab = tab;
+    _wActiveTab.poke();
+  });
 
   void setBulkAction(String value) => _set(() {
-        bulkAction = value;
-        _wBulk.poke();
-      });
+    bulkAction = value;
+    _wBulk.poke();
+  });
 
   @override
   void dispose() {
@@ -507,7 +553,8 @@ class ClassListVm extends ChangeNotifier {
   Future<void> _onBulkAction(String newVal) async {
     _set(() => isListLoading = true);
     try {
-      if (newVal == 'Bulkpromote' || newVal == 'Bulktransfer') await store.pivotStudents();
+      if (newVal == 'Bulkpromote' || newVal == 'Bulktransfer')
+        await store.pivotStudents();
     } finally {
       _set(() => isListLoading = false);
     }
@@ -544,7 +591,9 @@ class ClassListVm extends ChangeNotifier {
 
   /// `mounted()`
   Future<void> mounted(String? routeTab) async {
-    setLmsTab(routeTab == 'courses' && isAdminOrInstitute ? 'courses' : 'classes');
+    setLmsTab(
+      routeTab == 'courses' && isAdminOrInstitute ? 'courses' : 'classes',
+    );
     _set(() => isLoading = true);
     try {
       setActiveTab(isAdminOrInstitute ? 'admin' : 'batches');
@@ -560,7 +609,8 @@ class ClassListVm extends ChangeNotifier {
     }
   }
 
-  void handleCourseExpanded(bool expanded) => _set(() => isCourseExpanded = expanded);
+  void handleCourseExpanded(bool expanded) =>
+      _set(() => isCourseExpanded = expanded);
 
   // ── detach / remove ───────────────────────────────────────────────────────
 
@@ -618,14 +668,14 @@ class ClassListVm extends ChangeNotifier {
   // ── search result clicks ──────────────────────────────────────────────────
 
   void globalResultClick(SearchHit u) => _set(() {
-        foundUser = FoundUser(id: u.id, fullName: u.fullName, email: u.email);
-        showGlobalResults = false;
-      });
+    foundUser = FoundUser(id: u.id, fullName: u.fullName, email: u.email);
+    showGlobalResults = false;
+  });
 
   void studentGlobalResultClick(SearchHit u) => _set(() {
-        foundStudent = FoundUser(id: u.id, fullName: u.fullName, email: u.email);
-        showStudentGlobalResults = false;
-      });
+    foundStudent = FoundUser(id: u.id, fullName: u.fullName, email: u.email);
+    showStudentGlobalResults = false;
+  });
 
   Future<void> onNewInstructorPhoto() async {
     final file = await pickImageFile();
@@ -652,7 +702,9 @@ class ClassListVm extends ChangeNotifier {
       AppToast.error('No active students found in this batch.');
       return;
     }
-    await openExternal('https://mail.google.com/mail/?view=cm&to=${emails.join(',')}');
+    await openExternal(
+      'https://mail.google.com/mail/?view=cm&to=${emails.join(',')}',
+    );
   }
 
   Future<void> openQuizSysGenerator() async {
@@ -669,22 +721,34 @@ class ClassListVm extends ChangeNotifier {
     await loadQuizSysCards(false);
   }
 
-  bool isQuizSysStudentGenerating(Object? studentId) => quizSysGeneratingStudentIds.contains(jsNumber(studentId));
+  bool isQuizSysStudentGenerating(Object? studentId) =>
+      quizSysGeneratingStudentIds.contains(jsNumber(studentId));
 
   Future<void> generateQuizSysCardForStudent(Object? studentId) async {
     if (isQuizSysStudentGenerating(studentId)) return;
     final id = jsNumber(studentId);
-    _set(() => quizSysGeneratingStudentIds = [...quizSysGeneratingStudentIds, ?id]);
+    _set(
+      () => quizSysGeneratingStudentIds = [...quizSysGeneratingStudentIds, ?id],
+    );
     try {
       await loadQuizSysCards(true, [?studentId]);
     } finally {
-      _set(() => quizSysGeneratingStudentIds = [for (final x in quizSysGeneratingStudentIds) if (x != id) x]);
+      _set(
+        () => quizSysGeneratingStudentIds = [
+          for (final x in quizSysGeneratingStudentIds)
+            if (x != id) x,
+        ],
+      );
     }
   }
 
-  Future<void> loadQuizSysCards([bool generateMissing = false, List<Object> studentIds = const []]) async {
+  Future<void> loadQuizSysCards([
+    bool generateMissing = false,
+    List<Object> studentIds = const [],
+  ]) async {
     if (!jsTruthy(selectedBatch['id'])) {
-      if (generateMissing) AppToast.error('Please open a batch before generating QR codes.');
+      if (generateMissing)
+        AppToast.error('Please open a batch before generating QR codes.');
       return;
     }
     final instituteId = session.userInfo?.instituteId;
@@ -701,12 +765,20 @@ class ClassListVm extends ChangeNotifier {
         'generate_missing': generateMissing,
         if (studentIds.isNotEmpty) 'student_ids': studentIds,
       });
-      _set(() => quizSysCards = [for (final c in asList(dig(response, ['data', 'cards']))) ?asMap(c)]);
+      _set(
+        () => quizSysCards = [
+          for (final c in asList(dig(response, ['data', 'cards']))) ?asMap(c),
+        ],
+      );
       if (generateMissing) {
-        final generatedCount = jsNumber(orJs(dig(response, ['data', 'generated_count']), 0)) ?? 0;
+        final generatedCount =
+            jsNumber(orJs(dig(response, ['data', 'generated_count']), 0)) ?? 0;
         if (generatedCount == 0) {
           AppToast.success(
-              studentIds.isNotEmpty ? 'This student already has a QR card.' : 'All active students already have QR cards.');
+            studentIds.isNotEmpty
+                ? 'This student already has a QR card.'
+                : 'All active students already have QR cards.',
+          );
         }
         await store.getStudents(currentPage);
       }
@@ -717,13 +789,20 @@ class ClassListVm extends ChangeNotifier {
     }
   }
 
-  Future<void> downloadQuizSysCardsPdf() =>
-      downloadQuizSysCardsAsPdf(quizSysCards, '${orJs(selectedBatch['name'], 'batch')}-quizsys-qr-cards.pdf');
+  Future<void> downloadQuizSysCardsPdf() => downloadQuizSysCardsAsPdf(
+    quizSysCards,
+    '${orJs(selectedBatch['name'], 'batch')}-quizsys-qr-cards.pdf',
+  );
 
   Future<void> downloadQuizSysSingleCardPdf(Json card) =>
-      downloadQuizSysCardsAsPdf([card], '${safeFileName(orJs(card['name'], 'student'))}-quizsys-qr-card.pdf');
+      downloadQuizSysCardsAsPdf([
+        card,
+      ], '${safeFileName(orJs(card['name'], 'student'))}-quizsys-qr-card.pdf');
 
-  Future<void> downloadQuizSysCardsAsPdf([List<Json>? cards, String filename = 'quizsys-student-cards.pdf']) async {
+  Future<void> downloadQuizSysCardsAsPdf([
+    List<Json>? cards,
+    String filename = 'quizsys-student-cards.pdf',
+  ]) async {
     final toDownload = cards ?? quizSysCards;
     if (toDownload.isEmpty) {
       AppToast.error('Generate QR cards before downloading.');
@@ -731,9 +810,17 @@ class ClassListVm extends ChangeNotifier {
     }
     try {
       final bytes = await buildQuizSysCardsPdf(toDownload);
-      final saved =
-          await saveBytesAs(bytes, pdfFileName(safeFileName(filename, 'quizsys-student-cards.pdf')), mimeType: 'application/pdf');
-      if (saved) AppToast.success(toDownload.length == 1 ? 'QR card downloaded.' : 'QR cards PDF downloaded.');
+      final saved = await saveBytesAs(
+        bytes,
+        pdfFileName(safeFileName(filename, 'quizsys-student-cards.pdf')),
+        mimeType: 'application/pdf',
+      );
+      if (saved)
+        AppToast.success(
+          toDownload.length == 1
+              ? 'QR card downloaded.'
+              : 'QR cards PDF downloaded.',
+        );
     } catch (_) {
       AppToast.error('Failed to download QR PDF.');
     }
@@ -786,7 +873,11 @@ class ClassListVm extends ChangeNotifier {
       AppToast.error('Target batch ID is missing');
       return;
     }
-    await store.promoteStudents(jsNumber(fromBatchId) ?? fromBatchId, jsNumber(toBatchId) ?? toBatchId, promoteStudents);
+    await store.promoteStudents(
+      jsNumber(fromBatchId) ?? fromBatchId,
+      jsNumber(toBatchId) ?? toBatchId,
+      promoteStudents,
+    );
     setOpen(ClassDialog.promote, false);
   }
 
@@ -802,7 +893,12 @@ class ClassListVm extends ChangeNotifier {
   Future<void> loadTransferBatches() async {
     if (!hasClass) return;
     await store.getBatches(classId);
-    _set(() => transferBatchList = [for (final b in s.batches) if (b['id'] != selectedBatch['id']) b]);
+    _set(
+      () => transferBatchList = [
+        for (final b in s.batches)
+          if (b['id'] != selectedBatch['id']) b,
+      ],
+    );
   }
 
   /// `loadTransferClasses()` (not wired in the template).
@@ -822,10 +918,10 @@ class ClassListVm extends ChangeNotifier {
   }
 
   void toggleTransferSelectAll() => _set(() {
-        transferStudents = transferStudents.length == s.students.length
-            ? []
-            : [for (final st in s.students) jsNumber(asMap(st)?['id'])];
-      });
+    transferStudents = transferStudents.length == s.students.length
+        ? []
+        : [for (final st in s.students) jsNumber(asMap(st)?['id'])];
+  });
 
   Future<void> transferNow() async {
     if (transferStudents.isEmpty) {
@@ -844,7 +940,11 @@ class ClassListVm extends ChangeNotifier {
     }
     try {
       _set(() => isCreateBtnLoading = true);
-      await store.transferStudents(jsNumber(fromBatchId) ?? fromBatchId, jsNumber(toBatchId) ?? toBatchId!, transferStudents);
+      await store.transferStudents(
+        jsNumber(fromBatchId) ?? fromBatchId,
+        jsNumber(toBatchId) ?? toBatchId!,
+        transferStudents,
+      );
       setOpen(ClassDialog.transfer, false);
       setBulkAction('');
       await store.getStudents();
@@ -875,8 +975,15 @@ class ClassListVm extends ChangeNotifier {
   void listenToImportChannel(String channelName) {
     final channel = _container.read(echoClientProvider).private(channelName);
     _echoChannels.add(channelName);
-    _echoSubs.add(channel.listen('.update', (e) => _set(() => importRows = applyImportUpdate(importRows, e))));
-    _echoSubs.add(channel.listen('.complete', (_) => _set(() => importCompleted = true)));
+    _echoSubs.add(
+      channel.listen(
+        '.update',
+        (e) => _set(() => importRows = applyImportUpdate(importRows, e)),
+      ),
+    );
+    _echoSubs.add(
+      channel.listen('.complete', (_) => _set(() => importCompleted = true)),
+    );
   }
 
   Future<void> downloadstudentxl() => store.downloadTemplate();
@@ -903,38 +1010,49 @@ class ClassListVm extends ChangeNotifier {
   }
 
   void toggleSelectAll() => _set(() {
-        promoteStudents =
-            promoteStudents.length == s.students.length ? [] : [for (final st in s.students) asMap(st)?['id']];
-      });
+    promoteStudents = promoteStudents.length == s.students.length
+        ? []
+        : [for (final st in s.students) asMap(st)?['id']];
+  });
 
   void togglePromoteStudent(Object? id, bool checked) => _set(() {
-        promoteStudents = checked ? [...promoteStudents, id] : [for (final x in promoteStudents) if (x != id) x];
-      });
+    promoteStudents = checked
+        ? [...promoteStudents, id]
+        : [
+            for (final x in promoteStudents)
+              if (x != id) x,
+          ];
+  });
 
   void toggleTransferStudent(Object? id, bool checked) => _set(() {
-        final n = jsNumber(id);
-        transferStudents = checked ? [...transferStudents, n] : [for (final x in transferStudents) if (x != n) x];
-      });
+    final n = jsNumber(id);
+    transferStudents = checked
+        ? [...transferStudents, n]
+        : [
+            for (final x in transferStudents)
+              if (x != n) x,
+          ];
+  });
 
   // ── add student wizard ────────────────────────────────────────────────────
 
   void goToStudentStep(int n) => _set(() {
-        studentStep = n;
-        showStudentResults = false;
-        showStudentGlobalResults = false;
-        studentQuery.text = '';
-        studentGlobalQuery.text = '';
-        studentResults = [];
-        studentGlobalResults = [];
-        isStudentSearching = false;
-        isStudentSearchingGlobal = false;
-        foundStudent = const FoundUser();
-        newStudent.firstName.text = '';
-        newStudent.lastName.text = '';
-        newStudent.email.text = '';
-        newStudent.countryCode = '91';
-        newStudent.phone.text = '';
-      });
+    studentStep = n;
+    showStudentResults = false;
+    showStudentGlobalResults = false;
+    studentQuery.text = '';
+    studentGlobalQuery.text = '';
+    studentResults = [];
+    studentGlobalResults = [];
+    isStudentSearching = false;
+    isStudentSearchingGlobal = false;
+    foundStudent = const FoundUser();
+    newStudent.firstName.text = '';
+    newStudent.lastName.text = '';
+    newStudent.email.text = '';
+    newStudent.countryCode = '91';
+    newStudent.phone.text = '';
+  });
 
   /// `getAllStudents()` (not wired in the template).
   Future<void> getAllStudents() async {
@@ -953,7 +1071,10 @@ class ClassListVm extends ChangeNotifier {
     });
     try {
       final response = await store.searchByUser(studentGlobalQuery.text.trim());
-      final hits = filterUserRows(searchRows(response), studentGlobalQuery.text);
+      final hits = filterUserRows(
+        searchRows(response),
+        studentGlobalQuery.text,
+      );
       _set(() => studentGlobalResults = hits);
     } finally {
       _set(() => isStudentSearchingGlobal = false);
@@ -981,10 +1102,10 @@ class ClassListVm extends ChangeNotifier {
   // ── add instructor wizard ─────────────────────────────────────────────────
 
   void goToStep(int step) => _set(() {
-        final currentEnableZoom = newInstructor.enableZoom;
-        currentStep = step;
-        newInstructor.assign(enableZoom: currentEnableZoom);
-      });
+    final currentEnableZoom = newInstructor.enableZoom;
+    currentStep = step;
+    newInstructor.assign(enableZoom: currentEnableZoom);
+  });
 
   /// `attachFromGlobal(item)` (step 2 is hidden in the web).
   Future<void> attachFromGlobal(FoundUser item) async {
@@ -1034,22 +1155,28 @@ class ClassListVm extends ChangeNotifier {
   }
 
   void selectResult(SearchHit item) => _set(() {
-        final row = item.raw ?? item;
-        final u = asMap(asMap(row)?['user'] ?? row);
-        final names = splitResultName(u);
-        foundUser = FoundUser(id: u?['id'], fullName: '${names.first} ${names.last}'.trim(), email: '${orJs(u?['email'], '')}');
-        newInstructor.firstName.text = names.first;
-        newInstructor.lastName.text = names.last;
-        newInstructor.email.text = '${orJs(u?['email'], '')}';
-        newInstructor.countryCode = jsString(u?['country_code'] ?? newInstructor.countryCode);
-        newInstructor.phone.text = u?['phone'] != null ? jsString(u!['phone']) : '';
-        showResults = false;
-      });
+    final row = item.raw ?? item;
+    final u = asMap(asMap(row)?['user'] ?? row);
+    final names = splitResultName(u);
+    foundUser = FoundUser(
+      id: u?['id'],
+      fullName: '${names.first} ${names.last}'.trim(),
+      email: '${orJs(u?['email'], '')}',
+    );
+    newInstructor.firstName.text = names.first;
+    newInstructor.lastName.text = names.last;
+    newInstructor.email.text = '${orJs(u?['email'], '')}';
+    newInstructor.countryCode = jsString(
+      u?['country_code'] ?? newInstructor.countryCode,
+    );
+    newInstructor.phone.text = u?['phone'] != null ? jsString(u!['phone']) : '';
+    showResults = false;
+  });
 
   void clearCreateMode() => _set(() {
-        foundUser = const FoundUser();
-        newInstructor.assign();
-      });
+    foundUser = const FoundUser();
+    newInstructor.assign();
+  });
 
   Future<void> searchUser() async {
     if (searchQuery.text.trim().isEmpty) {
@@ -1108,33 +1235,36 @@ class ClassListVm extends ChangeNotifier {
   }
 
   void resetInstructorDialog() => _set(() {
-        currentStep = 1;
-        globalQuery.text = '';
-        isSearchingGlobal = false;
-        showGlobalResults = false;
-        globalResults = [];
-      });
+    currentStep = 1;
+    globalQuery.text = '';
+    isSearchingGlobal = false;
+    showGlobalResults = false;
+    globalResults = [];
+  });
 
   void selectStudentResult(SearchHit item) => _set(() {
-        final row = asMap(item.raw ?? item);
-        final user = asMap(row?['user']);
-        foundStudent = FoundUser(
-          id: row?['id'],
-          fullName: '${user?['first_name'] ?? ''} ${user?['last_name'] ?? ''}'.trim(),
-          email: '${orJs(user?['email'], '')}',
-        );
-        newStudent.firstName.text = '${orJs(user?['first_name'], '')}';
-        newStudent.lastName.text = '${orJs(user?['last_name'], '')}';
-        newStudent.email.text = '${orJs(user?['email'], '')}';
-        newStudent.countryCode = jsString(user?['country_code'] ?? '91');
-        newStudent.phone.text = jsTruthy(user?['phone']) ? jsString(user!['phone']) : '';
-        showStudentResults = false;
-      });
+    final row = asMap(item.raw ?? item);
+    final user = asMap(row?['user']);
+    foundStudent = FoundUser(
+      id: row?['id'],
+      fullName: '${user?['first_name'] ?? ''} ${user?['last_name'] ?? ''}'
+          .trim(),
+      email: '${orJs(user?['email'], '')}',
+    );
+    newStudent.firstName.text = '${orJs(user?['first_name'], '')}';
+    newStudent.lastName.text = '${orJs(user?['last_name'], '')}';
+    newStudent.email.text = '${orJs(user?['email'], '')}';
+    newStudent.countryCode = jsString(user?['country_code'] ?? '91');
+    newStudent.phone.text = jsTruthy(user?['phone'])
+        ? jsString(user!['phone'])
+        : '';
+    showStudentResults = false;
+  });
 
   void clearStudentCreateMode() => _set(() {
-        foundStudent = const FoundUser();
-        newStudent.reset();
-      });
+    foundStudent = const FoundUser();
+    newStudent.reset();
+  });
 
   Future<void> searchStudent() async {
     if (studentQuery.text.trim().isEmpty) return;
@@ -1172,9 +1302,10 @@ class ClassListVm extends ChangeNotifier {
   }
 
   void resetStudentDialog() => _set(() {
-        newStudent.reset();
-        if (dailCodes.isNotEmpty) newStudent.countryCode = '${orJs(dailCodes.first['code'], '91')}';
-      });
+    newStudent.reset();
+    if (dailCodes.isNotEmpty)
+      newStudent.countryCode = '${orJs(dailCodes.first['code'], '91')}';
+  });
 
   /// `attachFoundStudent()` (its template is commented out in the web).
   Future<void> attachFoundStudent() async {
@@ -1310,7 +1441,12 @@ class ClassListVm extends ChangeNotifier {
     if (!hasClass) return;
     _set(() => isLoading = true);
     try {
-      await store.updateClass('$classId', name: newClassName.text, status: classstatus, classLevel: selectedClassLevel);
+      await store.updateClass(
+        '$classId',
+        name: newClassName.text,
+        status: classstatus,
+        classLevel: selectedClassLevel,
+      );
       _set(() {
         newClassName.text = '';
         classstatus = '';
@@ -1329,7 +1465,9 @@ class ClassListVm extends ChangeNotifier {
     if (isLoading) return;
     _set(() => isLoading = true);
     try {
-      final newStatus = institute['status'] == 'published' ? 'draft' : 'published';
+      final newStatus = institute['status'] == 'published'
+          ? 'draft'
+          : 'published';
       await store.updateClassStatus('${institute['id']}', newStatus);
       store.patchInstitute(institute['id'], {'status': newStatus});
     } catch (_) {
@@ -1396,7 +1534,11 @@ class ClassListVm extends ChangeNotifier {
     _set(() => isCreateBtnLoading = true);
     try {
       final normalized = normalizeBatchUpdateStatus(batchstatus);
-      await store.updateBatch(selectedBatch['id'], updateBatchName.text, normalized);
+      await store.updateBatch(
+        selectedBatch['id'],
+        updateBatchName.text,
+        normalized,
+      );
       setOpen(ClassDialog.updateBatch, false);
       await store.getBatches();
     } finally {
@@ -1424,22 +1566,24 @@ class ClassListVm extends ChangeNotifier {
       final instructor = asMap(s.selectedInstructor) ?? const {};
       final user = asMap(instructor['user']);
       String str(Object? v) => vueText(v);
-      _set(() => newInstructor.assign(
-            firstName: str(orJs(user?['first_name'], '')),
-            lastName: str(orJs(user?['last_name'], '')),
-            email: str(orJs(user?['email'], '')),
-            countryCode: str(orJs(user?['country_code'], '91')),
-            phone: str(orJs(user?['phone'], '')),
-            status: jsTruthy(instructor['status']),
-            photo: orJs(user?['photo'], null),
-            password: str(orJs(instructor['password'], '')),
-            gender: str(orJs(user?['gender'], '')),
-            dob: str(orJs(user?['dob'], '')),
-            joiningDate: str(orJs(instructor['joining_date'], '')),
-            designation: str(orJs(instructor['designation'], '')),
-            enableZoom: jsTruthy(instructor['enable_zoom']),
-            isLabAdmin: jsTruthy(instructor['is_labadmin']),
-          ));
+      _set(
+        () => newInstructor.assign(
+          firstName: str(orJs(user?['first_name'], '')),
+          lastName: str(orJs(user?['last_name'], '')),
+          email: str(orJs(user?['email'], '')),
+          countryCode: str(orJs(user?['country_code'], '91')),
+          phone: str(orJs(user?['phone'], '')),
+          status: jsTruthy(instructor['status']),
+          photo: orJs(user?['photo'], null),
+          password: str(orJs(instructor['password'], '')),
+          gender: str(orJs(user?['gender'], '')),
+          dob: str(orJs(user?['dob'], '')),
+          joiningDate: str(orJs(instructor['joining_date'], '')),
+          designation: str(orJs(instructor['designation'], '')),
+          enableZoom: jsTruthy(instructor['enable_zoom']),
+          isLabAdmin: jsTruthy(instructor['is_labadmin']),
+        ),
+      );
     } finally {
       _set(() => isLoading = false);
     }
@@ -1547,7 +1691,9 @@ class ClassListVm extends ChangeNotifier {
         newStudent.countryCode = '${orJs(user['country_code'], '91')}';
         newStudent.phone.text = '${orJs(user['phone'], '')}';
       });
-      studentStatusString = jsTruthy(selectedStudent['status']) ? 'true' : 'false';
+      studentStatusString = jsTruthy(selectedStudent['status'])
+          ? 'true'
+          : 'false';
       setOpen(ClassDialog.updateStudent, true);
     } catch (_) {
       AppToast.error('Something went wrong while fetching student details');
@@ -1606,7 +1752,11 @@ class ClassListVm extends ChangeNotifier {
       savedSelectedClass = {...institute};
     });
     store.clearClassDetailsData();
-    store.setClassDetails({'id': institute['id'], 'name': institute['year'], 'c_id': institute['c_id']});
+    store.setClassDetails({
+      'id': institute['id'],
+      'name': institute['year'],
+      'c_id': institute['c_id'],
+    });
     final id = jsNumber(institute['id']);
     await store.getBatches(id);
     if (activeTab == 'courses') await store.fetchClassCourse();
@@ -1680,11 +1830,13 @@ class ClassListVm extends ChangeNotifier {
   }
 
   Future<void> loadDailCodes() async {
-    if (_container.read(dialCodesProvider).hasError) _container.invalidate(dialCodesProvider);
+    if (_container.read(dialCodesProvider).hasError)
+      _container.invalidate(dialCodesProvider);
     final codes = await _container.read(dialCodesProvider.future);
     _set(() {
       dailCodes = codes;
-      if (codes.isNotEmpty) newInstructor.countryCode = '${codes.first['code']}';
+      if (codes.isNotEmpty)
+        newInstructor.countryCode = '${codes.first['code']}';
     });
   }
 
@@ -1749,9 +1901,12 @@ class ClassListVm extends ChangeNotifier {
 
   Future<void> showAlert() => alert('work in progress');
 
-  void toggleSection(Object? sectionId) => _set(() => openSectionId = openSectionId == sectionId ? null : sectionId);
-  void toggleChapter(Object? chapterId) => _set(() => openChapterId = openChapterId == chapterId ? null : chapterId);
-  void togglePdfPreview(Object? id) => _set(() => pdfPreviewId = pdfPreviewId == id ? null : id);
+  void toggleSection(Object? sectionId) =>
+      _set(() => openSectionId = openSectionId == sectionId ? null : sectionId);
+  void toggleChapter(Object? chapterId) =>
+      _set(() => openChapterId = openChapterId == chapterId ? null : chapterId);
+  void togglePdfPreview(Object? id) =>
+      _set(() => pdfPreviewId = pdfPreviewId == id ? null : id);
 
   // ── search ────────────────────────────────────────────────────────────────
 
@@ -1832,6 +1987,9 @@ class ClassListVm extends ChangeNotifier {
     await Clipboard.setData(ClipboardData(text: number));
     _set(() => copied = true);
     _copiedTimer?.cancel();
-    _copiedTimer = Timer(const Duration(milliseconds: 1200), () => _set(() => copied = false));
+    _copiedTimer = Timer(
+      const Duration(milliseconds: 1200),
+      () => _set(() => copied = false),
+    );
   }
 }

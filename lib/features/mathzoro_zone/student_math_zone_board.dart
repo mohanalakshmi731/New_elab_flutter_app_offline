@@ -476,7 +476,7 @@ class _MzActivityCardState extends State<_MzActivityCard> {
               child: AnimatedOpacity(
                 opacity: _hover ? 1 : 0.9,
                 duration: const Duration(milliseconds: 500),
-                child: Image.network(
+                child: contentImage(
                   jsDisplay(filePath),
                   fit: BoxFit.cover,
                   errorBuilder: (_, _, _) {

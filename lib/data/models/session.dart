@@ -75,44 +75,44 @@ class UserInfo {
       );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'username': username,
-        'token': token,
-        'role': role,
-        'institute_id': instituteId,
-        'full_name': fullName,
-        'email': email,
-        'student_id': studentId,
-        'exam_user_id': examUserId,
-        'institute_plan_id': institutePlanId,
-        'zsl': zsl,
-        'classes_id': classesId,
-        'zsl_class_id': zslClassId,
-        'is_math_zoro': isMathZoro,
+    'id': id,
+    'username': username,
+    'token': token,
+    'role': role,
+    'institute_id': instituteId,
+    'full_name': fullName,
+    'email': email,
+    'student_id': studentId,
+    'exam_user_id': examUserId,
+    'institute_plan_id': institutePlanId,
+    'zsl': zsl,
+    'classes_id': classesId,
+    'zsl_class_id': zslClassId,
+    'is_math_zoro': isMathZoro,
     'is_labadmin': isLabAdmin,
-        'phone': phone,
-        'mathzoroclassid': mathzoroClassId,
-      };
+    'phone': phone,
+    'mathzoroclassid': mathzoroClassId,
+  };
 
   factory UserInfo.fromJson(Map<String, dynamic> j) => UserInfo(
-        id: asInt(j['id']),
-        username: asString(j['username']) ?? '',
-        token: asString(j['token']) ?? '',
-        role: asString(j['role']),
-        instituteId: asInt(j['institute_id']),
-        fullName: asString(j['full_name']),
-        email: asString(j['email']),
-        studentId: asInt(j['student_id']),
-        examUserId: asString(j['exam_user_id']),
-        institutePlanId: asInt(j['institute_plan_id']),
-        zsl: j['zsl'],
-        classesId: asInt(j['classes_id']),
-        zslClassId: asInt(j['zsl_class_id']),
-        isMathZoro: asBool(j['is_math_zoro']),
+    id: asInt(j['id']),
+    username: asString(j['username']) ?? '',
+    token: asString(j['token']) ?? '',
+    role: asString(j['role']),
+    instituteId: asInt(j['institute_id']),
+    fullName: asString(j['full_name']),
+    email: asString(j['email']),
+    studentId: asInt(j['student_id']),
+    examUserId: asString(j['exam_user_id']),
+    institutePlanId: asInt(j['institute_plan_id']),
+    zsl: j['zsl'],
+    classesId: asInt(j['classes_id']),
+    zslClassId: asInt(j['zsl_class_id']),
+    isMathZoro: asBool(j['is_math_zoro']),
     isLabAdmin: asBool(j['is_labadmin']),
-        phone: asString(j['phone']),
-        mathzoroClassId: asInt(j['mathzoroclassid']),
-      );
+    phone: asString(j['phone']),
+    mathzoroClassId: asInt(j['mathzoroclassid']),
+  );
 }
 
 /// `studentLoginData` — full student snapshot saved at login (students only).
@@ -176,10 +176,10 @@ class AppLanguage {
   Map<String, dynamic> toJson() => {'id': id, 'code': code, 'name': name};
 
   factory AppLanguage.fromJson(Map<String, dynamic> j) => AppLanguage(
-        id: asInt(j['id']) ?? 1,
-        code: asString(j['code']) ?? 'en',
-        name: asString(j['name']) ?? 'ENGLISH',
-      );
+    id: asInt(j['id']) ?? 1,
+    code: asString(j['code']) ?? 'en',
+    name: asString(j['name']) ?? 'ENGLISH',
+  );
 }
 
 /// Everything the web app persisted for the logged-in session.
@@ -209,7 +209,8 @@ class SessionState {
   String get token => userInfo?.token ?? '';
   String get username => userInfo?.username ?? '';
   int? get userId => userInfo?.id;
-  String get role => userInfo?.role == Role.labAdmin ? Role.instructor : userInfo?.role ?? '';
+  String get role =>
+      userInfo?.role == Role.labAdmin ? Role.instructor : userInfo?.role ?? '';
   bool get isLabAdmin =>
       userInfo?.isLabAdmin == true || userInfo?.role == Role.labAdmin;
   int? get instituteId => userInfo?.instituteId;
@@ -229,33 +230,39 @@ class SessionState {
     Object? classDetails = _unset,
     List<dynamic>? rawStudentBatches,
     AppLanguage? language,
-  }) =>
-      SessionState(
-        userInfo: identical(userInfo, _unset) ? this.userInfo : userInfo as UserInfo?,
-        studentLoginData: identical(studentLoginData, _unset)
-            ? this.studentLoginData
-            : studentLoginData as StudentLoginData?,
-        expiresOn: identical(expiresOn, _unset) ? this.expiresOn : expiresOn as String?,
-        instructorId:
-            identical(instructorId, _unset) ? this.instructorId : instructorId as int?,
-        batchDetails:
-            identical(batchDetails, _unset) ? this.batchDetails : batchDetails as IdName?,
-        classDetails:
-            identical(classDetails, _unset) ? this.classDetails : classDetails as IdName?,
-        rawStudentBatches: rawStudentBatches ?? this.rawStudentBatches,
-        language: language ?? this.language,
-      );
+  }) => SessionState(
+    userInfo: identical(userInfo, _unset)
+        ? this.userInfo
+        : userInfo as UserInfo?,
+    studentLoginData: identical(studentLoginData, _unset)
+        ? this.studentLoginData
+        : studentLoginData as StudentLoginData?,
+    expiresOn: identical(expiresOn, _unset)
+        ? this.expiresOn
+        : expiresOn as String?,
+    instructorId: identical(instructorId, _unset)
+        ? this.instructorId
+        : instructorId as int?,
+    batchDetails: identical(batchDetails, _unset)
+        ? this.batchDetails
+        : batchDetails as IdName?,
+    classDetails: identical(classDetails, _unset)
+        ? this.classDetails
+        : classDetails as IdName?,
+    rawStudentBatches: rawStudentBatches ?? this.rawStudentBatches,
+    language: language ?? this.language,
+  );
 
   Map<String, dynamic> toJson() => {
-        'userInfo': userInfo?.toJson(),
-        'studentLoginData': studentLoginData?.raw,
-        'expires_on': expiresOn,
-        'instructor_id': instructorId,
-        'batchDetails': batchDetails?.toJson(),
-        'classDetails': classDetails?.toJson(),
-        'rawStudentBatches': rawStudentBatches,
-        'language': language.toJson(),
-      };
+    'userInfo': userInfo?.toJson(),
+    'studentLoginData': studentLoginData?.raw,
+    'expires_on': expiresOn,
+    'instructor_id': instructorId,
+    'batchDetails': batchDetails?.toJson(),
+    'classDetails': classDetails?.toJson(),
+    'rawStudentBatches': rawStudentBatches,
+    'language': language.toJson(),
+  };
 
   factory SessionState.fromJson(Map<String, dynamic> j) {
     final ui = asMap(j['userInfo']);

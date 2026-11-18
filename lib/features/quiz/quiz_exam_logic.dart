@@ -20,9 +20,20 @@ bool quizOptionIsCorrect(Map<String, dynamic> option) {
       v == '1';
 }
 
+bool quizHasAnswerKey(Map<String, dynamic> question) =>
+    quizOptions(question).any(
+      (option) => [
+        'is_correct',
+        'isCorrect',
+        'correct',
+      ].any((key) => option[key] != null),
+    );
+
 /// `currentQuestion.options` as maps (non-objects dropped).
 List<Map<String, dynamic>> quizOptions(Map<String, dynamic>? question) =>
-    asList(question?['options']).map(asMap).whereType<Map<String, dynamic>>().toList();
+    asList(
+      question?['options'],
+    ).map(asMap).whereType<Map<String, dynamic>>().toList();
 
 /// `option.display_label || String.fromCharCode(64 + (index + 1))`.
 String quizOptionLabel(Map<String, dynamic> option, int index) {
@@ -32,15 +43,19 @@ String quizOptionLabel(Map<String, dynamic> option, int index) {
 }
 
 /// `{{ option.text || option.option_text }}`.
-String quizOptionText(Map<String, dynamic> option) =>
-    jsTruthy(option['text']) ? jsDisplay(option['text']) : jsDisplay(option['option_text']);
+String quizOptionText(Map<String, dynamic> option) => jsTruthy(option['text'])
+    ? jsDisplay(option['text'])
+    : jsDisplay(option['option_text']);
 
 /// `v-html="currentQuestion.text || currentQuestion.stem"`.
 String quizQuestionHtml(Map<String, dynamic> question) =>
-    jsTruthy(question['text']) ? jsDisplay(question['text']) : jsDisplay(question['stem']);
+    jsTruthy(question['text'])
+    ? jsDisplay(question['text'])
+    : jsDisplay(question['stem']);
 
 /// `{{ option.remarks || 'No explanation provided.' }}`.
-String quizOptionRemarks(Map<String, dynamic> option) => jsTruthy(option['remarks'])
+String quizOptionRemarks(Map<String, dynamic> option) =>
+    jsTruthy(option['remarks'])
     ? jsDisplay(option['remarks'])
     : 'No explanation provided.';
 
@@ -70,19 +85,23 @@ List<String> jsObjectKeys(Map<String, dynamic> obj) {
 }
 
 /// The `answers` object as JavaScript would enumerate it.
-Map<String, dynamic> jsOrderedAnswers(Map<String, dynamic> answers) =>
-    {for (final k in jsObjectKeys(answers)) k: answers[k]};
+Map<String, dynamic> jsOrderedAnswers(Map<String, dynamic> answers) => {
+  for (final k in jsObjectKeys(answers)) k: answers[k],
+};
 
 /// `buildAnswersPayload()` — `Object.entries(answers).map(([q, o]) =>
 /// ({ question_id: String(q), option_id: String(o) }))`.
-List<Map<String, String>> buildQuizAnswersPayload(Map<String, dynamic> answers) => [
-      for (final k in jsObjectKeys(answers))
-        {'question_id': k, 'option_id': jsStr(answers[k]) ?? 'null'},
-    ];
+List<Map<String, String>> buildQuizAnswersPayload(
+  Map<String, dynamic> answers,
+) => [
+  for (final k in jsObjectKeys(answers))
+    {'question_id': k, 'option_id': jsStr(answers[k]) ?? 'null'},
+];
 
 /// `progressPercent` (0–100): answered / total.
 double quizProgressPercent(int answeredCount, int total) =>
     total == 0 ? 0 : answeredCount / total * 100;
 
 /// `progressCircle` as a 0–1 fraction of the ring (`currentStep / total`).
-double quizStepFraction(int currentStep, int total) => total == 0 ? 0 : currentStep / total;
+double quizStepFraction(int currentStep, int total) =>
+    total == 0 ? 0 : currentStep / total;

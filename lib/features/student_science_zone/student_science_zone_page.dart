@@ -1,9 +1,11 @@
+import '../../widgets/content_image.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:bootstrap_icons/bootstrap_icons.dart';
 import 'package:flutter/material.dart';
+import '../offline/offline_runtime.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -16,7 +18,8 @@ import '../../state/providers.dart';
 import '../../widgets/web_content_view.dart';
 import '../mathzoro/mathzoro_controller.dart';
 import '../mathzoro/mz_html_text.dart';
-import '../mathzoro/mz_ui.dart' show CssLinearGradient, HoverBuilder, jsStr, jsDisplay, jsNumKey;
+import '../mathzoro/mz_ui.dart'
+    show CssLinearGradient, HoverBuilder, jsStr, jsDisplay, jsNumKey;
 import '../quiz/quiz_exam.dart';
 import '../student_activity/student_activity_logic.dart'
     show dataOrSelfList, descriptionText, sameId, signedUrlOf;
@@ -36,7 +39,8 @@ class StudentScienceZonePage extends ConsumerStatefulWidget {
   const StudentScienceZonePage({super.key});
 
   @override
-  ConsumerState<StudentScienceZonePage> createState() => _StudentScienceZonePageState();
+  ConsumerState<StudentScienceZonePage> createState() =>
+      _StudentScienceZonePageState();
 }
 
 typedef _Json = Map<String, dynamic>;
@@ -63,9 +67,11 @@ class _ChapterRefModal {
   String? htmlContent;
 }
 
-class _StudentScienceZonePageState extends ConsumerState<StudentScienceZonePage> {
+class _StudentScienceZonePageState
+    extends ConsumerState<StudentScienceZonePage> {
   String _selectedClassId = '';
-  String _selectedSubjectId = ''; // always resolved fresh — never from persisted context
+  String _selectedSubjectId =
+      ''; // always resolved fresh — never from persisted context
   String _selectedClassName = '';
   String _selectedSubjectName = '';
 
@@ -138,7 +144,8 @@ class _StudentScienceZonePageState extends ConsumerState<StudentScienceZonePage>
     return _chapterPerformanceMap[jsNumKey(_filteredChapters[i]['id'])];
   }
 
-  int _getChapterPctByIndex(int i) => jsRound(_getChapterPerfByIndex(i)?['percentage']);
+  int _getChapterPctByIndex(int i) =>
+      jsRound(_getChapterPerfByIndex(i)?['percentage']);
 
   Map<String, dynamic>? _getActivityPerf(_Json act) {
     final ch = _activeChapter;
@@ -149,7 +156,8 @@ class _StudentScienceZonePageState extends ConsumerState<StudentScienceZonePage>
     return asMap(activityMap[jsNumKey(act['id'])]);
   }
 
-  int _getActivityStars(_Json act) => ticketsToStars(_getActivityPerf(act)?['earned_tickets'] ?? 0);
+  int _getActivityStars(_Json act) =>
+      ticketsToStars(_getActivityPerf(act)?['earned_tickets'] ?? 0);
 
   // ── lifecycle ────────────────────────────────────────────────────────────
 
@@ -165,7 +173,9 @@ class _StudentScienceZonePageState extends ConsumerState<StudentScienceZonePage>
     // data()
     final ctx = _zsl.selectedActivityContext ?? const <String, dynamic>{};
     _selectedClassId = jsTruthy(ctx['classId']) ? jsStr(ctx['classId'])! : '';
-    _selectedClassName = jsTruthy(ctx['className']) ? jsDisplay(ctx['className']) : '';
+    _selectedClassName = jsTruthy(ctx['className'])
+        ? jsDisplay(ctx['className'])
+        : '';
     // mounted()
     await _autoSelectAndLoad();
   }
@@ -204,7 +214,11 @@ class _StudentScienceZonePageState extends ConsumerState<StudentScienceZonePage>
       _selectedChapterIndex = index;
       _activeChapter = chapter;
     });
-    _mz.setLastOpenedChapter({'id': chapter['id'], 'name': chapter['name'], 'chapterIndex': index});
+    _mz.setLastOpenedChapter({
+      'id': chapter['id'],
+      'name': chapter['name'],
+      'chapterIndex': index,
+    });
     await _loadChapterActivities(chapter['id']);
   }
 
@@ -220,8 +234,13 @@ class _StudentScienceZonePageState extends ConsumerState<StudentScienceZonePage>
     }
     _set(() => _sheetLoading = true);
     try {
-      final topics = await _mz.getZslLinks(_instituteId, chapterId, _languageId);
-      if (topics != null && topics is! List) throw StateError('topics.flatMap is not a function');
+      final topics = await _mz.getZslLinks(
+        _instituteId,
+        chapterId,
+        _languageId,
+      );
+      if (topics != null && topics is! List)
+        throw StateError('topics.flatMap is not a function');
       final acts = <_Json>[
         for (final t in asList(topics).map(asMap).whereType<_Json>())
           for (final a in asList(t['activities']).map(asMap).whereType<_Json>())
@@ -262,8 +281,13 @@ class _StudentScienceZonePageState extends ConsumerState<StudentScienceZonePage>
     _set(() => _whyModal = modal);
     _showWhyRoute();
     try {
-      final topics = await _mz.getZslLinks(_instituteId, activity['chapter_id'], _languageId);
-      if (topics != null && topics is! List) throw StateError('topics.find is not a function');
+      final topics = await _mz.getZslLinks(
+        _instituteId,
+        activity['chapter_id'],
+        _languageId,
+      );
+      if (topics != null && topics is! List)
+        throw StateError('topics.find is not a function');
       final topicLink = asList(topics)
           .map(asMap)
           .whereType<_Json>()
@@ -280,7 +304,9 @@ class _StudentScienceZonePageState extends ConsumerState<StudentScienceZonePage>
       var contentType = 'html';
 
       if (content.isEmpty && jsTruthy(desc?['content_path'])) {
-        final descId = jsTruthy(desc!['description_id']) ? desc['description_id'] : desc['id'];
+        final descId = jsTruthy(desc!['description_id'])
+            ? desc['description_id']
+            : desc['id'];
         if (jsTruthy(descId)) {
           final r = await _zsl.getWhyToLearnSignedUrl(jsStr(descId)!);
           final url = signedUrlOf(r);
@@ -318,13 +344,17 @@ class _StudentScienceZonePageState extends ConsumerState<StudentScienceZonePage>
     try {
       if (chapter['chapter_reference_text'] != null) {
         _set(() {
-          _chapterRefModal.htmlContent = jsDisplay(chapter['chapter_reference_text']);
+          _chapterRefModal.htmlContent = jsDisplay(
+            chapter['chapter_reference_text'],
+          );
           _chapterRefModal.loading = false;
         });
         return;
       }
       if (jsTruthy(chapter['chapter_reference_url'])) {
-        final res = await _zsl.getChapterReferenceSignedLink(jsStr(chapter['id']) ?? 'undefined');
+        final res = await _zsl.getChapterReferenceSignedLink(
+          jsStr(chapter['id']) ?? 'undefined',
+        );
         final url = asMap(res)?['url'];
         if (jsTruthy(url)) _set(() => _chapterRefModal.url = jsDisplay(url));
       }
@@ -338,8 +368,14 @@ class _StudentScienceZonePageState extends ConsumerState<StudentScienceZonePage>
   // ── Quiz ─────────────────────────────────────────────────────────────────
 
   Future<void> _openQuiz(_Json activity) async {
+    if (ref.read(offlineBrowsingProvider)) {
+      _launchActivity({...activity, 'offlineQuiz': true});
+      return;
+    }
     try {
-      final res = await _mz.getZslQuestions(jsStr(activity['id']) ?? 'undefined');
+      final res = await _mz.getZslQuestions(
+        jsStr(activity['id']) ?? 'undefined',
+      );
       final questions = dataOrSelfList(res);
       if (questions.isEmpty) return;
       _set(() {
@@ -347,16 +383,20 @@ class _StudentScienceZonePageState extends ConsumerState<StudentScienceZonePage>
         _quizActivity = activity;
         _quizTitle = jsTruthy(activity['name'])
             ? jsDisplay(activity['name'])
-            : (jsTruthy(activity['topic_name']) ? jsDisplay(activity['topic_name']) : '');
+            : (jsTruthy(activity['topic_name'])
+                  ? jsDisplay(activity['topic_name'])
+                  : '');
       });
       if (!mounted) return;
-      unawaited(showQuizExam(
-        context,
-        questions: _quizExamQuestions,
-        quizTitle: _quizTitle,
-        onSubmitted: _onQuizSubmitted,
-        onClose: _onQuizClose,
-      ));
+      unawaited(
+        showQuizExam(
+          context,
+          questions: _quizExamQuestions,
+          quizTitle: _quizTitle,
+          onSubmitted: _onQuizSubmitted,
+          onClose: _onQuizClose,
+        ),
+      );
     } catch (e) {
       debugPrint('$e');
     }
@@ -364,9 +404,9 @@ class _StudentScienceZonePageState extends ConsumerState<StudentScienceZonePage>
 
   Future<void> _onQuizSubmitted(Map<String, dynamic> payload) async {
     try {
-      final answers = asList(payload['answersPayload'])
-          .map((e) => Map<String, String>.from(asMap(e) ?? const {}))
-          .toList();
+      final answers = asList(
+        payload['answersPayload'],
+      ).map((e) => Map<String, String>.from(asMap(e) ?? const {})).toList();
       await _zsl.submitZslQuiz(
         activityId: jsStr(_quizActivity?['id']) ?? 'undefined',
         answers: answers,
@@ -378,16 +418,19 @@ class _StudentScienceZonePageState extends ConsumerState<StudentScienceZonePage>
   }
 
   void _onQuizClose() => _set(() {
-        _quizActivity = null;
-        _quizExamQuestions = [];
-      });
+    _quizActivity = null;
+    _quizExamQuestions = [];
+  });
 
   // ── Performance refresh after quiz ───────────────────────────────────────
 
   Future<void> _refreshPerformance() async {
     if (_resolvedSubjectId.isEmpty || _resolvedClassId.isEmpty) return;
     try {
-      final perf = await _mz.getSubjectPerformance(_resolvedSubjectId, _resolvedClassId);
+      final perf = await _mz.getSubjectPerformance(
+        _resolvedSubjectId,
+        _resolvedClassId,
+      );
       _set(() => _subjectPerformance = _perfData(perf));
 
       final chapterId = _quizActivity?['chapter_id'];
@@ -419,13 +462,19 @@ class _StudentScienceZonePageState extends ConsumerState<StudentScienceZonePage>
       'chapterId': activity['chapter_id'],
       'topicId': activity['topic_id'],
       'topicName': activity['topic_name'],
-      'topicImage': jsTruthy(activity['file_path']) ? activity['file_path'] : '',
+      'topicImage': jsTruthy(activity['file_path'])
+          ? activity['file_path']
+          : '',
       'activityId': activity['id'],
+      'offlineQuiz': activity['offlineQuiz'] == true,
+      'fromRoute': GoRouterState.of(context).uri.path,
       'returnPath': '/newlayout/newsciencezone',
     });
     // router.push('studentactivitypage') — relative to the current path.
     final path = GoRouterState.of(context).uri.path;
-    final base = path.contains('/') ? path.substring(0, path.lastIndexOf('/')) : '';
+    final base = path.contains('/')
+        ? path.substring(0, path.lastIndexOf('/'))
+        : '';
     context.go('$base/studentactivitypage');
   }
 
@@ -458,17 +507,24 @@ class _StudentScienceZonePageState extends ConsumerState<StudentScienceZonePage>
       });
 
       // 1. Classes
-      final classRes = await ref.read(zslServiceProvider).getClass(_instituteId, null);
-      final classes = classRes is List ? classRes : _listOf(classRes, 'classes');
+      final classRes = await ref
+          .read(zslServiceProvider)
+          .getClass(_instituteId, null);
+      final classes = classRes is List
+          ? classRes
+          : _listOf(classRes, 'classes');
 
       if (classes.isEmpty) {
         _set(() => _error = 'No classes available.');
         return;
       }
 
-      final matchedClass = asMap(classes
-              .where((c) => sameId(asMap(c)?['id'], _selectedClassId))
-              .firstOrNull) ??
+      final matchedClass =
+          asMap(
+            classes
+                .where((c) => sameId(asMap(c)?['id'], _selectedClassId))
+                .firstOrNull,
+          ) ??
           asMap(classes[0]);
       _set(() {
         _selectedClassId = jsStr(matchedClass?['id']) ?? 'undefined';
@@ -477,8 +533,13 @@ class _StudentScienceZonePageState extends ConsumerState<StudentScienceZonePage>
       });
 
       // 2. Subjects — always fresh, never persisted subjectId
-      final subjectRes = await _mz.getAllSubjects(_instituteId, _selectedClassId);
-      final subjects = subjectRes is List ? subjectRes : _listOf(subjectRes, 'subjects');
+      final subjectRes = await _mz.getAllSubjects(
+        _instituteId,
+        _selectedClassId,
+      );
+      final subjects = subjectRes is List
+          ? subjectRes
+          : _listOf(subjectRes, 'subjects');
 
       if (subjects.isEmpty) {
         _set(() => _error = 'No subjects available.');
@@ -488,9 +549,13 @@ class _StudentScienceZonePageState extends ConsumerState<StudentScienceZonePage>
       // 3. Find Physics/Science/Chemistry
       final physicsSubject = findPhysicsSubject(subjects);
       if (physicsSubject == null) {
-        _set(() => _error = 'Physics / Science subject not found for this class.');
-        debugPrint('[ClassScienceView] Subjects available: '
-            '${subjects.map((s) => '${jsDisplay(asMap(s)?['id'])}:${jsDisplay(asMap(s)?['name'])}').toList()}');
+        _set(
+          () => _error = 'Physics / Science subject not found for this class.',
+        );
+        debugPrint(
+          '[ClassScienceView] Subjects available: '
+          '${subjects.map((s) => '${jsDisplay(asMap(s)?['id'])}:${jsDisplay(asMap(s)?['name'])}').toList()}',
+        );
         return;
       }
 
@@ -513,7 +578,9 @@ class _StudentScienceZonePageState extends ConsumerState<StudentScienceZonePage>
   /// `res?.data || res?.[key] || []` (anything but an array counts as empty).
   static List<dynamic> _listOf(dynamic res, String key) {
     final m = asMap(res);
-    final v = jsTruthy(m?['data']) ? m!['data'] : (jsTruthy(m?[key]) ? m![key] : const []);
+    final v = jsTruthy(m?['data'])
+        ? m!['data']
+        : (jsTruthy(m?[key]) ? m![key] : const []);
     return v is List ? v : const [];
   }
 
@@ -526,7 +593,9 @@ class _StudentScienceZonePageState extends ConsumerState<StudentScienceZonePage>
   }
 
   Future<void> _fetchAllChaptersAndPerformance() async {
-    if (!jsTruthy(_instituteId) || _selectedClassId.isEmpty || _selectedSubjectId.isEmpty) {
+    if (!jsTruthy(_instituteId) ||
+        _selectedClassId.isEmpty ||
+        _selectedSubjectId.isEmpty) {
       _set(() => _error = 'Missing context.');
       return;
     }
@@ -537,8 +606,16 @@ class _StudentScienceZonePageState extends ConsumerState<StudentScienceZonePage>
       });
 
       final results = await Future.wait([
-        _settle(_mz.getSubjectPerformance(_resolvedSubjectId, _resolvedClassId)),
-        _settle(_mz.getallchpaters(_instituteId, _selectedClassId, _selectedSubjectId)),
+        _settle(
+          _mz.getSubjectPerformance(_resolvedSubjectId, _resolvedClassId),
+        ),
+        _settle(
+          _mz.getallchpaters(
+            _instituteId,
+            _selectedClassId,
+            _selectedSubjectId,
+          ),
+        ),
       ]);
       final (perfOk, perfValue) = results[0];
       final (chsOk, chsValue) = results[1];
@@ -560,8 +637,9 @@ class _StudentScienceZonePageState extends ConsumerState<StudentScienceZonePage>
 
       if (_chapters.isNotEmpty) {
         final saved = ref.read(mathZoroProvider).lastOpenedChapter;
-        final savedIndex =
-            saved != null ? _chapters.indexWhere((ch) => sameId(ch['id'], saved['id'])) : -1;
+        final savedIndex = saved != null
+            ? _chapters.indexWhere((ch) => sameId(ch['id'], saved['id']))
+            : -1;
 
         final targetIndex = savedIndex != -1 ? savedIndex : 0;
         final targetChapter = _chapters[targetIndex];

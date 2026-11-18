@@ -14,7 +14,12 @@ import 'lucide_icon.dart';
 /// leading-none font-medium`, `text-destructive` when the field has an
 /// error, optional `<span class="text-red-500">*</span>` (8px gap).
 class FieldLabel extends StatelessWidget {
-  const FieldLabel(this.text, {super.key, this.required = false, this.error = false});
+  const FieldLabel(
+    this.text, {
+    super.key,
+    this.required = false,
+    this.error = false,
+  });
   final String text;
   final bool required;
   final bool error;
@@ -32,11 +37,16 @@ class FieldLabel extends StatelessWidget {
     );
     if (!required) return label;
     return Text.rich(
-      TextSpan(children: [
-        TextSpan(text: text),
-        const WidgetSpan(child: SizedBox(width: 8)),
-        const TextSpan(text: '*', style: TextStyle(color: Tw.red500)),
-      ]),
+      TextSpan(
+        children: [
+          TextSpan(text: text),
+          const WidgetSpan(child: SizedBox(width: 8)),
+          const TextSpan(
+            text: '*',
+            style: TextStyle(color: Tw.red500),
+          ),
+        ],
+      ),
       style: label.style,
     );
   }
@@ -44,21 +54,29 @@ class FieldLabel extends StatelessWidget {
 
 /// Wraps any control with a [FieldLabel] above it (`<FormItem>` = `grid gap-2`).
 class LabeledField extends StatelessWidget {
-  const LabeledField({super.key, required this.label, required this.child, this.required = false});
+  const LabeledField({
+    super.key,
+    required this.label,
+    required this.child,
+    this.required = false,
+  });
   final String label;
   final Widget child;
   final bool required;
 
   @override
   Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Align(alignment: AlignmentDirectional.centerStart, child: FieldLabel(label, required: required)),
-          const SizedBox(height: 8),
-          child,
-        ],
-      );
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: FieldLabel(label, required: required),
+      ),
+      const SizedBox(height: 8),
+      child,
+    ],
+  );
 }
 
 /// Text style of a shadcn `<Input>`: `text-base md:text-sm` (16px/24 on
@@ -169,7 +187,8 @@ class AppTextField extends StatelessWidget {
       validator: validator,
       onChanged: onChanged,
       onFieldSubmitted: onSubmitted,
-      keyboardType: keyboardType ?? (multiline ? TextInputType.multiline : null),
+      keyboardType:
+          keyboardType ?? (multiline ? TextInputType.multiline : null),
       textInputAction: textInputAction,
       inputFormatters: inputFormatters,
       obscureText: obscureText,
@@ -182,7 +201,9 @@ class AppTextField extends StatelessWidget {
       onTap: onTap,
       focusNode: focusNode,
       style: style,
-      textAlignVertical: multiline ? TextAlignVertical.top : TextAlignVertical.center,
+      textAlignVertical: multiline
+          ? TextAlignVertical.top
+          : TextAlignVertical.center,
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: style.copyWith(color: AppColors.placeholder),
@@ -194,10 +215,18 @@ class AppTextField extends StatelessWidget {
         ),
         // `min-h-16` for textareas.
         constraints: multiline ? const BoxConstraints(minHeight: 64) : null,
-        prefixIcon: prefixIcon == null ? null : Icon(prefixIcon, size: iconSize),
-        prefixIconConstraints: const BoxConstraints(minWidth: 36, minHeight: 20),
+        prefixIcon: prefixIcon == null
+            ? null
+            : Icon(prefixIcon, size: iconSize),
+        prefixIconConstraints: const BoxConstraints(
+          minWidth: 36,
+          minHeight: 20,
+        ),
         suffixIcon: suffix,
-        suffixIconConstraints: const BoxConstraints(minWidth: 36, minHeight: 20),
+        suffixIconConstraints: const BoxConstraints(
+          minWidth: 36,
+          minHeight: 20,
+        ),
         counterText: '',
       ),
     );
@@ -210,11 +239,15 @@ class AppTextField extends StatelessWidget {
 
 /// One `<SelectItem :value>` of an [AppSelect].
 class AppSelectItem<T> {
-  const AppSelectItem(this.value, this.label, {this.enabled = true, this.isLabel = false})
-      : isMessage = false,
-        messagePadding = null,
-        messageFontSize = null,
-        messageColor = null;
+  const AppSelectItem(
+    this.value,
+    this.label, {
+    this.enabled = true,
+    this.isLabel = false,
+  }) : isMessage = false,
+       messagePadding = null,
+       messageFontSize = null,
+       messageColor = null;
 
   /// A plain, centred, undimmed note row inside the menu, e.g. the web's
   /// `<div v-else class="py-3 text-center text-sm text-muted-foreground">No
@@ -223,12 +256,15 @@ class AppSelectItem<T> {
   const AppSelectItem.message(
     this.value,
     this.label, {
-    this.messagePadding = const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    this.messagePadding = const EdgeInsets.symmetric(
+      horizontal: 12,
+      vertical: 8,
+    ),
     this.messageFontSize = 14,
     this.messageColor,
-  })  : enabled = false,
-        isLabel = false,
-        isMessage = true;
+  }) : enabled = false,
+       isLabel = false,
+       isMessage = true;
 
   final T value;
   final String label;
@@ -343,13 +379,16 @@ class _AppSelectState<T> extends State<AppSelect<T>> {
     final interactive = widget.enabled && widget.onChanged != null;
     AppSelectItem<T>? selected;
     for (final it in widget.items) {
-      if (!it.isLabel && !it.isMessage && it.value == widget.value) selected = it;
+      if (!it.isLabel && !it.isMessage && it.value == widget.value)
+        selected = it;
     }
 
     final field = FormField<T>(
       initialValue: widget.value,
       // Validate the controlled value, not the FormField's internal copy.
-      validator: widget.validator == null ? null : (_) => widget.validator!(widget.value),
+      validator: widget.validator == null
+          ? null
+          : (_) => widget.validator!(widget.value),
       builder: (state) => LayoutBuilder(
         builder: (context, c) {
           final width = c.maxWidth.isFinite ? c.maxWidth : 220.0;
@@ -366,9 +405,13 @@ class _AppSelectState<T> extends State<AppSelect<T>> {
             alignmentOffset: const Offset(0, 4),
             style: MenuStyle(
               minimumSize: WidgetStatePropertyAll(Size(minW, 0)),
-              maximumSize: WidgetStatePropertyAll(Size(maxW, widget.menuMaxHeight)),
+              maximumSize: WidgetStatePropertyAll(
+                Size(maxW, widget.menuMaxHeight),
+              ),
               backgroundColor: WidgetStatePropertyAll(context.popoverColor),
-              surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+              surfaceTintColor: const WidgetStatePropertyAll(
+                Colors.transparent,
+              ),
               elevation: const WidgetStatePropertyAll(2),
               padding: const WidgetStatePropertyAll(EdgeInsets.all(4)),
               shape: WidgetStatePropertyAll(
@@ -378,22 +421,41 @@ class _AppSelectState<T> extends State<AppSelect<T>> {
                 ),
               ),
               // shadow-md
-              shadowColor: WidgetStatePropertyAll(Colors.black.withValues(alpha: 0.5)),
+              shadowColor: WidgetStatePropertyAll(
+                Colors.black.withValues(alpha: 0.5),
+              ),
             ),
             menuChildren: [
               if (widget.menuLabel != null)
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
+                  ),
                   child: Text(
                     widget.menuLabel!,
-                    style: const TextStyle(fontSize: 14, height: 20 / 14, fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      height: 20 / 14,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               for (final it in widget.items)
                 if (it.isLabel)
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                    child: Text(it.label, style: const TextStyle(fontSize: 14, height: 20 / 14, fontWeight: FontWeight.w500)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 6,
+                    ),
+                    child: Text(
+                      it.label,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        height: 20 / 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   )
                 else if (it.isMessage)
                   Padding(
@@ -405,66 +467,85 @@ class _AppSelectState<T> extends State<AppSelect<T>> {
                         style: TextStyle(
                           fontSize: it.messageFontSize,
                           // text-sm → 20px line, text-xs → 16px line.
-                          height: (it.messageFontSize! <= 12 ? 16 : 20) / it.messageFontSize!,
+                          height:
+                              (it.messageFontSize! <= 12 ? 16 : 20) /
+                              it.messageFontSize!,
                           color: it.messageColor ?? mutedFg,
                         ),
                       ),
                     ),
                   )
                 else
-                MenuItemButton(
-                  onPressed: it.enabled
-                      ? () {
-                          widget.onChanged?.call(it.value);
-                          // Marks the field as touched (re-validates under
-                          // AutovalidateMode.onUserInteraction).
-                          state.didChange(it.value);
-                        }
-                      : null,
-                  style: appMenuItemStyle(context),
-                  // Gives the label a bounded width, so long items wrap.
-                  overflowAxis: Axis.vertical,
-                  child: Row(
-                    children: [
-                      Expanded(child: Text(it.label)),
-                      const SizedBox(width: 10),
-                      // `absolute right-2 size-3.5` check indicator.
-                      SizedBox.square(
-                        dimension: 14,
-                        child: it.value == widget.value
-                            ? OverflowBox(
-                                maxWidth: 16,
-                                maxHeight: 16,
-                                child: LucideIcon(Lucide.check, size: 16, color: mutedFg),
-                              )
-                            : null,
-                      ),
-                    ],
+                  MenuItemButton(
+                    onPressed: it.enabled
+                        ? () {
+                            widget.onChanged?.call(it.value);
+                            // Marks the field as touched (re-validates under
+                            // AutovalidateMode.onUserInteraction).
+                            state.didChange(it.value);
+                          }
+                        : null,
+                    style: appMenuItemStyle(context),
+                    // Gives the label a bounded width, so long items wrap.
+                    overflowAxis: Axis.vertical,
+                    child: Row(
+                      children: [
+                        Expanded(child: Text(it.label)),
+                        const SizedBox(width: 10),
+                        // `absolute right-2 size-3.5` check indicator.
+                        SizedBox.square(
+                          dimension: 14,
+                          child: it.value == widget.value
+                              ? OverflowBox(
+                                  maxWidth: 16,
+                                  maxHeight: 16,
+                                  child: LucideIcon(
+                                    Lucide.check,
+                                    size: 16,
+                                    color: mutedFg,
+                                  ),
+                                )
+                              : null,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
             ],
             builder: (context, controller, _) {
               final placeholder = selected == null;
-              final textColor =
-                  placeholder ? AppColors.placeholder : (widget.textColor ?? context.colors.onSurface);
+              final textColor = placeholder
+                  ? AppColors.placeholder
+                  : (widget.textColor ?? context.colors.onSurface);
               final showRing = _focused && interactive;
               final ring = error != null
                   ? destructive.withValues(alpha: dark ? 0.4 : 0.2)
                   : context.ringColor.withValues(alpha: 0.5);
-              final borderColor =
-                  error != null ? destructive : (showRing ? context.ringColor : (widget.borderColor ?? input));
-              final fill = widget.fillColor ??
-                  (dark ? input.withValues(alpha: _hovered && interactive ? 0.5 : 0.3) : Colors.transparent);
+              final borderColor = error != null
+                  ? destructive
+                  : (showRing
+                        ? context.ringColor
+                        : (widget.borderColor ?? input));
+              final fill =
+                  widget.fillColor ??
+                  (dark
+                      ? input.withValues(
+                          alpha: _hovered && interactive ? 0.5 : 0.3,
+                        )
+                      : Colors.transparent);
               return FocusableActionDetector(
                 enabled: interactive,
-                mouseCursor: interactive ? SystemMouseCursors.click : SystemMouseCursors.forbidden,
+                mouseCursor: interactive
+                    ? SystemMouseCursors.click
+                    : SystemMouseCursors.forbidden,
                 onShowFocusHighlight: (v) => setState(() => _focused = v),
                 onShowHoverHighlight: (v) => setState(() => _hovered = v),
                 actions: {
-                  ActivateIntent: CallbackAction<ActivateIntent>(onInvoke: (_) {
-                    _toggle();
-                    return null;
-                  }),
+                  ActivateIntent: CallbackAction<ActivateIntent>(
+                    onInvoke: (_) {
+                      _toggle();
+                      return null;
+                    },
+                  ),
                 },
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
@@ -485,19 +566,33 @@ class _AppSelectState<T> extends State<AppSelect<T>> {
                     child: Row(
                       children: [
                         if (widget.leadingIcon != null) ...[
-                          Icon(widget.leadingIcon, size: widget.iconSize, color: textColor),
+                          Icon(
+                            widget.leadingIcon,
+                            size: widget.iconSize,
+                            color: textColor,
+                          ),
                           const SizedBox(width: 16),
                         ],
                         Expanded(
-                          child: Text(
-                            selected?.label ?? widget.placeholder,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: widget.fontSize, color: textColor),
+                          child: Tooltip(
+                            message: selected?.label ?? widget.placeholder,
+                            child: Text(
+                              selected?.label ?? widget.placeholder,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: widget.fontSize,
+                                color: textColor,
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
-                        LucideIcon(Lucide.chevronDown, size: 16, color: mutedFg.withValues(alpha: 0.5)),
+                        LucideIcon(
+                          Lucide.chevronDown,
+                          size: 16,
+                          color: mutedFg.withValues(alpha: 0.5),
+                        ),
                       ],
                     ),
                   ),
@@ -512,7 +607,14 @@ class _AppSelectState<T> extends State<AppSelect<T>> {
             children: [
               menu,
               const SizedBox(height: 8),
-              Text(error, style: TextStyle(fontSize: 14, height: 20 / 14, color: destructive)),
+              Text(
+                error,
+                style: TextStyle(
+                  fontSize: 14,
+                  height: 20 / 14,
+                  color: destructive,
+                ),
+              ),
             ],
           );
         },
@@ -520,9 +622,15 @@ class _AppSelectState<T> extends State<AppSelect<T>> {
     );
 
     // `disabled:opacity-50`
-    final control = widget.enabled ? field : Opacity(opacity: 0.5, child: field);
+    final control = widget.enabled
+        ? field
+        : Opacity(opacity: 0.5, child: field);
     if (widget.label == null) return control;
-    return LabeledField(label: widget.label!, required: widget.required, child: control);
+    return LabeledField(
+      label: widget.label!,
+      required: widget.required,
+      child: control,
+    );
   }
 }
 
@@ -532,16 +640,32 @@ class _AppSelectState<T> extends State<AppSelect<T>> {
 ButtonStyle appMenuItemStyle(BuildContext context, {Color? foreground}) {
   final fg = foreground ?? context.colors.onSurface;
   bool hot(Set<WidgetState> s) =>
-      s.contains(WidgetState.hovered) || s.contains(WidgetState.focused) || s.contains(WidgetState.pressed);
+      s.contains(WidgetState.hovered) ||
+      s.contains(WidgetState.focused) ||
+      s.contains(WidgetState.pressed);
   return ButtonStyle(
     minimumSize: const WidgetStatePropertyAll(Size(0, 32)),
-    padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 8, vertical: 6)),
-    shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusSm))),
-    backgroundColor: WidgetStateProperty.resolveWith((s) => hot(s) ? AppColors.accent : Colors.transparent),
-    foregroundColor: WidgetStateProperty.resolveWith((s) => hot(s) ? AppColors.accentForeground : fg),
-    iconColor: WidgetStateProperty.resolveWith((s) => hot(s) ? AppColors.accentForeground : context.mutedFgColor),
+    padding: const WidgetStatePropertyAll(
+      EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+    ),
+    shape: WidgetStatePropertyAll(
+      RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+      ),
+    ),
+    backgroundColor: WidgetStateProperty.resolveWith(
+      (s) => hot(s) ? AppColors.accent : Colors.transparent,
+    ),
+    foregroundColor: WidgetStateProperty.resolveWith(
+      (s) => hot(s) ? AppColors.accentForeground : fg,
+    ),
+    iconColor: WidgetStateProperty.resolveWith(
+      (s) => hot(s) ? AppColors.accentForeground : context.mutedFgColor,
+    ),
     overlayColor: const WidgetStatePropertyAll(Colors.transparent),
-    textStyle: const WidgetStatePropertyAll(TextStyle(fontSize: 14, height: 20 / 14)),
+    textStyle: const WidgetStatePropertyAll(
+      TextStyle(fontSize: 14, height: 20 / 14),
+    ),
     iconSize: const WidgetStatePropertyAll(16),
     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
     visualDensity: VisualDensity.standard,
@@ -580,7 +704,9 @@ class AppDateField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final parsed = value == null || value!.isEmpty ? null : DateTime.tryParse(value!);
+    final parsed = value == null || value!.isEmpty
+        ? null
+        : DateTime.tryParse(value!);
     return AppTextField(
       // Rebuild the field when the value changes from outside.
       key: ValueKey(value),
@@ -591,7 +717,11 @@ class AppDateField extends StatelessWidget {
       readOnly: true,
       enabled: enabled,
       validator: validator == null ? null : (_) => validator!(value),
-      suffix: Icon(BootstrapIcons.calendar3, size: 14, color: context.colors.onSurface),
+      suffix: Icon(
+        BootstrapIcons.calendar3,
+        size: 14,
+        color: context.colors.onSurface,
+      ),
       onTap: () async {
         final now = DateTime.now();
         final picked = await showDatePicker(
@@ -628,11 +758,11 @@ class AppSearchBar extends StatelessWidget {
     final dark = context.isDark;
     final side = BorderSide(color: context.borderColor);
     OutlineInputBorder border({bool focused = false}) => RingInputBorder(
-          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-          borderSide: side,
-          ringWidth: 2,
-          ringColor: focused ? Tw.blue500 : Colors.transparent,
-        );
+      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+      borderSide: side,
+      ringWidth: 2,
+      ringColor: focused ? Tw.blue500 : Colors.transparent,
+    );
     // A native input: 16px text with a 24px line, `px-2 py-1` (34px tall).
     final style = TextStyle(
       fontSize: 16,
@@ -654,7 +784,10 @@ class AppSearchBar extends StatelessWidget {
               hintStyle: style.copyWith(color: AppColors.placeholder),
               filled: true,
               fillColor: dark ? AppColors.darkCard : Colors.white,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 5,
+              ),
               border: border(),
               enabledBorder: border(),
               focusedBorder: border(focused: true),

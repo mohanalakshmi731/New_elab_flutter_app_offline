@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:html/parser.dart' as html_parser;
 
 import '../core/utils/external_link.dart';
 
@@ -15,6 +16,7 @@ class WebContentView extends StatefulWidget {
     this.html,
     this.onLoaded,
     this.showOpenExternally = false,
+    this.offline = false,
   }) : assert(url != null || html != null, 'Provide url or html');
 
   final String? url;
@@ -28,6 +30,7 @@ class WebContentView extends StatefulWidget {
 
   /// Shows a small "open in browser" button (useful on desktop).
   final bool showOpenExternally;
+  final bool offline;
 
   @override
   State<WebContentView> createState() => _WebContentViewState();
@@ -37,8 +40,8 @@ class _WebContentViewState extends State<WebContentView> {
   String? _error;
   InAppWebViewController? _controller;
 
-  static final _settings = InAppWebViewSettings(
-    javaScriptEnabled: true,
+  InAppWebViewSettings get _settings => InAppWebViewSettings(
+    javaScriptEnabled: !widget.offline,
     mediaPlaybackRequiresUserGesture: false,
     allowsInlineMediaPlayback: true,
     iframeAllowFullscreen: true,
@@ -50,7 +53,9 @@ class _WebContentViewState extends State<WebContentView> {
   @override
   void didUpdateWidget(covariant WebContentView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.url != widget.url || oldWidget.html != widget.html) {
+    if (oldWidget.url != widget.url ||
+        oldWidget.html != widget.html ||
+        oldWidget.offline != widget.offline) {
       _load();
     }
   }
@@ -60,9 +65,15 @@ class _WebContentViewState extends State<WebContentView> {
     if (c == null) return;
     setState(() => _error = null);
     if (widget.html != null) {
-      c.loadData(data: wrapHtml(widget.html!));
+      c.loadData(
+        data: widget.offline
+            ? wrapOfflineHtml(widget.html!)
+            : wrapHtml(widget.html!),
+      );
     } else if (widget.url != null) {
-      c.loadUrl(urlRequest: URLRequest(url: WebUri(normalizeEmbedUrl(widget.url!))));
+      c.loadUrl(
+        urlRequest: URLRequest(url: WebUri(normalizeEmbedUrl(widget.url!))),
+      );
     }
   }
 
@@ -71,14 +82,19 @@ class _WebContentViewState extends State<WebContentView> {
     return Stack(
       children: [
         // `.html-content-frame { background: white }`
-        if (widget.html != null) const Positioned.fill(child: ColoredBox(color: Colors.white)),
+        if (widget.html != null)
+          const Positioned.fill(child: ColoredBox(color: Colors.white)),
         InAppWebView(
           initialSettings: _settings,
           initialUrlRequest: widget.url != null && widget.html == null
               ? URLRequest(url: WebUri(normalizeEmbedUrl(widget.url!)))
               : null,
           initialData: widget.html != null
-              ? InAppWebViewInitialData(data: wrapHtml(widget.html!))
+              ? InAppWebViewInitialData(
+                  data: widget.offline
+                      ? wrapOfflineHtml(widget.html!)
+                      : wrapHtml(widget.html!),
+                )
               : null,
           onWebViewCreated: (c) => _controller = c,
           onLoadStop: (_, _) => widget.onLoaded?.call(),
@@ -88,7 +104,9 @@ class _WebContentViewState extends State<WebContentView> {
             }
           },
           onPermissionRequest: (_, request) async => PermissionResponse(
-              resources: request.resources, action: PermissionResponseAction.GRANT),
+            resources: request.resources,
+            action: PermissionResponseAction.GRANT,
+          ),
         ),
         if (_error != null)
           Positioned.fill(
@@ -100,7 +118,10 @@ class _WebContentViewState extends State<WebContentView> {
                   children: [
                     const Icon(Icons.wifi_off_rounded, size: 40),
                     const SizedBox(height: 8),
-                    Text('Could not load content', style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      'Could not load content',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     const SizedBox(height: 4),
                     Text(_error!, textAlign: TextAlign.center),
                     const SizedBox(height: 12),
@@ -129,8 +150,9 @@ class _WebContentViewState extends State<WebContentView> {
 /// `https://www.youtube.com/embed/<id>` iframes the same way).
 String normalizeEmbedUrl(String url) {
   final u = url.trim();
-  final yt = RegExp(r'(?:youtube\.com/(?:watch\?v=|shorts/)|youtu\.be/)([A-Za-z0-9_-]{6,})')
-      .firstMatch(u);
+  final yt = RegExp(
+    r'(?:youtube\.com/(?:watch\?v=|shorts/)|youtu\.be/)([A-Za-z0-9_-]{6,})',
+  ).firstMatch(u);
   if (yt != null) return 'https://www.youtube.com/embed/${yt.group(1)}';
   return u;
 }
@@ -140,8 +162,33 @@ String normalizeEmbedUrl(String url) {
 /// document is passed through unchanged; a fragment only gets a viewport tag
 /// so phones don't lay it out at 980px (an iframe uses its own width).
 String wrapHtml(String fragment) {
-  if (RegExp(r'<html[\s>]|<!doctype', caseSensitive: false).hasMatch(fragment)) return fragment;
+  if (RegExp(r'<html[\s>]|<!doctype', caseSensitive: false).hasMatch(fragment))
+    return fragment;
   return '<html><head><meta charset="utf-8">'
       '<meta name="viewport" content="width=device-width, initial-scale=1"></head>'
       '<body>$fragment</body></html>';
+}
+
+/// Preserves document layout and inline CSS while blocking remote resources.
+String wrapOfflineHtml(String source) {
+  final document = html_parser.parse(wrapHtml(source));
+  for (final element in document.querySelectorAll(
+    'script,iframe,object,embed,link,base,video,audio,meta[http-equiv]',
+  )) {
+    element.remove();
+  }
+  for (final element in document.querySelectorAll('*')) {
+    element.attributes.removeWhere(
+      (key, value) =>
+          '$key'.startsWith('on') ||
+          key == 'srcset' ||
+          ((key == 'src' || key == 'href') &&
+              !value.startsWith('data:') &&
+              !value.startsWith('#')),
+    );
+  }
+  const policy =
+      '<meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;; img-src data:; style-src &#39;unsafe-inline&#39;; font-src data:; form-action &#39;none&#39;; base-uri &#39;none&#39;">';
+  document.head!.innerHtml = '$policy${document.head!.innerHtml}';
+  return document.outerHtml;
 }

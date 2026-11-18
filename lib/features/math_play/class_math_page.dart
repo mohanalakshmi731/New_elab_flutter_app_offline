@@ -1,7 +1,9 @@
+import '../../widgets/content_image.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import '../offline/offline_runtime.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -50,14 +52,30 @@ class ClassMathPage extends ConsumerStatefulWidget {
 /// `cubic-bezier(.34,1.56,.64,1)` — the signIn / dotPop easing.
 const _kBackOut = Cubic(0.34, 1.56, 0.64, 1);
 
-TextStyle _nunito({double? size, FontWeight? weight, Color? color, double? height, double? spacing}) =>
-    GoogleFonts.nunito(
-        fontSize: size, fontWeight: weight, color: color, height: height, letterSpacing: spacing);
+TextStyle _nunito({
+  double? size,
+  FontWeight? weight,
+  Color? color,
+  double? height,
+  double? spacing,
+}) => GoogleFonts.nunito(
+  fontSize: size,
+  fontWeight: weight,
+  color: color,
+  height: height,
+  letterSpacing: spacing,
+);
 
-TextStyle _fredoka({double? size, Color? color, double? spacing}) => GoogleFonts.fredoka(
-    fontSize: size, fontWeight: FontWeight.w600, color: color, letterSpacing: spacing);
+TextStyle _fredoka({double? size, Color? color, double? spacing}) =>
+    GoogleFonts.fredoka(
+      fontSize: size,
+      fontWeight: FontWeight.w600,
+      color: color,
+      letterSpacing: spacing,
+    );
 
-class _ClassMathPageState extends ConsumerState<ClassMathPage> with TickerProviderStateMixin {
+class _ClassMathPageState extends ConsumerState<ClassMathPage>
+    with TickerProviderStateMixin {
   // ── data() ──
   String _selectedClassId = '';
   String _selectedSubjectName = '';
@@ -83,13 +101,14 @@ class _ClassMathPageState extends ConsumerState<ClassMathPage> with TickerProvid
   // ── Flutter-side state ──
   final _scroll = ScrollController();
   final _sheetPortal = OverlayPortalController();
-  late final AnimationController _sheetAnim = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 500),
-    reverseDuration: const Duration(milliseconds: 300),
-  )..addStatusListener((s) {
-      if (s == AnimationStatus.dismissed) _sheetPortal.hide();
-    });
+  late final AnimationController _sheetAnim =
+      AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 500),
+        reverseDuration: const Duration(milliseconds: 300),
+      )..addStatusListener((s) {
+        if (s == AnimationStatus.dismissed) _sheetPortal.hide();
+      });
 
   /// Sign / dot entrance animations (`signIn`, `dotPop`).
   late final AnimationController _entrance = AnimationController(vsync: this);
@@ -119,7 +138,9 @@ class _ClassMathPageState extends ConsumerState<ClassMathPage> with TickerProvid
     final ctx = _store.selectedActivityContext ?? const <String, dynamic>{};
     setState(() {
       _selectedClassId = jsTruthy(ctx['classId']) ? jsStr(ctx['classId'])! : '';
-      _selectedSubjectName = jsTruthy(ctx['subjectName']) ? jsDisplay(ctx['subjectName']) : '';
+      _selectedSubjectName = jsTruthy(ctx['subjectName'])
+          ? jsDisplay(ctx['subjectName'])
+          : '';
     });
     await _autoSelectAndLoad();
   }
@@ -139,7 +160,8 @@ class _ClassMathPageState extends ConsumerState<ClassMathPage> with TickerProvid
   String get _instituteId => _store.instituteId;
 
   /// `filteredChapters` — see the class doc.
-  List<Json> get _filteredChapters => filterChaptersBySubject(_chapters, _selectedSubjectId);
+  List<Json> get _filteredChapters =>
+      filterChaptersBySubject(_chapters, _selectedSubjectId);
 
   /// JS object key of `chaptersCache[id]`.
   static String _cacheKey(dynamic id) => jsStr(id) ?? 'null';
@@ -195,7 +217,9 @@ class _ClassMathPageState extends ConsumerState<ClassMathPage> with TickerProvid
         _error = null;
       });
 
-      final classRes = await ref.read(zslServiceProvider).getClass(_instituteId, null);
+      final classRes = await ref
+          .read(zslServiceProvider)
+          .getClass(_instituteId, null);
       final classes = arrayOr(classRes, 'classes');
       if (!hasItems(classes)) {
         if (mounted) {
@@ -211,7 +235,10 @@ class _ClassMathPageState extends ConsumerState<ClassMathPage> with TickerProvid
       _selectedClassId = jsStringOf(matchedClass, 'id');
       _selectedClassName = jsStr(matchedClass['name']);
 
-      final subjectRes = await _mz.getAllSubjects(_instituteId, _selectedClassId);
+      final subjectRes = await _mz.getAllSubjects(
+        _instituteId,
+        _selectedClassId,
+      );
       final subjects = arrayOr(subjectRes, 'subjects');
       if (!hasItems(subjects)) {
         if (mounted) {
@@ -247,11 +274,14 @@ class _ClassMathPageState extends ConsumerState<ClassMathPage> with TickerProvid
 
     await _fetchAllChapters();
     // this.$nextTick(() => this.scrollToBottom())
-    if (mounted) WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+    if (mounted)
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
   }
 
   Future<void> _fetchAllChapters() async {
-    if (_instituteId.isEmpty || _selectedClassId.isEmpty || _selectedSubjectId.isEmpty) {
+    if (_instituteId.isEmpty ||
+        _selectedClassId.isEmpty ||
+        _selectedSubjectId.isEmpty) {
       setState(() => _error = 'Missing context.');
       return;
     }
@@ -260,7 +290,11 @@ class _ClassMathPageState extends ConsumerState<ClassMathPage> with TickerProvid
         _loading = true;
         _error = null;
       });
-      final chs = await _mz.getallchpaters(_instituteId, _selectedClassId, _selectedSubjectId);
+      final chs = await _mz.getallchpaters(
+        _instituteId,
+        _selectedClassId,
+        _selectedSubjectId,
+      );
       if (!mounted) return;
       setState(() {
         _chapters = [
@@ -288,25 +322,29 @@ class _ClassMathPageState extends ConsumerState<ClassMathPage> with TickerProvid
       if (!mounted) return;
       setState(() {
         _chaptersCache = {..._chaptersCache, key: acts};
-        if (_activeChapter != null && _activeChapter!.id == chapterId) _sheetActivities = acts;
+        if (_activeChapter != null && _activeChapter!.id == chapterId)
+          _sheetActivities = acts;
       });
     } catch (e) {
       debugPrint('$e');
-      if (mounted) setState(() => _chaptersCache = {..._chaptersCache, key: const []});
+      if (mounted)
+        setState(() => _chaptersCache = {..._chaptersCache, key: const []});
     }
   }
 
   Json _activityContextPatch(Json activity) => {
-        'classId': _selectedClassId,
-        'className': _selectedClassName,
-        'subjectId': _selectedSubjectId,
-        'subjectName': _selectedSubjectName,
-        'chapterId': activity['chapter_id'],
-        'topicId': activity['topic_id'],
-        'topicName': activity['topic_name'],
-        'topicImage': jsTruthy(activity['file_path']) ? activity['file_path'] : '',
-        'activityId': activity['id'],
-      };
+    'classId': _selectedClassId,
+    'className': _selectedClassName,
+    'subjectId': _selectedSubjectId,
+    'subjectName': _selectedSubjectName,
+    'chapterId': activity['chapter_id'],
+    'topicId': activity['topic_id'],
+    'topicName': activity['topic_name'],
+    'topicImage': jsTruthy(activity['file_path']) ? activity['file_path'] : '',
+    'activityId': activity['id'],
+    'offlineQuiz': activity['offlineQuiz'] == true,
+    'fromRoute': GoRouterState.of(context).uri.path,
+  };
 
   void _goToActivity(Json activity) {
     _store.setActivityContext(_activityContextPatch(activity));
@@ -314,6 +352,10 @@ class _ClassMathPageState extends ConsumerState<ClassMathPage> with TickerProvid
   }
 
   Future<void> _goToQuiz(Json activity) async {
+    if (ref.read(offlineBrowsingProvider)) {
+      _goToActivity({...activity, 'offlineQuiz': true});
+      return;
+    }
     _store.setActivityContext(_activityContextPatch(activity));
     try {
       final res = await _mz.getZslQuestions(jsStringOf(activity, 'id'));
@@ -325,15 +367,19 @@ class _ClassMathPageState extends ConsumerState<ClassMathPage> with TickerProvid
         _quizActivity = activity;
         _quizTitle = jsTruthy(activity['name'])
             ? jsDisplay(activity['name'])
-            : (jsTruthy(activity['topic_name']) ? jsDisplay(activity['topic_name']) : 'Quiz');
+            : (jsTruthy(activity['topic_name'])
+                  ? jsDisplay(activity['topic_name'])
+                  : 'Quiz');
       });
-      unawaited(showQuizExam(
-        context,
-        questions: _quizExamQuestions,
-        quizTitle: _quizTitle,
-        onSubmitted: _onQuizSubmitted,
-        onClose: _onQuizClose,
-      ));
+      unawaited(
+        showQuizExam(
+          context,
+          questions: _quizExamQuestions,
+          quizTitle: _quizTitle,
+          onSubmitted: _onQuizSubmitted,
+          onClose: _onQuizClose,
+        ),
+      );
     } catch (e) {
       debugPrint('$e');
     }
@@ -371,7 +417,8 @@ class _ClassMathPageState extends ConsumerState<ClassMathPage> with TickerProvid
   }
 
   /// signIn: .55s + idx × .09s delay; dotPop: .45s.
-  static double _entranceSeconds(int count) => math.max(0.55 + (count - 1) * 0.09, 0.45);
+  static double _entranceSeconds(int count) =>
+      math.max(0.55 + (count - 1) * 0.09, 0.45);
 
   void _onMapVisibility(bool visible, int count) {
     if (visible == _mapShown) return;
@@ -380,7 +427,9 @@ class _ClassMathPageState extends ConsumerState<ClassMathPage> with TickerProvid
       _entrance.value = 0;
       return;
     }
-    _entrance.duration = Duration(milliseconds: (_entranceSeconds(count) * 1000).round());
+    _entrance.duration = Duration(
+      milliseconds: (_entranceSeconds(count) * 1000).round(),
+    );
     _entrance.forward(from: 0);
   }
 
@@ -408,12 +457,17 @@ class _ClassMathPageState extends ConsumerState<ClassMathPage> with TickerProvid
       body = _buildError(dark);
     } else if (filtered.isEmpty && !_loading) {
       body = Center(
-        child: Text('No chapters yet',
-            style: _nunito(
-                size: 14,
-                weight: FontWeight.w600,
-                height: TwLeading.sm,
-                color: dark ? Tw.slate500 : AppColors.primaryForeground.withValues(alpha: 0.5))),
+        child: Text(
+          'No chapters yet',
+          style: _nunito(
+            size: 14,
+            weight: FontWeight.w600,
+            height: TwLeading.sm,
+            color: dark
+                ? Tw.slate500
+                : AppColors.primaryForeground.withValues(alpha: 0.5),
+          ),
+        ),
       );
     } else {
       body = _buildMap(context, dark, filtered);
@@ -439,30 +493,39 @@ class _ClassMathPageState extends ConsumerState<ClassMathPage> with TickerProvid
   }
 
   Widget _buildLoading(bool dark) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // `rounded-full border-[3px] animate-spin` + `border-t-*`
-            BorderSpinner(
-              size: 44,
-              stroke: 3,
-              track: dark ? Tw.slate800 : AppColors.primaryForeground.withValues(alpha: 0.2),
-              head: dark ? AppColors.darkPrimary : AppColors.primaryForeground,
-            ),
-            const SizedBox(height: 16),
-            Text('Loading chapters…',
-                style: _nunito(
-                    size: 14,
-                    weight: FontWeight.w700,
-                    spacing: 0.35,
-                    height: TwLeading.sm,
-                    color: dark ? Tw.slate400 : AppColors.primaryForeground.withValues(alpha: 0.7))),
-          ],
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // `rounded-full border-[3px] animate-spin` + `border-t-*`
+        BorderSpinner(
+          size: 44,
+          stroke: 3,
+          track: dark
+              ? Tw.slate800
+              : AppColors.primaryForeground.withValues(alpha: 0.2),
+          head: dark ? AppColors.darkPrimary : AppColors.primaryForeground,
         ),
-      );
+        const SizedBox(height: 16),
+        Text(
+          'Loading chapters…',
+          style: _nunito(
+            size: 14,
+            weight: FontWeight.w700,
+            spacing: 0.35,
+            height: TwLeading.sm,
+            color: dark
+                ? Tw.slate400
+                : AppColors.primaryForeground.withValues(alpha: 0.7),
+          ),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildError(bool dark) {
-    final destructive = dark ? AppColors.darkDestructive : AppColors.destructive;
+    final destructive = dark
+        ? AppColors.darkDestructive
+        : AppColors.destructive;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -474,17 +537,33 @@ class _ClassMathPageState extends ConsumerState<ClassMathPage> with TickerProvid
               height: 56,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: dark ? Tw.slate900 : AppColors.primaryForeground.withValues(alpha: 0.1),
+                color: dark
+                    ? Tw.slate900
+                    : AppColors.primaryForeground.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                    color: dark ? Tw.slate800 : AppColors.primaryForeground.withValues(alpha: 0.2)),
+                  color: dark
+                      ? Tw.slate800
+                      : AppColors.primaryForeground.withValues(alpha: 0.2),
+                ),
               ),
-              child: SvgIcon(SvgGlyph.alertCircle, size: 24, color: destructive),
+              child: SvgIcon(
+                SvgGlyph.alertCircle,
+                size: 24,
+                color: destructive,
+              ),
             ),
             const SizedBox(height: 16),
-            Text(_error ?? '',
-                textAlign: TextAlign.center,
-                style: _nunito(size: 14, weight: FontWeight.w600, height: TwLeading.sm, color: destructive)),
+            Text(
+              _error ?? '',
+              textAlign: TextAlign.center,
+              style: _nunito(
+                size: 14,
+                weight: FontWeight.w600,
+                height: TwLeading.sm,
+                color: destructive,
+              ),
+            ),
             const SizedBox(height: 16),
             AppButton(
               label: 'Retry',

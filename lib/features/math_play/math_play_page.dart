@@ -1,3 +1,4 @@
+import '../../widgets/content_image.dart';
 import 'dart:async';
 import 'dart:ui' as ui;
 

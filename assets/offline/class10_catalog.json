@@ -1,0 +1,839 @@
+{
+  "version": 1,
+  "class_level": 10,
+  "activities": [
+    {
+      "mapping_id": 2261,
+      "zone": "math",
+      "chapter_number": 1,
+      "title": "Decimal Sorter",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2257,
+      "zone": "math",
+      "chapter_number": 1,
+      "title": "Royal Tiler",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2259,
+      "zone": "math",
+      "chapter_number": 1,
+      "title": "Factor Space Academy",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2260,
+      "zone": "math",
+      "chapter_number": 1,
+      "title": "LCMHCF",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2262,
+      "zone": "math",
+      "chapter_number": 1,
+      "title": "Irrational Spiral",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2311,
+      "zone": "math",
+      "chapter_number": 2,
+      "title": "Parabola Skater",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2316,
+      "zone": "math",
+      "chapter_number": 2,
+      "title": "Cubic Coaster",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2317,
+      "zone": "math",
+      "chapter_number": 2,
+      "title": "Division Maze",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2314,
+      "zone": "math",
+      "chapter_number": 2,
+      "title": "Polynomial Constructor",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2312,
+      "zone": "math",
+      "chapter_number": 2,
+      "title": "Zeroes Balance Beam",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2325,
+      "zone": "math",
+      "chapter_number": 3,
+      "title": "Elimination Arena",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2319,
+      "zone": "math",
+      "chapter_number": 3,
+      "title": "Line Interceptor",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2321,
+      "zone": "math",
+      "chapter_number": 3,
+      "title": "Ratio Analyser",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2323,
+      "zone": "math",
+      "chapter_number": 3,
+      "title": "Substitution Detective",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2327,
+      "zone": "math",
+      "chapter_number": 3,
+      "title": "Word Problem Translator",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2332,
+      "zone": "math",
+      "chapter_number": 4,
+      "title": "Discriminant Radar",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2330,
+      "zone": "math",
+      "chapter_number": 4,
+      "title": "Factorisation",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2334,
+      "zone": "math",
+      "chapter_number": 4,
+      "title": "Formula Pilot",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2336,
+      "zone": "math",
+      "chapter_number": 4,
+      "title": "Garden Architect",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2328,
+      "zone": "math",
+      "chapter_number": 4,
+      "title": "Quadratic",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2342,
+      "zone": "math",
+      "chapter_number": 5,
+      "title": "Gauss Challenge",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2339,
+      "zone": "math",
+      "chapter_number": 5,
+      "title": "Ladder Climber",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2341,
+      "zone": "math",
+      "chapter_number": 5,
+      "title": "Missing Link",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2337,
+      "zone": "math",
+      "chapter_number": 5,
+      "title": "Pattern Spotter",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2344,
+      "zone": "math",
+      "chapter_number": 5,
+      "title": "Savings Planner",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2346,
+      "zone": "math",
+      "chapter_number": 6,
+      "title": "Shape Shifter",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2348,
+      "zone": "math",
+      "chapter_number": 6,
+      "title": "Thales Ladder",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2350,
+      "zone": "math",
+      "chapter_number": 6,
+      "title": "Similarity Scanner",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2450,
+      "zone": "math",
+      "chapter_number": 6,
+      "title": "Shadow Surveyor",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2353,
+      "zone": "math",
+      "chapter_number": 6,
+      "title": "Area Ratio Cutter",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2362,
+      "zone": "math",
+      "chapter_number": 7,
+      "title": "Area Surveyor",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2364,
+      "zone": "math",
+      "chapter_number": 7,
+      "title": "Collinear Checker",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2356,
+      "zone": "math",
+      "chapter_number": 7,
+      "title": "Gps Navigator",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2358,
+      "zone": "math",
+      "chapter_number": 7,
+      "title": "Midpoint Meeting",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2360,
+      "zone": "math",
+      "chapter_number": 7,
+      "title": "Section Divider",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2762,
+      "zone": "math",
+      "chapter_number": 8,
+      "title": "Angle Evaluator",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2248,
+      "zone": "math",
+      "chapter_number": 8,
+      "title": "Complementary Switch",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2254,
+      "zone": "math",
+      "chapter_number": 8,
+      "title": "Height Estimator",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2242,
+      "zone": "math",
+      "chapter_number": 8,
+      "title": "Ratio Builder",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2761,
+      "zone": "math",
+      "chapter_number": 8,
+      "title": "Special Angle Dial",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2236,
+      "zone": "math",
+      "chapter_number": 9,
+      "title": "Broken Tree",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2228,
+      "zone": "math",
+      "chapter_number": 9,
+      "title": "Clinometer Constructor",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2233,
+      "zone": "math",
+      "chapter_number": 9,
+      "title": "Rescue Chopper",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2239,
+      "zone": "math",
+      "chapter_number": 9,
+      "title": "Shadow Shifter",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2230,
+      "zone": "math",
+      "chapter_number": 9,
+      "title": "Tower Scaler",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2272,
+      "zone": "math",
+      "chapter_number": 10,
+      "title": "Circumscribed Fort",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2270,
+      "zone": "math",
+      "chapter_number": 10,
+      "title": "Concentric Ring",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2268,
+      "zone": "math",
+      "chapter_number": 10,
+      "title": "External Twins",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2266,
+      "zone": "math",
+      "chapter_number": 10,
+      "title": "Radius Radar",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2264,
+      "zone": "math",
+      "chapter_number": 10,
+      "title": "Tangent Touch",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2276,
+      "zone": "math",
+      "chapter_number": 11,
+      "title": "Arc Walker",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2281,
+      "zone": "math",
+      "chapter_number": 11,
+      "title": "Brooch Maker",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2274,
+      "zone": "math",
+      "chapter_number": 11,
+      "title": "Pizza Slicer",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2278,
+      "zone": "math",
+      "chapter_number": 11,
+      "title": "Segment Shaper",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2280,
+      "zone": "math",
+      "chapter_number": 11,
+      "title": "Wiper Blade",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2285,
+      "zone": "math",
+      "chapter_number": 12,
+      "title": "Capsule Coater",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2289,
+      "zone": "math",
+      "chapter_number": 12,
+      "title": "Clay Moulder",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2291,
+      "zone": "math",
+      "chapter_number": 12,
+      "title": "Embankment Builder",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2283,
+      "zone": "math",
+      "chapter_number": 12,
+      "title": "Toy Assembler",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2287,
+      "zone": "math",
+      "chapter_number": 12,
+      "title": "Volume Builder",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2293,
+      "zone": "math",
+      "chapter_number": 13,
+      "title": "Mean Machine",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2296,
+      "zone": "math",
+      "chapter_number": 13,
+      "title": "Median Line",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2300,
+      "zone": "math",
+      "chapter_number": 13,
+      "title": "Missing Frequency",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2295,
+      "zone": "math",
+      "chapter_number": 13,
+      "title": "Modal Tower",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2298,
+      "zone": "math",
+      "chapter_number": 13,
+      "title": "Ogive Tracker",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2306,
+      "zone": "math",
+      "chapter_number": 14,
+      "title": "Card Shark",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2302,
+      "zone": "math",
+      "chapter_number": 14,
+      "title": "Coin Flipper",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2303,
+      "zone": "math",
+      "chapter_number": 14,
+      "title": "Dice Roller",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2307,
+      "zone": "math",
+      "chapter_number": 14,
+      "title": "Marble Picker",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2309,
+      "zone": "math",
+      "chapter_number": 14,
+      "title": "Probability Scale",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2017,
+      "zone": "science",
+      "chapter_number": 1,
+      "title": "Iron Steam Challenge",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2018,
+      "zone": "science",
+      "chapter_number": 1,
+      "title": "Decomposition Reaction",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2019,
+      "zone": "science",
+      "chapter_number": 1,
+      "title": "Copper Oxide Mystery",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 4366,
+      "zone": "science",
+      "chapter_number": 1,
+      "title": "Battle Against Corrosion",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 4367,
+      "zone": "science",
+      "chapter_number": 1,
+      "title": "Kitchen Dilemma",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2020,
+      "zone": "science",
+      "chapter_number": 2,
+      "title": "Acids Base Lab",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2022,
+      "zone": "science",
+      "chapter_number": 2,
+      "title": "Pop Sound Challenge",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2024,
+      "zone": "science",
+      "chapter_number": 2,
+      "title": "Phscale Basics",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2025,
+      "zone": "science",
+      "chapter_number": 2,
+      "title": "Salt Factory",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 4368,
+      "zone": "science",
+      "chapter_number": 2,
+      "title": "Hydration Chamber",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2026,
+      "zone": "science",
+      "chapter_number": 3,
+      "title": "Physical Properties",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2027,
+      "zone": "science",
+      "chapter_number": 3,
+      "title": "Reactivity Duel",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2028,
+      "zone": "science",
+      "chapter_number": 3,
+      "title": "Ionic Bond Builder",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2029,
+      "zone": "science",
+      "chapter_number": 3,
+      "title": "Extraction Plant",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 4369,
+      "zone": "science",
+      "chapter_number": 3,
+      "title": "The Refining Unit For Copper",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2033,
+      "zone": "science",
+      "chapter_number": 4,
+      "title": "Covalent Bond Architect",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2034,
+      "zone": "science",
+      "chapter_number": 4,
+      "title": "Hydrocarbon Factory",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2035,
+      "zone": "science",
+      "chapter_number": 4,
+      "title": "Combustion Lab",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2036,
+      "zone": "science",
+      "chapter_number": 4,
+      "title": "Soapand Micelle Plant",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 4370,
+      "zone": "science",
+      "chapter_number": 4,
+      "title": "Manufacturing Soap",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 4340,
+      "zone": "science",
+      "chapter_number": 5,
+      "title": "Excretion In Plants",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 4341,
+      "zone": "science",
+      "chapter_number": 5,
+      "title": "Respiration In Plants",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 4342,
+      "zone": "science",
+      "chapter_number": 6,
+      "title": "Coordination In Plants",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2959,
+      "zone": "science",
+      "chapter_number": 9,
+      "title": "Lens Lab",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2950,
+      "zone": "science",
+      "chapter_number": 9,
+      "title": "Lens Power Lab",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2957,
+      "zone": "science",
+      "chapter_number": 9,
+      "title": "Refraction Lab",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2961,
+      "zone": "science",
+      "chapter_number": 9,
+      "title": "Spherical Mirrorllab",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2954,
+      "zone": "science",
+      "chapter_number": 9,
+      "title": "Speed Trap",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2654,
+      "zone": "science",
+      "chapter_number": 10,
+      "title": "Defects Of Vision",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 3860,
+      "zone": "science",
+      "chapter_number": 10,
+      "title": "Prism Refraction Dispersion",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 3861,
+      "zone": "science",
+      "chapter_number": 10,
+      "title": "Atomospheric Optics",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 4372,
+      "zone": "science",
+      "chapter_number": 10,
+      "title": "Automatic Shutter",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 4375,
+      "zone": "science",
+      "chapter_number": 10,
+      "title": "Color Of The Sky",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2042,
+      "zone": "science",
+      "chapter_number": 11,
+      "title": "Charge Flowand Circuits",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2043,
+      "zone": "science",
+      "chapter_number": 11,
+      "title": "Potential Difference Duel",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2044,
+      "zone": "science",
+      "chapter_number": 11,
+      "title": "Ohm SLawand Resistance",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2045,
+      "zone": "science",
+      "chapter_number": 11,
+      "title": "Resistivity Workshop",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2046,
+      "zone": "science",
+      "chapter_number": 11,
+      "title": "Series Parallel Master",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2047,
+      "zone": "science",
+      "chapter_number": 11,
+      "title": "Heating Effectand Power Plant",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2048,
+      "zone": "science",
+      "chapter_number": 12,
+      "title": "Straight Conductor Thumb Rule",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2049,
+      "zone": "science",
+      "chapter_number": 12,
+      "title": "Solenoid Electromagnet Plant",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2050,
+      "zone": "science",
+      "chapter_number": 12,
+      "title": "Motor Principle Lab",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2051,
+      "zone": "science",
+      "chapter_number": 12,
+      "title": "Electromagnetic Induction Lab",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 3862,
+      "zone": "science",
+      "chapter_number": 12,
+      "title": "Domestic Safety Hub",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2052,
+      "zone": "science",
+      "chapter_number": 13,
+      "title": "Natural Pond",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2053,
+      "zone": "science",
+      "chapter_number": 13,
+      "title": "Food Chain Gallery",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2054,
+      "zone": "science",
+      "chapter_number": 13,
+      "title": "Invisible Entry",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 2055,
+      "zone": "science",
+      "chapter_number": 13,
+      "title": "Ozone Shield",
+      "class_level": 10
+    },
+    {
+      "mapping_id": 4374,
+      "zone": "science",
+      "chapter_number": 13,
+      "title": "Sustainable Choices",
+      "class_level": 10
+    }
+  ]
+}

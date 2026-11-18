@@ -1,3 +1,4 @@
+import '../../widgets/content_image.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
@@ -17,6 +18,7 @@ import '../../widgets/app_loader.dart';
 import '../mathzoro/mz_ui.dart' show CssLinearGradient;
 import '../quiz/quiz_exam.dart';
 import 'zone_widgets.dart';
+import '../offline/offline_runtime.dart';
 import 'zones_controller.dart';
 import 'zones_logic.dart';
 
@@ -155,12 +157,15 @@ class _ZonePageState extends ConsumerState<_ZonePage> {
   double _getActivityStars(Json activity) =>
       ticketsToStars(_getActivityPerf(activity)?['earned_tickets'] ?? 0);
 
-  Color _currentStarColor(double filled) => starColor(filled, science: !_isMath);
+  Color _currentStarColor(double filled) =>
+      starColor(filled, science: !_isMath);
 
   /// `flagColor(i)`.
   ({Color fill, Color stroke}) _flagColor(int i, ColorScheme colors) {
-    if (_selectedChapterIndex == i) return (fill: colors.primary, stroke: colors.secondary);
-    if (i < _selectedChapterIndex) return (fill: colors.secondary, stroke: colors.primary);
+    if (_selectedChapterIndex == i)
+      return (fill: colors.primary, stroke: colors.secondary);
+    if (i < _selectedChapterIndex)
+      return (fill: colors.secondary, stroke: colors.primary);
     return (fill: const Color(0xFF94A3B8), stroke: const Color(0xFF475569));
   }
 
@@ -171,7 +176,10 @@ class _ZonePageState extends ConsumerState<_ZonePage> {
   Future<void> _refreshPerformance() async {
     if (!jsTruthy(_selectedSubjectId) || !jsTruthy(_selectedClassId)) return;
     try {
-      final perf = await _ctrl.getSubjectPerformance(_selectedSubjectId, _selectedClassId);
+      final perf = await _ctrl.getSubjectPerformance(
+        _selectedSubjectId,
+        _selectedClassId,
+      );
       _update(() => _subjectPerformance = dataOr(perf, null));
     } catch (e) {
       debugPrint('Performance refresh failed: $e');
@@ -190,12 +198,20 @@ class _ZonePageState extends ConsumerState<_ZonePage> {
 
   static String _activityLabel(Json activity) => jsTruthy(activity['name'])
       ? jsStr(activity['name'])!
-      : (jsTruthy(activity['topic_name']) ? jsStr(activity['topic_name'])! : '');
+      : (jsTruthy(activity['topic_name'])
+            ? jsStr(activity['topic_name'])!
+            : '');
 
   Future<void> _startQuiz(Json activity) async {
+    if (ref.read(offlineBrowsingProvider)) {
+      _goToActivity({...activity, 'offlineQuiz': true});
+      return;
+    }
     List<dynamic> questions;
     try {
-      final response = await _ctrl.getZslQuestions(jsStr(activity['id']) ?? 'undefined');
+      final response = await _ctrl.getZslQuestions(
+        jsStr(activity['id']) ?? 'undefined',
+      );
       final q = dataOr(response, const []);
       if (q is! List || q.isEmpty) {
         _openNoQuestions(_activityLabel(activity));
@@ -249,9 +265,15 @@ class _ZonePageState extends ConsumerState<_ZonePage> {
   void _scrollPathRight() {
     if (!_roadmapScroll.hasClients) return;
     final pos = _roadmapScroll.position;
-    final target = (pos.pixels + 300).clamp(pos.minScrollExtent, pos.maxScrollExtent);
-    _roadmapScroll.animateTo(target,
-        duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
+    final target = (pos.pixels + 300).clamp(
+      pos.minScrollExtent,
+      pos.maxScrollExtent,
+    );
+    _roadmapScroll.animateTo(
+      target,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOut,
+    );
   }
 
   // ── data fetching ────────────────────────────────────────────────────────
@@ -273,18 +295,26 @@ class _ZonePageState extends ConsumerState<_ZonePage> {
       final list = jsTruthy(data) ? data : const [];
       // `[...this.allClassesData]` throws for a non-iterable response.
       if (list is! List) throw StateError('allClassesData is not iterable');
-      _update(() => _allClasses = [for (final c in list) asMap(c) ?? <String, dynamic>{}]);
+      _update(
+        () => _allClasses = [
+          for (final c in list) asMap(c) ?? <String, dynamic>{},
+        ],
+      );
 
       if (_allClasses.isNotEmpty) {
         final persisted = _ctrl.persistedClassId;
         final persistedKey = jsStr(persisted) ?? 'null';
-        final exists = _allClasses.any((c) => (jsStr(c['id']) ?? 'undefined') == persistedKey);
+        final exists = _allClasses.any(
+          (c) => (jsStr(c['id']) ?? 'undefined') == persistedKey,
+        );
         final selectedId = exists ? persisted : _allClasses.first['id'];
         // `find(c => c.id === this.selectedClassId)` — strict equality.
         final cls = _allClasses.where((c) => c['id'] == selectedId).firstOrNull;
         _update(() {
           _selectedClassId = selectedId;
-          _selectedClassName = jsTruthy(cls?['name']) ? jsStr(cls!['name'])! : '';
+          _selectedClassName = jsTruthy(cls?['name'])
+              ? jsStr(cls!['name'])!
+              : '';
         });
         _ctrl.persistedClassId = selectedId;
         await _onClassChange();
@@ -325,16 +355,23 @@ class _ZonePageState extends ConsumerState<_ZonePage> {
       if (!jsTruthy(_selectedClassId) || !jsTruthy(_instituteId)) return;
       _update(() => _loading = true);
 
-      final subjects = asList(await _ctrl.getAllSubjects(_instituteId, _selectedClassId));
+      final subjects = asList(
+        await _ctrl.getAllSubjects(_instituteId, _selectedClassId),
+      );
       if (!mounted || subjects.isEmpty) return;
 
       if (_isMath) {
-        final mathZone = subjects.where((s) => asMap(s)?['zone'] == 'MATH_ZONE').firstOrNull;
-        final subjectId = mathZone != null ? asMap(mathZone)!['id'] : asMap(subjects.first)?['id'];
+        final mathZone = subjects
+            .where((s) => asMap(s)?['zone'] == 'MATH_ZONE')
+            .firstOrNull;
+        final subjectId = mathZone != null
+            ? asMap(mathZone)!['id']
+            : asMap(subjects.first)?['id'];
         _update(() => _selectedSubjectId = subjectId);
       } else {
-        final scienceSubject =
-            subjects.where((s) => asMap(s)?['zone'] == 'SCIENCE_ZONE').firstOrNull;
+        final scienceSubject = subjects
+            .where((s) => asMap(s)?['zone'] == 'SCIENCE_ZONE')
+            .firstOrNull;
         if (scienceSubject == null) {
           debugPrint('No SCIENCE_ZONE subject found');
           return;
@@ -350,15 +387,22 @@ class _ZonePageState extends ConsumerState<_ZonePage> {
       _update(() => _loading = false);
 
       // Math Zone: wait for the canvas to paint, then re-confirm the selection.
-      if (_isMath && mounted && _chapters.isNotEmpty && _activeChapter != null) {
-        final idx = _chapters.indexWhere((ch) => ch['id'] == _activeChapter!['id']);
+      if (_isMath &&
+          mounted &&
+          _chapters.isNotEmpty &&
+          _activeChapter != null) {
+        final idx = _chapters.indexWhere(
+          (ch) => ch['id'] == _activeChapter!['id'],
+        );
         if (idx >= 0) _update(() => _selectedChapterIndex = idx);
       }
     }
   }
 
   Future<void> _onSubjectChange() async {
-    if (!jsTruthy(_selectedSubjectId) || !jsTruthy(_instituteId) || !jsTruthy(_selectedClassId)) {
+    if (!jsTruthy(_selectedSubjectId) ||
+        !jsTruthy(_instituteId) ||
+        !jsTruthy(_selectedClassId)) {
       return;
     }
     try {
@@ -374,13 +418,19 @@ class _ZonePageState extends ConsumerState<_ZonePage> {
         _update(() => _loading = true);
       }
 
-      final chapters =
-          await _ctrl.getallchpaters(_instituteId, _selectedClassId, _selectedSubjectId as Object);
+      final chapters = await _ctrl.getallchpaters(
+        _instituteId,
+        _selectedClassId,
+        _selectedSubjectId as Object,
+      );
       if (!mounted) return;
       _update(() => _chapters = _maps(chapters));
 
       try {
-        final perf = await _ctrl.getSubjectPerformance(_selectedSubjectId, _selectedClassId);
+        final perf = await _ctrl.getSubjectPerformance(
+          _selectedSubjectId,
+          _selectedClassId,
+        );
         _update(() => _subjectPerformance = perf);
       } catch (e) {
         debugPrint('Error fetching subject performance: $e');
@@ -418,7 +468,10 @@ class _ZonePageState extends ConsumerState<_ZonePage> {
       _selectedChapterIndex = index;
       _activeChapter = chapter;
     });
-    _ctrl.setPersistedChapterId(_style.persistedChapterKey, jsStr(chapter['id']) ?? 'undefined');
+    _ctrl.setPersistedChapterId(
+      _style.persistedChapterKey,
+      jsStr(chapter['id']) ?? 'undefined',
+    );
     await _loadChapterActivities(chapter['id']);
   }
 
@@ -449,8 +502,9 @@ class _ZonePageState extends ConsumerState<_ZonePage> {
   Future<void> _fetchAllActivities() async {
     try {
       if (!jsTruthy(_instituteId) || _chapters.isEmpty) return;
-      final responses =
-          await Future.wait(_chapters.map((ch) => _ctrl.getZslLinks(_instituteId, ch['id'])));
+      final responses = await Future.wait(
+        _chapters.map((ch) => _ctrl.getZslLinks(_instituteId, ch['id'])),
+      );
       _update(() => _allActivitiesData = flatOne(responses));
     } catch (e) {
       debugPrint('fetchAllActivities failed: $e');
@@ -460,17 +514,25 @@ class _ZonePageState extends ConsumerState<_ZonePage> {
   /// `goToActivity(activity)` — stores the activity context and opens
   /// `/activitylibrary`.
   void _goToActivity(Json activity) {
-    final chapterId =
-        jsTruthy(activity['chapter_id']) ? activity['chapter_id'] : _activeChapter?['id'];
+    final chapterId = jsTruthy(activity['chapter_id'])
+        ? activity['chapter_id']
+        : _activeChapter?['id'];
     final wanted = jsStr(chapterId) ?? 'undefined';
-    final chapter = _chapters.where((ch) => (jsStr(ch['id']) ?? 'undefined') == wanted).firstOrNull;
+    final chapter = _chapters
+        .where((ch) => (jsStr(ch['id']) ?? 'undefined') == wanted)
+        .firstOrNull;
     _ctrl.setActivityContext({
       'chapterId': chapterId,
       'chapterName': jsTruthy(chapter?['name']) ? chapter!['name'] : '',
       'topicId': jsTruthy(activity['topic_id']) ? activity['topic_id'] : '',
-      'topicName': jsTruthy(activity['topic_name']) ? activity['topic_name'] : '',
-      'topicImage': jsTruthy(activity['file_path']) ? activity['file_path'] : '',
+      'topicName': jsTruthy(activity['topic_name'])
+          ? activity['topic_name']
+          : '',
+      'topicImage': jsTruthy(activity['file_path'])
+          ? activity['file_path']
+          : '',
       'activityId': activity['id'],
+      'offlineQuiz': activity['offlineQuiz'] == true,
       'classId': _selectedClassId,
       'className': _selectedClassName,
       'subjectId': _selectedSubjectId,
@@ -497,14 +559,20 @@ class _ZonePageState extends ConsumerState<_ZonePage> {
     final card = Container(
       padding: EdgeInsets.all(md ? 24 : (sm ? 20 : 16)),
       decoration: BoxDecoration(
-        color: dark ? Tw.slate900.withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.75),
+        color: dark
+            ? Tw.slate900.withValues(alpha: 0.8)
+            : Colors.white.withValues(alpha: 0.75),
         borderRadius: BorderRadius.circular(32),
         border: Border.all(
           width: 2,
-          color: dark ? Tw.slate800.withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.4),
+          color: dark
+              ? Tw.slate800.withValues(alpha: 0.8)
+              : Colors.white.withValues(alpha: 0.4),
         ),
         // shadow-[0_20px_50px_-12px_rgba(99,102,241,0.15)]
-        boxShadow: [cssShadow(0, 20, 50, -12, const Color.fromRGBO(99, 102, 241, 0.15))],
+        boxShadow: [
+          cssShadow(0, 20, 50, -12, const Color.fromRGBO(99, 102, 241, 0.15)),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -537,19 +605,32 @@ class _ZonePageState extends ConsumerState<_ZonePage> {
                     Positioned(
                       top: -200,
                       right: -100,
-                      child: GlowBlob(color: glow, opacity: 0.2, diameter: 600, blur: 120),
+                      child: GlowBlob(
+                        color: glow,
+                        opacity: 0.2,
+                        diameter: 600,
+                        blur: 120,
+                      ),
                     ),
                     Positioned(
                       bottom: 0,
                       left: -100,
-                      child: GlowBlob(color: glow, opacity: 0.1, diameter: 400, blur: 100),
+                      child: GlowBlob(
+                        color: glow,
+                        opacity: 0.1,
+                        diameter: 400,
+                        blur: 100,
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
             SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: sm ? 16 : 8, vertical: sm ? 24 : 16),
+              padding: EdgeInsets.symmetric(
+                horizontal: sm ? 16 : 8,
+                vertical: sm ? 24 : 16,
+              ),
               child: card,
             ),
           ],

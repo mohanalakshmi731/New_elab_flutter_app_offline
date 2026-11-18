@@ -1,8 +1,10 @@
+import '../../widgets/content_image.dart';
 import 'dart:async';
 import 'dart:ui' show ImageFilter;
 
 import 'package:bootstrap_icons/bootstrap_icons.dart';
 import 'package:flutter/material.dart';
+import '../offline/offline_activity_entry.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -25,7 +27,8 @@ import '../institutes/institute_widgets.dart' show SpinIcon;
 import '../mathzoro/mz_ui.dart' show CssLinearGradient;
 import '../quiz/quiz_exam.dart';
 import '../quiz/bridged_web_view.dart';
-import '../student_activity/student_activity_logic.dart' show isXpSuccessMessage, isXpChannelSuccess;
+import '../student_activity/student_activity_logic.dart'
+    show isXpSuccessMessage, isXpChannelSuccess;
 import '../student_activity/zsl_activity_controller.dart';
 import '../take_exam/exam_window.dart';
 import 'library_controller.dart';
@@ -47,7 +50,8 @@ class _ActivityLibraryPageContent extends ConsumerStatefulWidget {
   const _ActivityLibraryPageContent({super.key});
 
   @override
-  ConsumerState<_ActivityLibraryPageContent> createState() => _ActivityLibraryPageState();
+  ConsumerState<_ActivityLibraryPageContent> createState() =>
+      _ActivityLibraryPageState();
 }
 
 class _TabMeta {
@@ -66,7 +70,8 @@ const _tabMeta = <String, _TabMeta>{
   'quiz': _TabMeta('Quiz', BootstrapIcons.patch_question),
 };
 
-class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageContent> {
+class _ActivityLibraryPageState
+    extends ConsumerState<_ActivityLibraryPageContent> {
   // ── data(): quiz ──
   bool _quizSubmitted = false;
   dynamic _quizResult;
@@ -124,9 +129,14 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
   String? _completedUrl;
   bool _recordingCompletion = false;
 
-  Future<void> _recordPracticeCompletion(dynamic data, {bool xpChannel = false}) async {
-    if (!mounted || _container.read(labPracticeProvider)?.practice != true ||
-        _recordingCompletion || _completedUrl == _signedUrl ||
+  Future<void> _recordPracticeCompletion(
+    dynamic data, {
+    bool xpChannel = false,
+  }) async {
+    if (!mounted ||
+        _container.read(labPracticeProvider)?.practice != true ||
+        _recordingCompletion ||
+        _completedUrl == _signedUrl ||
         !(xpChannel ? isXpChannelSuccess(data) : isXpSuccessMessage(data))) {
       return;
     }
@@ -135,15 +145,23 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
     if (id == null) return;
     _recordingCompletion = true;
     try {
-      await _container.read(zslActivityProvider.notifier).recordZslActivityPerformance('$id', _classId);
+      await _container
+          .read(zslActivityProvider.notifier)
+          .recordZslActivityPerformance('$id', _classId);
       _completedUrl = url;
     } catch (error) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not record activity completion. Please try again.')));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Could not record activity completion. Please try again.',
+            ),
+          ),
+        );
     } finally {
       _recordingCompletion = false;
     }
   }
-
 
   /// Keeps the activity WebView alive when it moves into the fullscreen layer.
   final _activityViewKey = GlobalKey();
@@ -154,7 +172,8 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
   /// is left (like the web's component methods), when `ref` is unusable.
   late final ProviderContainer _container;
 
-  LibraryController get _ctrl => _container.read(libraryControllerProvider.notifier);
+  LibraryController get _ctrl =>
+      _container.read(libraryControllerProvider.notifier);
   SessionState get _session => _container.read(sessionProvider);
   AppLanguage get _language => _session.language;
 
@@ -186,13 +205,26 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
     _topicId = jsTruthy(ctx['topicId']) ? jsString(ctx['topicId']) : '';
     _topicName = jsOr([ctx['topicName'], 'Unknown Topic']);
     _classId = jsOr([ctx['classId'], '']);
-    _batchId = jsOr([ctx['batchId'], ctx['batch_id'], selectedClass?['batch_id'], batchDetails?.id, '']);
-    _batchName =
-        jsOr([ctx['batchName'], ctx['batch_name'], selectedClass?['batch_name'], batchDetails?.name, '']);
+    _batchId = jsOr([
+      ctx['batchId'],
+      ctx['batch_id'],
+      selectedClass?['batch_id'],
+      batchDetails?.id,
+      '',
+    ]);
+    _batchName = jsOr([
+      ctx['batchName'],
+      ctx['batch_name'],
+      selectedClass?['batch_name'],
+      batchDetails?.name,
+      '',
+    ]);
     _subjectId = jsOr([ctx['subjectId'], '']);
     _subjectName = jsOr([ctx['subjectName'], 'Unknown Subject']);
     _activityIdFromRoute = jsOr([ctx['activityId'], '']);
-    _selectedChapterId = jsTruthy(ctx['chapterId']) ? jsString(ctx['chapterId']) : '';
+    _selectedChapterId = jsTruthy(ctx['chapterId'])
+        ? jsString(ctx['chapterId'])
+        : '';
     _selectedSubjectId = jsOr([ctx['subjectId'], '']);
     _selectedClassId = jsOr([ctx['classId'], '']);
 
@@ -208,9 +240,16 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
   Future<void> _mounted() async {
     await _guard(_fetchAllChapters);
     if (!mounted) return;
-    _trackingInterval = Timer.periodic(Duration(seconds: _container.read(labPracticeProvider)?.practice == true ? 10 : 5), (_) {
-      if (jsTruthy(_trackingId)) _ctrl.trackActivity(jsString(_trackingId));
-    });
+    _trackingInterval = Timer.periodic(
+      Duration(
+        seconds: _container.read(labPracticeProvider)?.practice == true
+            ? 10
+            : 5,
+      ),
+      (_) {
+        if (jsTruthy(_trackingId)) _ctrl.trackActivity(jsString(_trackingId));
+      },
+    );
   }
 
   @override
@@ -223,7 +262,8 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
 
   // ── computed ──
 
-  Map<String, dynamic>? get _selectedActivityContext => _ctrl.selectedActivityContext;
+  Map<String, dynamic>? get _selectedActivityContext =>
+      _ctrl.selectedActivityContext;
 
   Object? get _instituteId => jsOr([_session.userInfo?.instituteId, '']);
 
@@ -232,7 +272,11 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
       isInstructorQuizRole(_session.userInfo?.role);
 
   String get _quizSysScannerTitle {
-    final label = jsOr([dig(_quizSysSession, ['batch_name']), _batchName, 'Batch']);
+    final label = jsOr([
+      dig(_quizSysSession, ['batch_name']),
+      _batchName,
+      'Batch',
+    ]);
     return 'QuizSys Scanner - ${vueText(label)}';
   }
 
@@ -259,7 +303,8 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
     return null;
   }
 
-  List<dynamic> get _topicsForSelectedChapter => asList(_selectedChapter?['topics']);
+  List<dynamic> get _topicsForSelectedChapter =>
+      asList(_selectedChapter?['topics']);
 
   List<String> get _filteredTabs => visibleTabKeys(_session.userInfo?.role);
 
@@ -275,7 +320,8 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
     _selectedActivity = activity;
     if (activity != null) {
       _selectedActivityId = activity['id'];
-      if (_activeTab != 'quiz' && _activeTab != 'activity') _guard(() => _loadTabContent(_activeTab));
+      if (_activeTab != 'quiz' && _activeTab != 'activity')
+        _guard(() => _loadTabContent(_activeTab));
     } else {
       _selectedActivityId = null;
     }
@@ -283,8 +329,10 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
 
   void _onLanguageChanged(AppLanguage newLang) {
     if (!jsTruthy(newLang.id)) return;
-    if (jsTruthy(_chapterId) && jsTruthy(_topicId)) _guard(() => _fetchChapterLinks(newLang.id));
-    if (_activeTab != 'quiz' && _activeTab != 'activity') _guard(() => _loadTabContent(_activeTab));
+    if (jsTruthy(_chapterId) && jsTruthy(_topicId))
+      _guard(() => _fetchChapterLinks(newLang.id));
+    if (_activeTab != 'quiz' && _activeTab != 'activity')
+      _guard(() => _loadTabContent(_activeTab));
   }
 
   // ── navigation ──
@@ -301,25 +349,31 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
   // ── quiz ──
 
   void _resetQuiz() => _set(() {
-        _quizSubmitted = false;
-        _quizResult = null;
-        _quizStarted = false;
-        _quizSysSession = null;
-        _quizSysSessionError = '';
-      });
+    _quizSubmitted = false;
+    _quizResult = null;
+    _quizStarted = false;
+    _quizSysSession = null;
+    _quizSysSessionError = '';
+  });
 
   Future<void> _ensureQuizClassOptions() async {
-    if (!_isInstructorQuizMode || _quizClassOptions.isNotEmpty || !jsTruthy(_instituteId)) return;
+    if (!_isInstructorQuizMode ||
+        _quizClassOptions.isNotEmpty ||
+        !jsTruthy(_instituteId))
+      return;
 
     _set(() {
       _quizSelectionLoading = true;
       _quizSysSessionError = '';
     });
     try {
-      final response =
-          await _container.read(classServiceProvider).getAllClasses(asInt(_instituteId) ?? _instituteId!);
+      final response = await _container
+          .read(classServiceProvider)
+          .getAllClasses(asInt(_instituteId) ?? _instituteId!);
       final options = normalizeApiList(response);
-      final contextClassId = jsString(jsOr([_selectedActivityContext?['classId'], _classId, '']));
+      final contextClassId = jsString(
+        jsOr([_selectedActivityContext?['classId'], _classId, '']),
+      );
       Object? matching;
       for (final c in options) {
         if (jsString(asMap(c)?['id']) == contextClassId) {
@@ -329,11 +383,13 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
       }
       _set(() {
         _quizClassOptions = options;
-        _selectedQuizClassId = jsString(jsOr([
-          matching,
-          options.isNotEmpty ? (asMap(options.first)?['id']) : null,
-          '',
-        ]));
+        _selectedQuizClassId = jsString(
+          jsOr([
+            matching,
+            options.isNotEmpty ? (asMap(options.first)?['id']) : null,
+            '',
+          ]),
+        );
       });
       if (_selectedQuizClassId.isNotEmpty) await _loadQuizBatches();
     } catch (error) {
@@ -343,7 +399,10 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
         _quizBatchOptions = [];
         _selectedQuizClassId = '';
         _selectedQuizBatchId = '';
-        _quizSysSessionError = responseMessage(error, 'Failed to load classes.');
+        _quizSysSessionError = responseMessage(
+          error,
+          'Failed to load classes.',
+        );
       });
     } finally {
       _set(() => _quizSelectionLoading = false);
@@ -364,10 +423,16 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
       _quizSysSessionError = '';
     });
     try {
-      final response = await _container.read(batchServiceProvider).getBatches(
-          asInt(_selectedQuizClassId) ?? _selectedQuizClassId, asInt(_instituteId) ?? _instituteId!);
+      final response = await _container
+          .read(batchServiceProvider)
+          .getBatches(
+            asInt(_selectedQuizClassId) ?? _selectedQuizClassId,
+            asInt(_instituteId) ?? _instituteId!,
+          );
       final options = normalizeApiList(response);
-      final contextBatchId = jsString(jsOr([_selectedActivityContext?['batchId'], _batchId, '']));
+      final contextBatchId = jsString(
+        jsOr([_selectedActivityContext?['batchId'], _batchId, '']),
+      );
       Object? matching;
       for (final b in options) {
         if (jsString(asMap(b)?['id']) == contextBatchId) {
@@ -377,18 +442,23 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
       }
       _set(() {
         _quizBatchOptions = options;
-        _selectedQuizBatchId = jsString(jsOr([
-          matching,
-          options.isNotEmpty ? (asMap(options.first)?['id']) : null,
-          '',
-        ]));
+        _selectedQuizBatchId = jsString(
+          jsOr([
+            matching,
+            options.isNotEmpty ? (asMap(options.first)?['id']) : null,
+            '',
+          ]),
+        );
       });
     } catch (error) {
       debugPrint('Failed to load quiz batches: $error');
       _set(() {
         _quizBatchOptions = [];
         _selectedQuizBatchId = '';
-        _quizSysSessionError = responseMessage(error, 'Failed to load batches.');
+        _quizSysSessionError = responseMessage(
+          error,
+          'Failed to load batches.',
+        );
       });
     } finally {
       _set(() => _quizBatchLoading = false);
@@ -405,7 +475,10 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
       if (_isInstructorQuizMode) {
         await _ensureQuizClassOptions();
         if (_selectedQuizClassId.isEmpty || _selectedQuizBatchId.isEmpty) {
-          _set(() => _quizSysSessionError = 'Select class and batch before starting the quiz.');
+          _set(
+            () => _quizSysSessionError =
+                'Select class and batch before starting the quiz.',
+          );
           return;
         }
       }
@@ -417,7 +490,11 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
         _quizSysSessionError = '';
       });
 
-      final activityId = jsOr([_selectedActivity?['id'], _selectedActivityId, _activityIdFromRoute]);
+      final activityId = jsOr([
+        _selectedActivity?['id'],
+        _selectedActivityId,
+        _activityIdFromRoute,
+      ]);
 
       if (!jsTruthy(activityId)) {
         _set(() {
@@ -429,7 +506,13 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
       }
 
       final res = await _ctrl.getZslQuestions(jsString(activityId));
-      final questions = asList(jsOr([dig(res, ['data']), res, const []]));
+      final questions = asList(
+        jsOr([
+          dig(res, ['data']),
+          res,
+          const [],
+        ]),
+      );
 
       if (questions.isEmpty) {
         _set(() {
@@ -442,13 +525,18 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
       _quizExamQuestions = questions;
 
       if (_isInstructorQuizMode) {
-        final setup = await _container.read(studentServiceProvider).setupQuizSysQuizSession({
-          'institute_id': _instituteId,
-          'class_id': _selectedQuizClassId,
-          'batch_id': _selectedQuizBatchId,
-          'questions': questions,
-        });
-        _quizSysSession = jsOr([dig(setup, ['data']), setup]);
+        final setup = await _container
+            .read(studentServiceProvider)
+            .setupQuizSysQuizSession({
+              'institute_id': _instituteId,
+              'class_id': _selectedQuizClassId,
+              'batch_id': _selectedQuizBatchId,
+              'questions': questions,
+            });
+        _quizSysSession = jsOr([
+          dig(setup, ['data']),
+          setup,
+        ]);
       }
 
       _set(() => _showQuizExam = true);
@@ -458,7 +546,10 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
       _set(() {
         _quizStarted = false;
         _quizSysSession = null;
-        _quizSysSessionError = responseMessage(error, 'Failed to start QuizSys scanner.');
+        _quizSysSessionError = responseMessage(
+          error,
+          'Failed to start QuizSys scanner.',
+        );
       });
     } finally {
       _set(() => _quizLoading = false);
@@ -471,8 +562,12 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
     showQuizExam(
       context,
       questions: _quizExamQuestions,
-      quizTitle: _selectedActivity != null ? activityTitle(_selectedActivity) : vueText(_topicName),
-      scannerUrl: firstTruthyString([dig(_quizSysSession, ['scanner_url'])]),
+      quizTitle: _selectedActivity != null
+          ? activityTitle(_selectedActivity)
+          : vueText(_topicName),
+      scannerUrl: firstTruthyString([
+        dig(_quizSysSession, ['scanner_url']),
+      ]),
       scannerTitle: _quizSysScannerTitle,
       onSubmitted: (payload) => _guard(() => _onQuizSubmitted(payload)),
       onClose: _onQuizClose,
@@ -482,8 +577,13 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
   Future<void> _onQuizSubmitted(Map<String, dynamic> payload) async {
     if (!mounted) return;
     try {
-      final activityId =
-          jsString(jsOr([_selectedActivity?['id'], _selectedActivityId, _activityIdFromRoute]));
+      final activityId = jsString(
+        jsOr([
+          _selectedActivity?['id'],
+          _selectedActivityId,
+          _activityIdFromRoute,
+        ]),
+      );
       final res = await _ctrl.submitZslQuiz(
         activityId: activityId,
         answers: asList(payload['answersPayload']),
@@ -503,13 +603,13 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
   }
 
   void _onQuizClose() => _set(() {
-        _showQuizExam = false;
-        _quizExamQuestions = [];
-        _quizStarted = false;
-        _quizLoading = false;
-        _quizSysSession = null;
-        _quizSysSessionError = '';
-      });
+    _showQuizExam = false;
+    _quizExamQuestions = [];
+    _quizStarted = false;
+    _quizLoading = false;
+    _quizSysSession = null;
+    _quizSysSessionError = '';
+  });
 
   // ── tabs ──
 
@@ -560,20 +660,35 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
 
       if (tabKey == 'why-to-learn') {
         final desc = asMap(activity['description']);
-        _set(() => _activeTabContent.text = vueOr([desc?['content'], desc?['text']]));
+        _set(
+          () =>
+              _activeTabContent.text = vueOr([desc?['content'], desc?['text']]),
+        );
         if (jsTruthy(desc?['content_path'])) {
           final id = jsOr([desc?['description_id'], desc?['id']]);
           if (jsTruthy(id)) {
             final r = await _ctrl.getWhyToLearnSignedUrl(jsString(id));
-            _set(() => _activeTabContent.url = vueOr([dig(r, ['signed_url']), dig(r, ['url'])]));
+            _set(
+              () => _activeTabContent.url = vueOr([
+                dig(r, ['signed_url']),
+                dig(r, ['url']),
+              ]),
+            );
           }
         }
       } else if (tabKey == 'how-to-play') {
         final autopilot = pickAutopilot(activity['autopilots'], langId);
         if (autopilot != null) {
-          final r = await _ctrl.getAutopilotSignedUrl(jsString(autopilot['id']));
+          final r = await _ctrl.getAutopilotSignedUrl(
+            jsString(autopilot['id']),
+          );
           if (_activeTab == tabKey) {
-            _set(() => _activeTabContent.url = vueOr([dig(r, ['signed_url']), dig(r, ['url'])]));
+            _set(
+              () => _activeTabContent.url = vueOr([
+                dig(r, ['signed_url']),
+                dig(r, ['url']),
+              ]),
+            );
           }
         }
       } else if (tabKey == 'reference-video') {
@@ -587,23 +702,37 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
       } else if (tabKey == 'teacher-guide') {
         final items = asList(activity['instructions']);
         final inst = items.isNotEmpty ? asMap(items.first) : null;
-        _set(() => _activeTabContent.text = joinTexts(activity!['instructions']));
+        _set(
+          () => _activeTabContent.text = joinTexts(activity!['instructions']),
+        );
         if (jsTruthy(inst?['content_path'])) {
           final id = jsOr([inst?['instruction_id'], inst?['id']]);
           if (jsTruthy(id)) {
             final r = await _ctrl.getTeacherGuideSignedUrl(jsString(id));
-            _set(() => _activeTabContent.url = vueOr([dig(r, ['signed_url']), dig(r, ['url'])]));
+            _set(
+              () => _activeTabContent.url = vueOr([
+                dig(r, ['signed_url']),
+                dig(r, ['url']),
+              ]),
+            );
           }
         }
       } else if (tabKey == 'learning-outcome') {
         final items = asList(activity['observations']);
         final obs = items.isNotEmpty ? asMap(items.first) : null;
-        _set(() => _activeTabContent.text = joinTexts(activity!['observations']));
+        _set(
+          () => _activeTabContent.text = joinTexts(activity!['observations']),
+        );
         if (jsTruthy(obs?['content_path'])) {
           final id = jsOr([obs?['observation_id'], obs?['id']]);
           if (jsTruthy(id)) {
             final r = await _ctrl.getLearningOutcomeSignedUrl(jsString(id));
-            _set(() => _activeTabContent.url = vueOr([dig(r, ['signed_url']), dig(r, ['url'])]));
+            _set(
+              () => _activeTabContent.url = vueOr([
+                dig(r, ['signed_url']),
+                dig(r, ['url']),
+              ]),
+            );
           }
         }
       }
@@ -621,7 +750,10 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
     try {
       final langId = _language.id;
       final results = await Future.wait(
-          chapters.map((ch) => _ctrl.getZslLinks(_instituteId, asMap(ch)?['id'], langId)));
+        chapters.map(
+          (ch) => _ctrl.getZslLinks(_instituteId, asMap(ch)?['id'], langId),
+        ),
+      );
       _set(() {
         _allChapters = [
           for (var i = 0; i < chapters.length; i++)
@@ -635,7 +767,9 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
                     'name': asMap(raw)?['name'],
                     'file_path': jsOr([asMap(raw)?['file_path'], '']),
                     'chapter_id': asMap(raw)?['chapter_id'],
-                    'activities': jsTruthy(asMap(raw)?['activities']) ? asMap(raw)!['activities'] : const [],
+                    'activities': jsTruthy(asMap(raw)?['activities'])
+                        ? asMap(raw)!['activities']
+                        : const [],
                   },
               ],
             },
@@ -647,17 +781,28 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
   }
 
   Future<void> _fetchAllChapters() async {
-    if (!jsTruthy(_instituteId) || !jsTruthy(_selectedClassId) || !jsTruthy(_selectedSubjectId)) return;
+    if (!jsTruthy(_instituteId) ||
+        !jsTruthy(_selectedClassId) ||
+        !jsTruthy(_selectedSubjectId))
+      return;
     try {
       _set(() => _loading = true);
       final subjectId = _selectedSubjectId!;
-      final chapters = await _ctrl.getallchpaters(_instituteId!, _selectedClassId!, subjectId);
+      final chapters = await _ctrl.getallchpaters(
+        _instituteId!,
+        _selectedClassId!,
+        subjectId,
+      );
       _chaptersCache[jsString(subjectId)] = chapters;
       _fetchAllChaptersWithActivities(chapters);
       if (chapters.isNotEmpty) {
         if (jsTruthy(_chapterId)) {
-          final match = chapters.any((ch) => jsString(asMap(ch)?['id']) == jsString(_chapterId));
-          _selectedChapterId = jsString(match ? _chapterId : asMap(chapters.first)?['id']);
+          final match = chapters.any(
+            (ch) => jsString(asMap(ch)?['id']) == jsString(_chapterId),
+          );
+          _selectedChapterId = jsString(
+            match ? _chapterId : asMap(chapters.first)?['id'],
+          );
         } else {
           _selectedChapterId = jsString(asMap(chapters.first)?['id']);
         }
@@ -745,7 +890,10 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
     _guard(_handleChapterChange);
   }
 
-  Future<dynamic> _generateActivitySignedUrl(Map<String, dynamic>? activity, [String? dataType]) async {
+  Future<dynamic> _generateActivitySignedUrl(
+    Map<String, dynamic>? activity, [
+    String? dataType,
+  ]) async {
     if (activity == null ||
         !jsTruthy(_instituteId) ||
         !jsTruthy(_subjectId) ||
@@ -762,14 +910,21 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
         signed = _signedUrls[cacheKey];
       } else {
         signed = await _ctrl.generateSignedUrl(
-            _instituteId!, _subjectId!, _chapterId!, _topicId!, activityId);
+          _instituteId!,
+          _subjectId!,
+          _chapterId!,
+          _topicId!,
+          activityId,
+        );
         _signedUrls[cacheKey] = signed;
         // `signedUrl.tracking_id` on `undefined` threw on the web.
-        if (signed == null) throw StateError('No signed URL for activity $activityId');
+        if (signed == null)
+          throw StateError('No signed URL for activity $activityId');
         final tid = dig(signed, ['tracking_id']);
         if (jsTruthy(tid)) _trackingId = tid;
       }
-      if (signed == null) throw StateError('No signed URL for activity $activityId');
+      if (signed == null)
+        throw StateError('No signed URL for activity $activityId');
       final url = dig(signed, ['url']);
       _set(() => _signedUrl = url == null ? '' : jsString(url));
       try {
@@ -795,7 +950,10 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
     }
     if (activity == null) return;
     _set(() => _setSelectedActivity(activity));
-    _ctrl.setActivityContext({...?_ctrl.selectedActivityContext, 'activityId': activity['id']});
+    _ctrl.setActivityContext({
+      ...?_ctrl.selectedActivityContext,
+      'activityId': activity['id'],
+    });
     await _generateActivitySignedUrl(activity);
     _set(() => _activeTab = 'activity');
   }
@@ -821,7 +979,8 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
   Future<void> _handleChapterChange() async {
     final selectedChapter = _selectedChapter;
     if (selectedChapter == null) return;
-    final isChapterChanging = jsString(_chapterId) != jsString(selectedChapter['id']);
+    final isChapterChanging =
+        jsString(_chapterId) != jsString(selectedChapter['id']);
     _set(() {
       _selectedChapterId = jsString(selectedChapter['id']);
       _chapterId = selectedChapter['id'];
@@ -873,7 +1032,10 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
     await _fetchChapterLinks();
   }
 
-  Future<void> _handleActivityFromPopup(Map<String, dynamic> topic, Map<String, dynamic> activity) async {
+  Future<void> _handleActivityFromPopup(
+    Map<String, dynamic> topic,
+    Map<String, dynamic> activity,
+  ) async {
     _set(() {
       _topicId = jsString(topic['id']);
       _topicName = topic['name'];
@@ -881,7 +1043,9 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
     });
     Map<String, dynamic>? parentChapter;
     for (final ch in _allChapters) {
-      if (asList(ch['topics']).any((t) => sameId(asMap(t)?['id'], topic['id']))) {
+      if (asList(
+        ch['topics'],
+      ).any((t) => sameId(asMap(t)?['id'], topic['id']))) {
         parentChapter = ch;
         break;
       }
@@ -915,13 +1079,13 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
   }
 
   void _setPopup(bool open) => _set(() {
-        _openActivityPopup = open;
-        if (open) {
-          _popupPortal.show();
-        } else {
-          _popupPortal.hide();
-        }
-      });
+    _openActivityPopup = open;
+    if (open) {
+      _popupPortal.show();
+    } else {
+      _popupPortal.hide();
+    }
+  });
 
   // ── template ──
 
@@ -933,15 +1097,21 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
     final size = MediaQuery.sizeOf(context);
 
     final page = SingleChildScrollView(
-      padding: EdgeInsets.symmetric(horizontal: sm ? 16 : 8, vertical: sm ? 24 : 16),
+      padding: EdgeInsets.symmetric(
+        horizontal: sm ? 16 : 8,
+        vertical: sm ? 24 : 16,
+      ),
       child: Container(
         decoration: libGlassContainer(context),
         padding: EdgeInsets.all(md ? 24 : (sm ? 20 : 16)),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          _topNav(context),
-          const SizedBox(height: 16),
-          _mainContent(context),
-        ]),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _topNav(context),
+            const SizedBox(height: 16),
+            _mainContent(context),
+          ],
+        ),
       ),
     );
 
@@ -961,71 +1131,93 @@ class _ActivityLibraryPageState extends ConsumerState<_ActivityLibraryPageConten
         loading: _pageLoading,
         child: DefaultTextStyle.merge(
           style: GoogleFonts.nunito(),
-          child: Stack(children: [
-            Positioned.fill(child: ColoredBox(color: dark ? AppColors.dashboardDark : Colors.transparent)),
-            // Ambient glow blobs
-            Positioned(
-              top: size.height * 0.25 - size.width * 0.15,
-              left: size.width / 3 - size.width * 0.15,
-              child: GlowBlob(
-                  size: size.width * 0.6,
-                  color: dark ? Tw.indigo500.withValues(alpha: 0.15) : Tw.indigo400.withValues(alpha: 0.1)),
-            ),
-            Positioned(
-              bottom: size.height / 3 - size.width * 0.125,
-              right: size.width / 4 - size.width * 0.125,
-              child: GlowBlob(
-                  size: size.width * 0.5,
-                  color: dark ? Tw.purple500.withValues(alpha: 0.1) : Tw.violet400.withValues(alpha: 0.1)),
-            ),
-            Positioned.fill(child: page),
-            // ===== OVERLAY =====
-            if (_openNotesSidebar)
+          child: Stack(
+            children: [
               Positioned.fill(
-                child: GestureDetector(
-                  onTap: () => _set(() => _openNotesSidebar = false),
-                  child: const ColoredBox(color: Color(0x66000000)),
+                child: ColoredBox(
+                  color: dark ? AppColors.dashboardDark : Colors.transparent,
                 ),
               ),
-            // ===== RIGHT SIDEBAR =====
-            _sidebar(context),
-            OverlayPortal(
-              controller: _popupPortal,
-              overlayChildBuilder: _allActivitiesPopup,
-              child: const SizedBox.shrink(),
-            ),
-            OverlayPortal(
-              controller: _fullscreenPortal,
-              overlayChildBuilder: _fullscreenLayer,
-              child: const SizedBox.shrink(),
-            ),
-          ]),
+              // Ambient glow blobs
+              Positioned(
+                top: size.height * 0.25 - size.width * 0.15,
+                left: size.width / 3 - size.width * 0.15,
+                child: GlowBlob(
+                  size: size.width * 0.6,
+                  color: dark
+                      ? Tw.indigo500.withValues(alpha: 0.15)
+                      : Tw.indigo400.withValues(alpha: 0.1),
+                ),
+              ),
+              Positioned(
+                bottom: size.height / 3 - size.width * 0.125,
+                right: size.width / 4 - size.width * 0.125,
+                child: GlowBlob(
+                  size: size.width * 0.5,
+                  color: dark
+                      ? Tw.purple500.withValues(alpha: 0.1)
+                      : Tw.violet400.withValues(alpha: 0.1),
+                ),
+              ),
+              Positioned.fill(child: page),
+              // ===== OVERLAY =====
+              if (_openNotesSidebar)
+                Positioned.fill(
+                  child: GestureDetector(
+                    onTap: () => _set(() => _openNotesSidebar = false),
+                    child: const ColoredBox(color: Color(0x66000000)),
+                  ),
+                ),
+              // ===== RIGHT SIDEBAR =====
+              _sidebar(context),
+              OverlayPortal(
+                controller: _popupPortal,
+                overlayChildBuilder: _allActivitiesPopup,
+                child: const SizedBox.shrink(),
+              ),
+              OverlayPortal(
+                controller: _fullscreenPortal,
+                overlayChildBuilder: _fullscreenLayer,
+                child: const SizedBox.shrink(),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _fullscreenLayer(BuildContext context) => Positioned.fill(
-        child: CallbackShortcuts(
-          bindings: {
-            const SingleActivator(LogicalKeyboardKey.escape): () {
-              if (_isFullscreen) _toggleFullscreen();
-            },
-          },
-          child: Focus(
-            autofocus: true,
-            child: Material(
-              color: Colors.black,
-              child: SafeArea(child: _panelBody(context, fill: true)),
-            ),
-          ),
+    child: CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.escape): () {
+          if (_isFullscreen) _toggleFullscreen();
+        },
+      },
+      child: Focus(
+        autofocus: true,
+        child: Material(
+          color: Colors.black,
+          child: SafeArea(child: _panelBody(context, fill: true)),
         ),
-      );
+      ),
+    ),
+  );
 }
 
-class ActivityLibraryPage extends StatelessWidget {
+class ActivityLibraryPage extends ConsumerWidget {
   const ActivityLibraryPage({super.key});
   @override
-  Widget build(BuildContext context) =>
-      LabActivityHost(builder: (key) => _ActivityLibraryPageContent(key: key));
+  Widget build(BuildContext context, WidgetRef ref) {
+    return OfflineAwareActivity(
+      readContext: (ref) =>
+          ref
+              .read(libraryControllerProvider.notifier)
+              .selectedActivityContext ??
+          {},
+      onlineBuilder: (_) => LabActivityHost(
+        builder: (key) => _ActivityLibraryPageContent(key: key),
+      ),
+    );
+  }
 }

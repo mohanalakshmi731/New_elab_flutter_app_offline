@@ -37,10 +37,13 @@ class SessionController extends Notifier<SessionState> {
     if (user['isAdmin'] == true) role = Role.admin;
 
     final institutes = asList(res['institutes']);
-    final institute = asMap(institutes.cast<dynamic>().firstWhere(
-              (i) => asBool(asMap(i)?['is_default']),
-              orElse: () => institutes.isNotEmpty ? institutes.first : null,
-            )) ??
+    final institute =
+        asMap(
+          institutes.cast<dynamic>().firstWhere(
+            (i) => asBool(asMap(i)?['is_default']),
+            orElse: () => institutes.isNotEmpty ? institutes.first : null,
+          ),
+        ) ??
         const <String, dynamic>{};
 
     final instituteId = asInt(institute['id']);
@@ -50,14 +53,17 @@ class SessionController extends Notifier<SessionState> {
 
     // Pick the ACTIVE batch (pivot.status === true first)
     final batches = asList(student?['batches']);
-    final activeBatch = asMap(batches.cast<dynamic>().firstWhere(
-          (b) => dig(b, ['pivot', 'status']) == true,
-          orElse: () => batches.isNotEmpty ? batches.first : null,
-        ));
+    final activeBatch = asMap(
+      batches.cast<dynamic>().firstWhere(
+        (b) => dig(b, ['pivot', 'status']) == true,
+        orElse: () => batches.isNotEmpty ? batches.first : null,
+      ),
+    );
 
     final studentId = asInt(student?['id']);
-    final examUserId =
-        asString(student?['exam_user_id'] ?? instructor?['exam_user_id']);
+    final examUserId = asString(
+      student?['exam_user_id'] ?? instructor?['exam_user_id'],
+    );
     final zslId = student?['zsl_id'] ?? instructor?['zsl_id'];
     final batchId = asInt(activeBatch?['id']);
     final classesId = asInt(activeBatch?['classes_id']);
@@ -72,8 +78,8 @@ class SessionController extends Notifier<SessionState> {
     final username = (asString(user['username'])?.isNotEmpty ?? false)
         ? asString(user['username'])!
         : (asString(user['full_name'])?.isNotEmpty ?? false)
-            ? asString(user['full_name'])!
-            : '$first $last';
+        ? asString(user['full_name'])!
+        : '$first $last';
 
     final userInfo = UserInfo(
       id: asInt(user['id']),
@@ -104,10 +110,14 @@ class SessionController extends Notifier<SessionState> {
     }
     final cls = asMap(activeBatch?['classes']);
     if (role == Role.student && cls != null) {
-      classDetails = IdName(asInt(cls['id']), asString(cls['name']) ?? '', extra: {
-        'c_id': asString(cls['curricula_id']),
-        'institute_id': asInt(cls['institute_id']),
-      });
+      classDetails = IdName(
+        asInt(cls['id']),
+        asString(cls['name']) ?? '',
+        extra: {
+          'c_id': asString(cls['curricula_id']),
+          'institute_id': asInt(cls['institute_id']),
+        },
+      );
     }
     if (role == Role.student && student != null) {
       studentLoginData = StudentLoginData({
@@ -134,20 +144,24 @@ class SessionController extends Notifier<SessionState> {
       });
     }
 
-    _commit(state.copyWith(
-      userInfo: userInfo,
-      expiresOn: asString(institute['expires_on']),
-      instructorId: instructorId,
-      rawStudentBatches: batches,
-      batchDetails: batchDetails,
-      classDetails: classDetails,
-      studentLoginData: studentLoginData,
-    ));
+    _commit(
+      state.copyWith(
+        userInfo: userInfo,
+        expiresOn: asString(institute['expires_on']),
+        instructorId: instructorId,
+        rawStudentBatches: batches,
+        batchDetails: batchDetails,
+        classDetails: classDetails,
+        studentLoginData: studentLoginData,
+      ),
+    );
   }
 
-  void setBatchDetails(IdName? batch) => _commit(state.copyWith(batchDetails: batch));
+  void setBatchDetails(IdName? batch) =>
+      _commit(state.copyWith(batchDetails: batch));
 
-  void setClassDetails(IdName? cls) => _commit(state.copyWith(classDetails: cls));
+  void setClassDetails(IdName? cls) =>
+      _commit(state.copyWith(classDetails: cls));
 
   void setLanguage(AppLanguage lang) => _commit(state.copyWith(language: lang));
 
@@ -155,8 +169,14 @@ class SessionController extends Notifier<SessionState> {
   void setMathzoroClassId(int? zslClassId) {
     final ui = state.userInfo;
     if (ui == null) return;
-    _commit(state.copyWith(
-        userInfo: ui.copyWith(mathzoroClassId: zslClassId, zslClassId: zslClassId)));
+    _commit(
+      state.copyWith(
+        userInfo: ui.copyWith(
+          mathzoroClassId: zslClassId,
+          zslClassId: zslClassId,
+        ),
+      ),
+    );
   }
 
   /// Applies [update] to the session and persists the result. Used by the

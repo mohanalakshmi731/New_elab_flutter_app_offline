@@ -62,10 +62,17 @@ Future<void> showQuizExam(
       ),
       // enter: opacity-0 scale-95 → 1 (300ms ease-out); leave: 200ms ease-in.
       transitionsBuilder: (_, anim, _, child) {
-        final a = CurvedAnimation(parent: anim, curve: Curves.easeOut, reverseCurve: Curves.easeIn);
+        final a = CurvedAnimation(
+          parent: anim,
+          curve: Curves.easeOut,
+          reverseCurve: Curves.easeIn,
+        );
         return FadeTransition(
           opacity: a,
-          child: ScaleTransition(scale: Tween(begin: 0.95, end: 1.0).animate(a), child: child),
+          child: ScaleTransition(
+            scale: Tween(begin: 0.95, end: 1.0).animate(a),
+            child: child,
+          ),
         );
       },
     ),
@@ -84,6 +91,10 @@ class QuizExamView extends ConsumerStatefulWidget {
     this.scannerTitle = 'QuizSys Scanner',
     this.onSubmitted,
     this.onClose,
+    this.offline = false,
+    this.embedded = false,
+    this.initialAnswers = const {},
+    this.onAnswersChanged,
   });
 
   /// `questions` prop (array of question objects, as the parents pass them).
@@ -100,6 +111,10 @@ class QuizExamView extends ConsumerStatefulWidget {
 
   /// `$emit('close')` when the view is embedded instead of pushed as a route.
   final VoidCallback? onClose;
+  final bool offline;
+  final bool embedded;
+  final Map<String, dynamic> initialAnswers;
+  final ValueChanged<Map<String, dynamic>>? onAnswersChanged;
 
   @override
   ConsumerState<QuizExamView> createState() => _QuizExamViewState();
@@ -134,8 +149,10 @@ class _QuizExamViewState extends ConsumerState<QuizExamView>
 
   final _scroll = ScrollController();
   final _focus = FocusNode(debugLabel: 'quiz-exam');
-  late final AnimationController _shake =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
+  late final AnimationController _shake = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 500),
+  );
 
   void _set(VoidCallback fn) {
     if (mounted) setState(fn);
@@ -158,12 +175,13 @@ class _QuizExamViewState extends ConsumerState<QuizExamView>
   int get _answeredCount => _answers.length;
 
   /// `!!answers[q.id]`.
-  bool _isAnswered(Map<String, dynamic> q) => jsTruthy(_answers[quizKey(q['id'])]);
+  bool _isAnswered(Map<String, dynamic> q) =>
+      jsTruthy(_answers[quizKey(q['id'])]);
 
   /// `answers[q.id] === option.id`.
   bool _isChosen(Map<String, dynamic> q, Map<String, dynamic> option) {
     final key = quizKey(q['id']);
-    return _answers.containsKey(key) && _answers[key] == option['id'];
+    return _answers.containsKey(key) && '${_answers[key]}' == '${option['id']}';
   }
 
   // ── lifecycle ────────────────────────────────────────────────────────────
@@ -186,7 +204,7 @@ class _QuizExamViewState extends ConsumerState<QuizExamView>
 
   void _initQuiz() {
     _currentStep = 1;
-    _answers = {};
+    _answers = {...widget.initialAnswers};
     _isSubmitting = false;
     _violations = 0;
     _violationTriggered = false;
@@ -198,7 +216,7 @@ class _QuizExamViewState extends ConsumerState<QuizExamView>
       _enterFullscreen();
       return;
     }
-    _enableSecurity();
+    if (!widget.offline) _enableSecurity();
   }
 
   void _teardown() {
@@ -209,24 +227,52 @@ class _QuizExamViewState extends ConsumerState<QuizExamView>
 
   // ── answering ────────────────────────────────────────────────────────────
 
-  void _onOptionSelect(Map<String, dynamic> question, Map<String, dynamic> option) {
+  void _onOptionSelect(
+    Map<String, dynamic> question,
+    Map<String, dynamic> option,
+  ) {
     if (_isAnswered(question)) return;
     // v-model sets the answer, then @change shows the feedback toast.
     _set(() => _answers = {..._answers, quizKey(question['id']): option['id']});
+    widget.onAnswersChanged?.call({..._answers});
 
     toastification.dismissAll(delayForAnimation: false);
-    if (quizOptionIsCorrect(option)) {
-      _feedbackToast('Correct answer! 🎉', const Color(0xFF28883F), ToastificationType.success,
-          Icons.check_circle_rounded, const Duration(milliseconds: 4000));
+    if (widget.offline && !quizHasAnswerKey(question)) {
+      _feedbackToast(
+        'Answer saved. Grading will be available after sync.',
+        const Color(0xFF475569),
+        ToastificationType.info,
+        Icons.info_outline,
+        const Duration(milliseconds: 4000),
+      );
+    } else if (quizOptionIsCorrect(option)) {
+      _feedbackToast(
+        'Correct answer! 🎉',
+        const Color(0xFF28883F),
+        ToastificationType.success,
+        Icons.check_circle_rounded,
+        const Duration(milliseconds: 4000),
+      );
     } else {
-      _feedbackToast('Wrong answer. ❌', const Color(0xFFFF000D), ToastificationType.error, Icons.error_rounded,
-          const Duration(milliseconds: 5000));
+      _feedbackToast(
+        'Wrong answer. ❌',
+        const Color(0xFFFF000D),
+        ToastificationType.error,
+        Icons.error_rounded,
+        const Duration(milliseconds: 5000),
+      );
     }
   }
 
   /// `toast.success/error(…, { duration, style: { fontSize: '1rem', color:
   /// 'white', backgroundColor } })` in the kit's top-right `Toaster`.
-  void _feedbackToast(String message, Color bg, ToastificationType type, IconData icon, Duration duration) {
+  void _feedbackToast(
+    String message,
+    Color bg,
+    ToastificationType type,
+    IconData icon,
+    Duration duration,
+  ) {
     toastification.show(
       type: type,
       style: ToastificationStyle.fillColored,
@@ -236,7 +282,11 @@ class _QuizExamViewState extends ConsumerState<QuizExamView>
       icon: Icon(icon, color: Colors.white),
       title: Text(
         message,
-        style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
         maxLines: 4,
         overflow: TextOverflow.ellipsis,
       ),
@@ -253,13 +303,27 @@ class _QuizExamViewState extends ConsumerState<QuizExamView>
     // watch currentStep → questionCard.scrollIntoView({ behavior: 'smooth' })
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scroll.hasClients) {
-        _scroll.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+        _scroll.animateTo(
+          0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
       }
     });
   }
 
   void _submitQuiz() {
     if (_isSubmitting) return;
+    if (widget.offline && _answeredCount < _total) {
+      _feedbackToast(
+        'Answer every question before saving this offline attempt.',
+        const Color(0xFF475569),
+        ToastificationType.info,
+        Icons.info_outline,
+        const Duration(milliseconds: 4000),
+      );
+      return;
+    }
     _set(() {
       _isSubmitting = true;
       _confirmOpen = false;
@@ -306,7 +370,9 @@ class _QuizExamViewState extends ConsumerState<QuizExamView>
 
   /// `document.documentElement.requestFullscreen()`.
   Future<void> _enterFullscreen() async {
-    _ignoreFocusLossUntil = DateTime.now().add(const Duration(milliseconds: 1500));
+    _ignoreFocusLossUntil = DateTime.now().add(
+      const Duration(milliseconds: 1500),
+    );
     _fullscreenOn = true;
     try {
       if (_isDesktop) {
@@ -325,7 +391,8 @@ class _QuizExamViewState extends ConsumerState<QuizExamView>
     _fullscreenOn = false;
     try {
       if (_isDesktop) {
-        if (await windowManager.isFullScreen()) await windowManager.setFullScreen(false);
+        if (await windowManager.isFullScreen())
+          await windowManager.setFullScreen(false);
       } else if (!kIsWeb) {
         await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
       }

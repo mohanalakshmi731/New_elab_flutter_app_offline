@@ -88,58 +88,60 @@ class MathZoroState {
     List<Map<String, dynamic>>? institutes,
     List<Map<String, dynamic>>? classes,
     int? ticketsUpdatedTick,
-  }) =>
-      MathZoroState(
-        instituteMeta: identical(instituteMeta, _unset)
-            ? this.instituteMeta
-            : instituteMeta as Map<String, dynamic>?,
-        selectedClass: identical(selectedClass, _unset)
-            ? this.selectedClass
-            : selectedClass as Map<String, dynamic>?,
-        availableClasses: availableClasses ?? this.availableClasses,
-        mathZoroCourses: mathZoroCourses ?? this.mathZoroCourses,
-        lastOpenedChapter: identical(lastOpenedChapter, _unset)
-            ? this.lastOpenedChapter
-            : lastOpenedChapter as Map<String, dynamic>?,
-        selectedActivityContext: identical(selectedActivityContext, _unset)
-            ? this.selectedActivityContext
-            : selectedActivityContext as Map<String, dynamic>?,
-        storedSubjectId: identical(storedSubjectId, _unset)
-            ? this.storedSubjectId
-            : storedSubjectId as String?,
-        allsubject: identical(allsubject, _unset) ? this.allsubject : allsubject,
-        allchapters: identical(allchapters, _unset) ? this.allchapters : allchapters,
-        institutes: institutes ?? this.institutes,
-        classes: classes ?? this.classes,
-        ticketsUpdatedTick: ticketsUpdatedTick ?? this.ticketsUpdatedTick,
-      );
+  }) => MathZoroState(
+    instituteMeta: identical(instituteMeta, _unset)
+        ? this.instituteMeta
+        : instituteMeta as Map<String, dynamic>?,
+    selectedClass: identical(selectedClass, _unset)
+        ? this.selectedClass
+        : selectedClass as Map<String, dynamic>?,
+    availableClasses: availableClasses ?? this.availableClasses,
+    mathZoroCourses: mathZoroCourses ?? this.mathZoroCourses,
+    lastOpenedChapter: identical(lastOpenedChapter, _unset)
+        ? this.lastOpenedChapter
+        : lastOpenedChapter as Map<String, dynamic>?,
+    selectedActivityContext: identical(selectedActivityContext, _unset)
+        ? this.selectedActivityContext
+        : selectedActivityContext as Map<String, dynamic>?,
+    storedSubjectId: identical(storedSubjectId, _unset)
+        ? this.storedSubjectId
+        : storedSubjectId as String?,
+    allsubject: identical(allsubject, _unset) ? this.allsubject : allsubject,
+    allchapters: identical(allchapters, _unset)
+        ? this.allchapters
+        : allchapters,
+    institutes: institutes ?? this.institutes,
+    classes: classes ?? this.classes,
+    ticketsUpdatedTick: ticketsUpdatedTick ?? this.ticketsUpdatedTick,
+  );
 
   Map<String, dynamic> toJson() => {
-        'instituteMeta': instituteMeta,
-        'selectedClass': selectedClass,
-        'availableClasses': availableClasses,
-        'math_zoro_courses': mathZoroCourses,
-        'lastOpenedChapter': lastOpenedChapter,
-        'selectedActivityContext': selectedActivityContext,
-        'subjectId': storedSubjectId,
-      };
+    'instituteMeta': instituteMeta,
+    'selectedClass': selectedClass,
+    'availableClasses': availableClasses,
+    'math_zoro_courses': mathZoroCourses,
+    'lastOpenedChapter': lastOpenedChapter,
+    'selectedActivityContext': selectedActivityContext,
+    'subjectId': storedSubjectId,
+  };
 
   factory MathZoroState.fromJson(Map<String, dynamic> j) => MathZoroState(
-        instituteMeta: asMap(j['instituteMeta']),
-        selectedClass: asMap(j['selectedClass']),
-        availableClasses: _maps(j['availableClasses']),
-        mathZoroCourses: _maps(j['math_zoro_courses']),
-        lastOpenedChapter: asMap(j['lastOpenedChapter']),
-        selectedActivityContext: asMap(j['selectedActivityContext']),
-        storedSubjectId: asString(j['subjectId']),
-      );
+    instituteMeta: asMap(j['instituteMeta']),
+    selectedClass: asMap(j['selectedClass']),
+    availableClasses: _maps(j['availableClasses']),
+    mathZoroCourses: _maps(j['math_zoro_courses']),
+    lastOpenedChapter: asMap(j['lastOpenedChapter']),
+    selectedActivityContext: asMap(j['selectedActivityContext']),
+    storedSubjectId: asString(j['subjectId']),
+  );
 
   static List<Map<String, dynamic>> _maps(dynamic v) =>
       asList(v).map(asMap).whereType<Map<String, dynamic>>().toList();
 }
 
-final mathZoroProvider =
-    NotifierProvider<MathZoroController, MathZoroState>(MathZoroController.new);
+final mathZoroProvider = NotifierProvider<MathZoroController, MathZoroState>(
+  MathZoroController.new,
+);
 
 class MathZoroController extends Notifier<MathZoroState> {
   static const storageKey = 'elab.mathzoro';
@@ -153,7 +155,10 @@ class MathZoroController extends Notifier<MathZoroState> {
   @override
   MathZoroState build() {
     // `logout()` → `this.$reset()` clears the MathZoro state as well.
-    ref.listen<bool>(sessionProvider.select((s) => s.isLoggedIn), (prev, loggedIn) {
+    ref.listen<bool>(sessionProvider.select((s) => s.isLoggedIn), (
+      prev,
+      loggedIn,
+    ) {
       if (prev == true && !loggedIn) reset();
     });
     _restore();
@@ -196,12 +201,24 @@ class MathZoroController extends Notifier<MathZoroState> {
 
   // ── setters ──────────────────────────────────────────────────────────────
 
-  void setAvailableClasses(List<dynamic> classes) => _set(state.copyWith(
-      availableClasses: classes.map(asMap).whereType<Map<String, dynamic>>().toList()));
+  void setAvailableClasses(List<dynamic> classes) => _set(
+    state.copyWith(
+      availableClasses: classes
+          .map(asMap)
+          .whereType<Map<String, dynamic>>()
+          .toList(),
+    ),
+  );
 
   /// `setMathZoroCourses(courses)` (also mirrored to sessionStorage on the web).
-  void setMathZoroCourses(List<dynamic> courses) => _set(state.copyWith(
-      mathZoroCourses: courses.map(asMap).whereType<Map<String, dynamic>>().toList()));
+  void setMathZoroCourses(List<dynamic> courses) => _set(
+    state.copyWith(
+      mathZoroCourses: courses
+          .map(asMap)
+          .whereType<Map<String, dynamic>>()
+          .toList(),
+    ),
+  );
 
   void setInstituteMeta(Map<String, dynamic>? meta) =>
       _set(state.copyWith(instituteMeta: meta));
@@ -219,8 +236,9 @@ class MathZoroController extends Notifier<MathZoroState> {
 
   /// `window.dispatchEvent(new CustomEvent('tickets-updated'))`.
   void dispatchTicketsUpdated() => _set(
-      state.copyWith(ticketsUpdatedTick: state.ticketsUpdatedTick + 1),
-      persist: false);
+    state.copyWith(ticketsUpdatedTick: state.ticketsUpdatedTick + 1),
+    persist: false,
+  );
 
   /// Port of `setSelectedClass(classData)`: stores the selection and patches
   /// `userInfo`, `studentLoginData` and `batchDetails` exactly like the web.
@@ -256,7 +274,8 @@ class MathZoroController extends Notifier<MathZoroState> {
       final ui = s.userInfo;
       if (ui != null) {
         next = next.copyWith(
-            userInfo: _userInfoWithClass(ui, asInt(zslClassId), asInt(classesId)));
+          userInfo: _userInfoWithClass(ui, asInt(zslClassId), asInt(classesId)),
+        );
       }
       final sld = s.studentLoginData;
       if (sld != null) {
@@ -277,7 +296,9 @@ class MathZoroController extends Notifier<MathZoroState> {
         );
       }
       if (jsTruthy(batchId)) {
-        next = next.copyWith(batchDetails: IdName(asInt(batchId), jsStr(batchName) ?? ''));
+        next = next.copyWith(
+          batchDetails: IdName(asInt(batchId), jsStr(batchName) ?? ''),
+        );
       }
       return next;
     });
@@ -287,7 +308,10 @@ class MathZoroController extends Notifier<MathZoroState> {
 
   /// `storeAllClassData(item, instituteMeta, store)` from
   /// mathzorostudentloginpage.vue — used when the student has one class.
-  void storeAllClassData(Map<String, dynamic> item, Map<String, dynamic> instituteMeta) {
+  void storeAllClassData(
+    Map<String, dynamic> item,
+    Map<String, dynamic> instituteMeta,
+  ) {
     final selectedClass = <String, dynamic>{
       'zsl_class_id': item['zsl_class_id'],
       'zsl_subject_id': item['zsl_subject_id'],
@@ -310,34 +334,42 @@ class MathZoroController extends Notifier<MathZoroState> {
       final sld = s.studentLoginData;
       // Object.assign(store.studentLoginData, selectedClass)
       if (sld != null) {
-        next = next.copyWith(studentLoginData: StudentLoginData({...sld.raw, ...selectedClass}));
+        next = next.copyWith(
+          studentLoginData: StudentLoginData({...sld.raw, ...selectedClass}),
+        );
       }
       return next.copyWith(
-          batchDetails: IdName(asInt(item['batch_id']), jsStr(item['batch_name']) ?? ''));
+        batchDetails: IdName(
+          asInt(item['batch_id']),
+          jsStr(item['batch_name']) ?? '',
+        ),
+      );
     });
 
     final courses = asList(item['courses']);
     if (courses.isNotEmpty) {
       final plan = asMap(instituteMeta['plan']);
-      setMathZoroCourses(courses.map((c) {
-        final course = asMap(c) ?? const <String, dynamic>{};
-        return <String, dynamic>{
-          'course_id': course['id'],
-          'title': course['title'],
-          'zsl_class_id': course['zsl_class_id'],
-          'zsl_subject_id': course['zsl_subject_id'],
-          'is_math_zoro': course['is_math_zoro'] ?? false,
-          'zone': course['zone'],
-          'class_name': item['name'],
-          'institute_name': instituteMeta['name'],
-          'institute_logo': instituteMeta['logo'],
-          'plan_id': plan?['id'] ?? instituteMeta['institute_plan_id'],
-          'plan_name': plan?['name'],
-          'plan_type': plan?['plan_type'],
-          'start_date': plan?['start_date'],
-          'end_date': plan?['end_date'],
-        };
-      }).toList());
+      setMathZoroCourses(
+        courses.map((c) {
+          final course = asMap(c) ?? const <String, dynamic>{};
+          return <String, dynamic>{
+            'course_id': course['id'],
+            'title': course['title'],
+            'zsl_class_id': course['zsl_class_id'],
+            'zsl_subject_id': course['zsl_subject_id'],
+            'is_math_zoro': course['is_math_zoro'] ?? false,
+            'zone': course['zone'],
+            'class_name': item['name'],
+            'institute_name': instituteMeta['name'],
+            'institute_logo': instituteMeta['logo'],
+            'plan_id': plan?['id'] ?? instituteMeta['institute_plan_id'],
+            'plan_name': plan?['name'],
+            'plan_type': plan?['plan_type'],
+            'start_date': plan?['start_date'],
+            'end_date': plan?['end_date'],
+          };
+        }).toList(),
+      );
     }
   }
 
@@ -347,7 +379,9 @@ class MathZoroController extends Notifier<MathZoroState> {
   /// `setSelectedClass`) and maps the courses without `?? null / ?? false`
   /// defaults.
   void applyClassChangeSelection(
-      Map<String, dynamic> item, Map<String, dynamic> instituteMeta) {
+    Map<String, dynamic> item,
+    Map<String, dynamic> instituteMeta,
+  ) {
     final selectedClass = <String, dynamic>{
       'zsl_class_id': item['zsl_class_id'],
       'zsl_subject_id': item['zsl_subject_id'],
@@ -371,62 +405,76 @@ class MathZoroController extends Notifier<MathZoroState> {
       if (ui != null) {
         next = next.copyWith(
           userInfo: _userInfoWithClass(
-              ui, asInt(item['zsl_class_id']), asInt(item['classes_id'])),
+            ui,
+            asInt(item['zsl_class_id']),
+            asInt(item['classes_id']),
+          ),
         );
       }
       final sld = s.studentLoginData;
       if (sld != null) {
         next = next.copyWith(
-            studentLoginData: StudentLoginData({...sld.raw, ...selectedClass}));
+          studentLoginData: StudentLoginData({...sld.raw, ...selectedClass}),
+        );
       }
       return next.copyWith(
-          batchDetails: IdName(asInt(item['batch_id']), jsStr(item['batch_name']) ?? ''));
+        batchDetails: IdName(
+          asInt(item['batch_id']),
+          jsStr(item['batch_name']) ?? '',
+        ),
+      );
     });
 
     final courses = asList(item['courses']);
     if (courses.isNotEmpty) {
       final plan = asMap(instituteMeta['plan']);
-      setMathZoroCourses(courses.map((c) {
-        final course = asMap(c) ?? const <String, dynamic>{};
-        return <String, dynamic>{
-          'course_id': course['id'],
-          'title': course['title'],
-          'zsl_class_id': course['zsl_class_id'],
-          'zsl_subject_id': course['zsl_subject_id'],
-          'is_math_zoro': course['is_math_zoro'],
-          'zone': course['zone'],
-          'class_name': item['name'],
-          'institute_name': instituteMeta['name'],
-          'institute_logo': instituteMeta['logo'],
-          'plan_id': plan?['id'] ?? instituteMeta['institute_plan_id'],
-          'plan_name': plan?['name'],
-          'plan_type': plan?['plan_type'],
-          'start_date': plan?['start_date'],
-          'end_date': plan?['end_date'],
-        };
-      }).toList());
+      setMathZoroCourses(
+        courses.map((c) {
+          final course = asMap(c) ?? const <String, dynamic>{};
+          return <String, dynamic>{
+            'course_id': course['id'],
+            'title': course['title'],
+            'zsl_class_id': course['zsl_class_id'],
+            'zsl_subject_id': course['zsl_subject_id'],
+            'is_math_zoro': course['is_math_zoro'],
+            'zone': course['zone'],
+            'class_name': item['name'],
+            'institute_name': instituteMeta['name'],
+            'institute_logo': instituteMeta['logo'],
+            'plan_id': plan?['id'] ?? instituteMeta['institute_plan_id'],
+            'plan_name': plan?['name'],
+            'plan_type': plan?['plan_type'],
+            'start_date': plan?['start_date'],
+            'end_date': plan?['end_date'],
+          };
+        }).toList(),
+      );
     }
   }
 
-  static UserInfo _userInfoWithClass(UserInfo u, int? zslClassId, int? classesId) => UserInfo(
-        id: u.id,
-        username: u.username,
-        token: u.token,
-        role: u.role,
+  static UserInfo _userInfoWithClass(
+    UserInfo u,
+    int? zslClassId,
+    int? classesId,
+  ) => UserInfo(
+    id: u.id,
+    username: u.username,
+    token: u.token,
+    role: u.role,
     isLabAdmin: u.isLabAdmin,
-        instituteId: u.instituteId,
-        fullName: u.fullName,
-        email: u.email,
-        studentId: u.studentId,
-        examUserId: u.examUserId,
-        institutePlanId: u.institutePlanId,
-        zsl: u.zsl,
-        classesId: classesId,
-        zslClassId: zslClassId,
-        isMathZoro: u.isMathZoro,
-        phone: u.phone,
-        mathzoroClassId: zslClassId,
-      );
+    instituteId: u.instituteId,
+    fullName: u.fullName,
+    email: u.email,
+    studentId: u.studentId,
+    examUserId: u.examUserId,
+    institutePlanId: u.institutePlanId,
+    zsl: u.zsl,
+    classesId: classesId,
+    zslClassId: zslClassId,
+    isMathZoro: u.isMathZoro,
+    phone: u.phone,
+    mathzoroClassId: zslClassId,
+  );
 
   // ── auth (forgotPassword / resetPassword) ────────────────────────────────
 
@@ -438,8 +486,9 @@ class MathZoroController extends Notifier<MathZoroState> {
     required String otp,
     required String password,
     required String passwordConfirmation,
-  }) =>
-      ref.read(authServiceProvider).resetPassword(email, otp, password, passwordConfirmation);
+  }) => ref
+      .read(authServiceProvider)
+      .resetPassword(email, otp, password, passwordConfirmation);
 
   // ── ZSL content ──────────────────────────────────────────────────────────
 
@@ -458,7 +507,11 @@ class MathZoroController extends Notifier<MathZoroState> {
   }
 
   /// `getallchpaters(instituteId, classId, subjectId)`.
-  Future<dynamic> getallchpaters(Object instituteId, Object classId, Object subjectId) async {
+  Future<dynamic> getallchpaters(
+    Object instituteId,
+    Object classId,
+    Object subjectId,
+  ) async {
     try {
       final res = await _zsl.getAllChapters(instituteId, classId, subjectId);
       final value = _dataOr(res, const []);
@@ -473,8 +526,11 @@ class MathZoroController extends Notifier<MathZoroState> {
 
   /// `getZslLinks(instituteId, chapterId, languageId)` — `sub_user_id` is
   /// always taken from `userInfo.zsl`.
-  Future<dynamic> getZslLinks(Object? instituteId, Object? chapterId,
-      [Object? languageId]) async {
+  Future<dynamic> getZslLinks(
+    Object? instituteId,
+    Object? chapterId, [
+    Object? languageId,
+  ]) async {
     final subUserId = jsStr(_ui?.zsl);
     if (!jsTruthy(instituteId) || !jsTruthy(chapterId)) {
       throw const ApiError('Institute ID and Chapter ID are required');
@@ -518,14 +574,18 @@ class MathZoroController extends Notifier<MathZoroState> {
       truthy(_ui?.zslClassId),
       truthy(_ui?.classesId),
       truthy(state.selectedActivityContext?['classId']),
-      truthy(state.mathZoroCourses.isNotEmpty
-          ? state.mathZoroCourses.first['zsl_class_id']
-          : null),
+      truthy(
+        state.mathZoroCourses.isNotEmpty
+            ? state.mathZoroCourses.first['zsl_class_id']
+            : null,
+      ),
     ]);
 
     if (instituteId.isEmpty) throw const ApiError('Institute ID is missing');
-    if (zslStudentId.isEmpty) throw const ApiError('Sub User ID (ZSL) is missing');
-    if (classId.isEmpty) throw const ApiError('Class ID is missing for quiz submission');
+    if (zslStudentId.isEmpty)
+      throw const ApiError('Sub User ID (ZSL) is missing');
+    if (classId.isEmpty)
+      throw const ApiError('Class ID is missing for quiz submission');
     if (activityId.isEmpty) throw const ApiError('Activity ID is missing');
     if (answers.isEmpty) throw const ApiError('Answers are empty');
 
@@ -539,7 +599,10 @@ class MathZoroController extends Notifier<MathZoroState> {
   }
 
   /// `getSubjectPerformance(subjectId, classesId?)`.
-  Future<dynamic> getSubjectPerformance(String subjectId, [String? classesId]) async {
+  Future<dynamic> getSubjectPerformance(
+    String subjectId, [
+    String? classesId,
+  ]) async {
     final instituteId = jsStr(_ui?.instituteId);
     final subUserId = jsStr(_ui?.zsl);
     final finalClassesId = firstNonEmpty([
@@ -556,7 +619,12 @@ class MathZoroController extends Notifier<MathZoroState> {
     if (subUserId == null || subUserId.isEmpty) {
       throw const ApiError('Sub User ID not available');
     }
-    return _zsl.getSubjectPerformance(instituteId, finalClassesId, subjectId, subUserId);
+    return _zsl.getSubjectPerformance(
+      instituteId,
+      finalClassesId,
+      subjectId,
+      subUserId,
+    );
   }
 
   /// `getZslTickets()`.
@@ -577,11 +645,16 @@ class MathZoroController extends Notifier<MathZoroState> {
     if (subUserId == null || subUserId.isEmpty) {
       throw const ApiError('Sub User ID not available');
     }
-    return ref.read(gameTokensServiceProvider).getTickets(instituteId, classId, subUserId);
+    return ref
+        .read(gameTokensServiceProvider)
+        .getTickets(instituteId, classId, subUserId);
   }
 
   /// `individualrecordUsageAction(instructorId?, studentId?)`.
-  Future<dynamic> individualrecordUsageAction([String? instructorId, String? studentId]) async {
+  Future<dynamic> individualrecordUsageAction([
+    String? instructorId,
+    String? studentId,
+  ]) async {
     final instituteId = jsStr(_ui?.instituteId);
     if (instituteId == null || instituteId.isEmpty) {
       throw const ApiError('Institute ID not available');
@@ -600,18 +673,25 @@ class MathZoroController extends Notifier<MathZoroState> {
       ref.read(activityTrackingServiceProvider).getZslLanguages();
 
   /// `setLanguage(lang)`.
-  void setLanguage(AppLanguage lang) => ref.read(sessionProvider.notifier).setLanguage(lang);
+  void setLanguage(AppLanguage lang) =>
+      ref.read(sessionProvider.notifier).setLanguage(lang);
 
   /// `setClassDetails({ id, name, c_id })`.
-  void setClassDetails({required Object? id, required String name, Object? cId}) =>
-      ref.read(sessionProvider.notifier).setClassDetails(
-          IdName(asInt(id), name, extra: {'c_id': cId}));
+  void setClassDetails({
+    required Object? id,
+    required String name,
+    Object? cId,
+  }) => ref
+      .read(sessionProvider.notifier)
+      .setClassDetails(IdName(asInt(id), name, extra: {'c_id': cId}));
 
   /// `profilegetInstituteById()` — admins / institutes only, otherwise null.
   Future<dynamic> profilegetInstituteById() async {
     final ui = _ui;
     final id = ui?.instituteId;
-    if (id != null && id != 0 && (ui?.role == Role.admin || ui?.role == Role.institute)) {
+    if (id != null &&
+        id != 0 &&
+        (ui?.role == Role.admin || ui?.role == Role.institute)) {
       return ref.read(instituteServiceProvider).getInstituteById(id);
     }
     return null;
@@ -626,7 +706,9 @@ class MathZoroController extends Notifier<MathZoroState> {
       instituteId = _ui?.instituteId;
       finalFilter = 'published';
     } else {
-      instituteId = jsTruthy(instituteIdOrFilter) ? instituteIdOrFilter : _ui?.instituteId;
+      instituteId = jsTruthy(instituteIdOrFilter)
+          ? instituteIdOrFilter
+          : _ui?.instituteId;
       finalFilter = filter;
     }
     if (!jsTruthy(instituteId)) return;
@@ -637,28 +719,33 @@ class MathZoroController extends Notifier<MathZoroState> {
         ? data.where((c) => asMap(c)?['status'] == 'published').toList()
         : data;
 
-    final mapped = await Future.wait(filtered.map((raw) async {
-      final item = asMap(raw) ?? const <String, dynamic>{};
-      final counts = asMap(await classService.getClassesCount(instituteId!, item['id']));
-      return <String, dynamic>{
-        'id': item['id'],
-        'year': item['name'],
-        'c_id': item['curricula_id'],
-        'students': counts?['students_count'] ?? 0,
-        'batches': counts?['batches_count'] ?? 0,
-        'instructors': counts?['instructors_count'] ?? 0,
-        'courses': counts?['courses_count'] ?? 0,
-        'admins': counts?['admin_instructors_count'] ?? 0,
-        'status': item['status'] ?? 'unknown',
-        'is_admin': item['is_admin'] ?? false,
-      };
-    }));
+    final mapped = await Future.wait(
+      filtered.map((raw) async {
+        final item = asMap(raw) ?? const <String, dynamic>{};
+        final counts = asMap(
+          await classService.getClassesCount(instituteId!, item['id']),
+        );
+        return <String, dynamic>{
+          'id': item['id'],
+          'year': item['name'],
+          'c_id': item['curricula_id'],
+          'students': counts?['students_count'] ?? 0,
+          'batches': counts?['batches_count'] ?? 0,
+          'instructors': counts?['instructors_count'] ?? 0,
+          'courses': counts?['courses_count'] ?? 0,
+          'admins': counts?['admin_instructors_count'] ?? 0,
+          'status': item['status'] ?? 'unknown',
+          'is_admin': item['is_admin'] ?? false,
+        };
+      }),
+    );
 
     _set(
       state.copyWith(
         institutes: mapped,
         classes: [
-          for (final m in mapped) {'id': m['id'], 'name': m['year'], 'status': m['status']}
+          for (final m in mapped)
+            {'id': m['id'], 'name': m['year'], 'status': m['status']},
         ],
       ),
       persist: false,
@@ -678,14 +765,16 @@ class MathZoroController extends Notifier<MathZoroState> {
   /// `getWhyToLearnSignedUrl(descriptionId)`.
   Future<dynamic> getWhyToLearnSignedUrl(String descriptionId) async {
     final instituteId = _ui?.instituteId;
-    if (!jsTruthy(instituteId)) throw const ApiError('Institute ID not available');
+    if (!jsTruthy(instituteId))
+      throw const ApiError('Institute ID not available');
     return _zsl.getWhyToLearnSignedUrl(jsStr(instituteId)!, descriptionId);
   }
 
   /// `getChapterReferenceSignedLink(chapter_id)`.
   Future<dynamic> getChapterReferenceSignedLink(String chapterId) async {
     final instituteId = _ui?.instituteId;
-    if (!jsTruthy(instituteId)) throw const ApiError('Institute ID not available');
+    if (!jsTruthy(instituteId))
+      throw const ApiError('Institute ID not available');
     return _zsl.getChapterReferenceSignedLink({
       'institute_id': jsStr(instituteId),
       'chapter_id': chapterId,
@@ -709,7 +798,9 @@ class MathZoroController extends Notifier<MathZoroState> {
     if (subUserId == null || subUserId.isEmpty) {
       throw const ApiError('Sub User ID not available');
     }
-    return ref.read(gameTokensServiceProvider).unlockActivity(instituteId, activityId, subUserId);
+    return ref
+        .read(gameTokensServiceProvider)
+        .unlockActivity(instituteId, activityId, subUserId);
   }
 
   /// `getZslXp(classId?)`.
@@ -717,8 +808,9 @@ class MathZoroController extends Notifier<MathZoroState> {
     final instituteId = jsStr(_ui?.instituteId) ?? '';
     final subUserId = jsStr(_ui?.zsl) ?? '';
     final ctxClassId = state.selectedActivityContext?['classId'];
-    final Object resolvedClassId =
-        jsTruthy(classId) ? classId! : (jsTruthy(ctxClassId) ? ctxClassId as Object : '');
+    final Object resolvedClassId = jsTruthy(classId)
+        ? classId!
+        : (jsTruthy(ctxClassId) ? ctxClassId as Object : '');
     return _zsl.getXp(instituteId, resolvedClassId, subUserId);
   }
 }

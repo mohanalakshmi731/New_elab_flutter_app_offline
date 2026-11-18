@@ -16,11 +16,14 @@ import '../../state/providers.dart';
 import '../../widgets/form_fields.dart' show appMenuItemStyle;
 import '../../widgets/lucide_icon.dart';
 import 'left_sidebar.dart';
+import '../offline/offline_runtime.dart';
 
 /// ZSL content languages shown in the top bar (en / te / hi only),
 /// port of `langu()` in DashboardLayout.vue.
 final zslLanguagesProvider = FutureProvider<List<AppLanguage>>((ref) async {
-  final body = await ref.read(activityTrackingServiceProvider).getZslLanguages();
+  final body = await ref
+      .read(activityTrackingServiceProvider)
+      .getZslLanguages();
   const allowed = {'en', 'te', 'hi'};
   final langs = unwrapList(body)
       .map(asMap)
@@ -38,11 +41,16 @@ final zslLanguagesProvider = FutureProvider<List<AppLanguage>>((ref) async {
 });
 
 /// `text-gray-800 dark:text-white` of the top bar.
-Color _navText(BuildContext context) => context.isDark ? Colors.white : Tw.gray800;
+Color _navText(BuildContext context) =>
+    context.isDark ? Colors.white : Tw.gray800;
 
 /// Port of `src/components/DashboardLayout.vue` (+ LeftSidebar + Footer).
 class DashboardShell extends ConsumerWidget {
-  const DashboardShell({super.key, required this.location, required this.child});
+  const DashboardShell({
+    super.key,
+    required this.location,
+    required this.child,
+  });
 
   final String location;
   final Widget child;
@@ -50,14 +58,19 @@ class DashboardShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final wide = context.isMd;
+    final learning = ref.watch(offlineWorkspaceOwnerProvider) != null;
     // The layout's own `isDark` is `colorMode === 'dark'`, so in "system"
     // mode it keeps the light background (and image) even when the OS — and
     // so every `dark:` class inside — is dark. Kept as on the web.
     final layoutDark = ref.watch(colorModeProvider) == ColorModePref.dark;
 
     return Scaffold(
-      backgroundColor: layoutDark ? AppColors.dashboardDark : AppColors.dashboardLight,
-      bottomNavigationBar: wide ? null : MobileBottomNav(location: location),
+      backgroundColor: layoutDark
+          ? AppColors.dashboardDark
+          : AppColors.dashboardLight,
+      bottomNavigationBar: wide || learning
+          ? null
+          : MobileBottomNav(location: location),
       body: Container(
         decoration: layoutDark
             ? null
@@ -72,21 +85,29 @@ class DashboardShell extends ConsumerWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (wide) LeftSidebarRail(location: location),
+              if (wide && !learning) LeftSidebarRail(location: location),
               Expanded(
                 child: Column(
                   children: [
-                    const _TopBar(),
+                    if (!learning) const _TopBar(),
                     // The scroll area's `md:pb-6` (below md its `pb-24` only
                     // clears the fixed bottom bar, which doesn't overlap here).
                     Expanded(
+                      key: const ValueKey('dashboard-page-content'),
                       child: _MainText(
-                        child: wide ? Padding(padding: const EdgeInsets.only(bottom: 24), child: child) : child,
+                        child: wide
+                            ? Padding(
+                                padding: EdgeInsets.only(
+                                  bottom: learning ? 0 : 24,
+                                ),
+                                child: child,
+                              )
+                            : child,
                       ),
                     ),
                     // Below 768px the fixed bottom bar (h-16, z-40) covers the
                     // footer completely on the web.
-                    if (wide) const AppFooter(),
+                    if (wide && !learning) const AppFooter(),
                   ],
                 ),
               ),
@@ -109,8 +130,13 @@ class _MainText extends StatelessWidget {
     final theme = Theme.of(context);
     final color = context.isDark ? Colors.white : Tw.gray900;
     return Theme(
-      data: theme.copyWith(textTheme: theme.textTheme.apply(bodyColor: color, displayColor: color)),
-      child: DefaultTextStyle.merge(style: TextStyle(color: color), child: child),
+      data: theme.copyWith(
+        textTheme: theme.textTheme.apply(bodyColor: color, displayColor: color),
+      ),
+      child: DefaultTextStyle.merge(
+        style: TextStyle(color: color),
+        child: child,
+      ),
     );
   }
 }
@@ -131,7 +157,10 @@ class _TopBar extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Row(
           children: [
-            if (session.role == Role.institute && daysLeft != null && daysLeft <= 3) _ExpiryBadge(daysLeft: daysLeft),
+            if (session.role == Role.institute &&
+                daysLeft != null &&
+                daysLeft <= 3)
+              _ExpiryBadge(daysLeft: daysLeft),
             const Spacer(),
             const _LanguageSelect(),
             const SizedBox(width: 8),
@@ -163,9 +192,13 @@ class _ExpiryBadge extends StatefulWidget {
   State<_ExpiryBadge> createState() => _ExpiryBadgeState();
 }
 
-class _ExpiryBadgeState extends State<_ExpiryBadge> with SingleTickerProviderStateMixin {
-  late final _pulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000), lowerBound: 0.5)
-    ..repeat(reverse: true);
+class _ExpiryBadgeState extends State<_ExpiryBadge>
+    with SingleTickerProviderStateMixin {
+  late final _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1000),
+    lowerBound: 0.5,
+  )..repeat(reverse: true);
 
   @override
   void dispose() {
@@ -179,23 +212,37 @@ class _ExpiryBadgeState extends State<_ExpiryBadge> with SingleTickerProviderSta
     final text = d > 0
         ? 'Expires in $d day${d == 1 ? '' : 's'}'
         : d == 0
-            ? 'Expires today'
-            : 'Expired';
+        ? 'Expires today'
+        : 'Expired';
     final dark = context.isDark;
     final fg = dark ? Tw.red300 : Tw.red600;
     return FadeTransition(
-      opacity: CurvedAnimation(parent: _pulse, curve: const Cubic(0.4, 0, 0.6, 1)),
+      opacity: CurvedAnimation(
+        parent: _pulse,
+        curve: const Cubic(0.4, 0, 0.6, 1),
+      ),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           color: dark ? Tw.red900 : Tw.red100,
           borderRadius: BorderRadius.circular(999),
         ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(BootstrapIcons.clock_history, size: 12, color: fg),
-          const SizedBox(width: 4),
-          Text(text, style: TextStyle(fontSize: 12, height: 16 / 12, fontWeight: FontWeight.w600, color: fg)),
-        ]),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(BootstrapIcons.clock_history, size: 12, color: fg),
+            const SizedBox(width: 4),
+            Text(
+              text,
+              style: TextStyle(
+                fontSize: 12,
+                height: 16 / 12,
+                fontWeight: FontWeight.w600,
+                color: fg,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -218,15 +265,20 @@ class _LanguageSelectState extends ConsumerState<_LanguageSelect> {
 
   @override
   Widget build(BuildContext context) {
-    final langs = ref.watch(zslLanguagesProvider).valueOrNull ?? const <AppLanguage>[];
+    final langs =
+        ref.watch(zslLanguagesProvider).valueOrNull ?? const <AppLanguage>[];
     final current = ref.watch(sessionProvider.select((s) => s.language));
-    final code = (langs.any((l) => l.code == current.code) ? current.code : 'LA').toUpperCase();
+    final code =
+        (langs.any((l) => l.code == current.code) ? current.code : 'LA')
+            .toUpperCase();
     final dark = context.isDark;
     final input = context.inputColor;
     final fg = _navText(context);
     final itemStyle = appMenuItemStyle(context).copyWith(
       minimumSize: const WidgetStatePropertyAll(Size(0, 28)),
-      padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 8, vertical: 4)),
+      padding: const WidgetStatePropertyAll(
+        EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      ),
     );
 
     return MenuAnchor(
@@ -234,7 +286,9 @@ class _LanguageSelectState extends ConsumerState<_LanguageSelect> {
       alignmentOffset: const Offset(0, 4),
       style: MenuStyle(
         minimumSize: const WidgetStatePropertyAll(Size(128, 0)),
-        maximumSize: WidgetStatePropertyAll(Size(320, MediaQuery.sizeOf(context).height * 0.4)),
+        maximumSize: WidgetStatePropertyAll(
+          Size(320, MediaQuery.sizeOf(context).height * 0.4),
+        ),
       ),
       menuChildren: [
         for (final l in langs)
@@ -254,7 +308,11 @@ class _LanguageSelectState extends ConsumerState<_LanguageSelect> {
                       ? OverflowBox(
                           maxWidth: 16,
                           maxHeight: 16,
-                          child: LucideIcon(Lucide.check, size: 16, color: context.mutedFgColor),
+                          child: LucideIcon(
+                            Lucide.check,
+                            size: 16,
+                            color: context.mutedFgColor,
+                          ),
                         )
                       : null,
                 ),
@@ -267,14 +325,17 @@ class _LanguageSelectState extends ConsumerState<_LanguageSelect> {
         onEnter: (_) => setState(() => _hover = true),
         onExit: (_) => setState(() => _hover = false),
         child: GestureDetector(
-          onTap: () => controller.isOpen ? controller.close() : controller.open(),
+          onTap: () =>
+              controller.isOpen ? controller.close() : controller.open(),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             width: context.isSm ? 64 : 56,
             height: 36,
             padding: const EdgeInsets.symmetric(horizontal: 4),
             decoration: BoxDecoration(
-              color: dark ? input.withValues(alpha: _hover ? 0.5 : 0.3) : Colors.transparent,
+              color: dark
+                  ? input.withValues(alpha: _hover ? 0.5 : 0.3)
+                  : Colors.transparent,
               borderRadius: BorderRadius.circular(AppTheme.radiusMd),
               border: Border.all(color: input),
               boxShadow: AppShadows.xs,
@@ -292,7 +353,11 @@ class _LanguageSelectState extends ConsumerState<_LanguageSelect> {
                     style: TextStyle(fontSize: 12, height: 16 / 12, color: fg),
                   ),
                 ),
-                LucideIcon(Lucide.chevronDown, size: 16, color: context.mutedFgColor.withValues(alpha: 0.5)),
+                LucideIcon(
+                  Lucide.chevronDown,
+                  size: 16,
+                  color: context.mutedFgColor.withValues(alpha: 0.5),
+                ),
               ],
             ),
           ),
@@ -320,9 +385,17 @@ class _ColorModeButtonState extends ConsumerState<_ColorModeButton> {
   Widget build(BuildContext context) {
     final mode = ref.watch(colorModeProvider);
     final (icon, color, label) = switch (mode) {
-      ColorModePref.light => (BootstrapIcons.sun_fill, Tw.yellow500, 'Light Mode'),
+      ColorModePref.light => (
+        BootstrapIcons.sun_fill,
+        Tw.yellow500,
+        'Light Mode',
+      ),
       ColorModePref.dark => (BootstrapIcons.moon_fill, Tw.blue500, 'Dark Mode'),
-      ColorModePref.system => (BootstrapIcons.laptop, Tw.gray500, 'System Mode'),
+      ColorModePref.system => (
+        BootstrapIcons.laptop,
+        Tw.gray500,
+        'System Mode',
+      ),
     };
     final dark = context.isDark;
     return Tooltip(
@@ -331,8 +404,15 @@ class _ColorModeButtonState extends ConsumerState<_ColorModeButton> {
       preferBelow: true,
       verticalOffset: 24,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(color: context.colors.primary, borderRadius: BorderRadius.circular(AppTheme.radiusMd)),
-      textStyle: TextStyle(fontSize: 12, height: 16 / 12, color: context.colors.onPrimary),
+      decoration: BoxDecoration(
+        color: context.colors.primary,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+      ),
+      textStyle: TextStyle(
+        fontSize: 12,
+        height: 16 / 12,
+        color: context.colors.onPrimary,
+      ),
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         onEnter: (_) => setState(() => _hover = true),
@@ -346,7 +426,9 @@ class _ColorModeButtonState extends ConsumerState<_ColorModeButton> {
             height: 40,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: _hover ? (dark ? Tw.indigo950.withValues(alpha: 0.4) : Tw.indigo50) : Colors.transparent,
+              color: _hover
+                  ? (dark ? Tw.indigo950.withValues(alpha: 0.4) : Tw.indigo50)
+                  : Colors.transparent,
               borderRadius: BorderRadius.circular(999),
             ),
             child: Icon(icon, size: 16, color: color),
@@ -373,7 +455,7 @@ class _UserMenu extends ConsumerStatefulWidget {
 class _UserMenuState extends ConsumerState<_UserMenu> {
   final _menu = MenuController();
   final _triggerKey = GlobalKey();
-    double _triggerWidth = 208;
+  double _triggerWidth = 208;
   bool _hover = false;
 
   Future<void> _onSelected(_UserAction a) async {
@@ -411,22 +493,31 @@ class _UserMenuState extends ConsumerState<_UserMenu> {
     final fg = _navText(context);
     final style = appMenuItemStyle(context);
 
-    MenuItemButton item(_UserAction a, IconData icon, String label, {Color? iconColor}) => MenuItemButton(
-          style: style.copyWith(
-            minimumSize: const WidgetStatePropertyAll(Size(0, 48)),
-            padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 14, vertical: 12)),
-            textStyle: const WidgetStatePropertyAll(TextStyle(fontSize: 16, height: 22 / 16)),
-          ),
-          onPressed: () => _onSelected(a),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(width: 20, child: Icon(icon, size: 18, color: iconColor)),
-              const SizedBox(width: 14),
-              Text(label),
-            ],
-          ),
-        );
+    MenuItemButton item(
+      _UserAction a,
+      IconData icon,
+      String label, {
+      Color? iconColor,
+    }) => MenuItemButton(
+      style: style.copyWith(
+        minimumSize: const WidgetStatePropertyAll(Size(0, 48)),
+        padding: const WidgetStatePropertyAll(
+          EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        ),
+        textStyle: const WidgetStatePropertyAll(
+          TextStyle(fontSize: 16, height: 22 / 16),
+        ),
+      ),
+      onPressed: () => _onSelected(a),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(width: 20, child: Icon(icon, size: 18, color: iconColor)),
+          const SizedBox(width: 14),
+          Text(label),
+        ],
+      ),
+    );
 
     return MenuAnchor(
       controller: _menu,
@@ -437,17 +528,33 @@ class _UserMenuState extends ConsumerState<_UserMenu> {
         maximumSize: WidgetStatePropertyAll(Size(208, double.infinity)),
       ),
       menuChildren: [
-        if (!sm) MenuItemButton(
-          style: style.copyWith(
-            minimumSize: const WidgetStatePropertyAll(Size(0, 40)),
-            padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 14, vertical: 10)),
+        if (!sm)
+          MenuItemButton(
+            style: style.copyWith(
+              minimumSize: const WidgetStatePropertyAll(Size(0, 40)),
+              padding: const WidgetStatePropertyAll(
+                EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              ),
+            ),
+            overflowAxis: Axis.vertical,
+            onPressed: () => _onSelected(_UserAction.name),
+            child: Text(
+              name,
+              style: const TextStyle(
+                fontSize: 14,
+                height: 20 / 14,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
-          overflowAxis: Axis.vertical,
-          onPressed: () => _onSelected(_UserAction.name),
-          child: Text(name, style: const TextStyle(fontSize: 14, height: 20 / 14, fontWeight: FontWeight.w700)),
-        ),
-        if (role != Role.admin) item(_UserAction.profile, BootstrapIcons.person_fill, 'Profile'),
-        if (role == Role.institute) item(_UserAction.upgrade, BootstrapIcons.arrow_up_circle, 'Upgrade Plan'),
+        if (role != Role.admin)
+          item(_UserAction.profile, BootstrapIcons.person_fill, 'Profile'),
+        if (role == Role.institute)
+          item(
+            _UserAction.upgrade,
+            BootstrapIcons.arrow_up_circle,
+            'Upgrade Plan',
+          ),
         if (role != Role.admin)
           // `bg-border -mx-1 my-1 h-px`
           SizedBox(
@@ -458,7 +565,12 @@ class _UserMenuState extends ConsumerState<_UserMenu> {
               child: Container(height: 1, color: context.borderColor),
             ),
           ),
-        item(_UserAction.logout, BootstrapIcons.box_arrow_right, 'Logout', iconColor: Tw.red500),
+        item(
+          _UserAction.logout,
+          BootstrapIcons.box_arrow_right,
+          'Logout',
+          iconColor: Tw.red500,
+        ),
       ],
       builder: (context, controller, _) => MouseRegion(
         cursor: SystemMouseCursors.click,
@@ -471,27 +583,36 @@ class _UserMenuState extends ConsumerState<_UserMenu> {
             duration: const Duration(milliseconds: 150),
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: _hover ? (dark ? Tw.indigo950.withValues(alpha: 0.4) : Tw.indigo50) : Colors.transparent,
+              color: _hover
+                  ? (dark ? Tw.indigo950.withValues(alpha: 0.4) : Tw.indigo50)
+                  : Colors.transparent,
               borderRadius: BorderRadius.circular(999),
             ),
             child: SizedBox(
               height: 28,
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                if (sm) ...[
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 220),
-                    child: Text(
-                      name,
-                      maxLines: 1,
-                      softWrap: false,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: context.isMd ? 16 : 14, fontWeight: FontWeight.w700, color: fg),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (sm) ...[
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 220),
+                      child: Text(
+                        name,
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: context.isMd ? 16 : 14,
+                          fontWeight: FontWeight.w700,
+                          color: fg,
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
+                    const SizedBox(width: 8),
+                  ],
+                  Icon(BootstrapIcons.person_circle, size: 20, color: fg),
                 ],
-                Icon(BootstrapIcons.person_circle, size: 20, color: fg),
-              ]),
+              ),
             ),
           ),
         ),
@@ -512,7 +633,10 @@ class AppFooter extends StatelessWidget {
     final dark = context.isDark;
     final textColor = dark ? Colors.white : const Color(0xFF333333);
     final dim = TextStyle(color: textColor.withValues(alpha: 0.8));
-    const brand = TextStyle(color: AppColors.brandOrange, fontWeight: FontWeight.w700);
+    const brand = TextStyle(
+      color: AppColors.brandOrange,
+      fontWeight: FontWeight.w700,
+    );
     final sm = context.isSm;
     final md = context.isMd;
     // text-[8px] (line 20 from leading-5) / sm:text-sm (20) / md:text-xs (16)
@@ -527,24 +651,50 @@ class AppFooter extends StatelessWidget {
           padding: EdgeInsets.symmetric(vertical: md ? 12 : 4, horizontal: 4),
           decoration: BoxDecoration(
             color: dark ? AppColors.sidebarBg : Colors.transparent,
-            border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.2))),
+            border: Border(
+              top: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+            ),
           ),
           child: DefaultTextStyle.merge(
-            style: TextStyle(fontSize: fontSize, height: lineHeight / fontSize, letterSpacing: 0.025 * fontSize),
+            style: TextStyle(
+              fontSize: fontSize,
+              height: lineHeight / fontSize,
+              letterSpacing: 0.025 * fontSize,
+            ),
             textAlign: TextAlign.center,
             child: sm
-                ? Text.rich(TextSpan(children: [
-                    TextSpan(text: 'Powered by', style: dim),
-                    const TextSpan(text: ' ZeroScienceLab ', style: brand),
-                    TextSpan(text: 'Fall in love with Mathematics & Science', style: dim),
-                  ]))
-                : Column(mainAxisSize: MainAxisSize.min, children: [
-                    Text.rich(TextSpan(children: [
-                      TextSpan(text: 'Powered by', style: dim),
-                      const TextSpan(text: ' ZeroScienceLab', style: brand),
-                    ])),
-                    Text('Fall in love with Mathematics & Science', style: dim),
-                  ]),
+                ? Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(text: 'Powered by', style: dim),
+                        const TextSpan(text: ' ZeroScienceLab ', style: brand),
+                        TextSpan(
+                          text: 'Fall in love with Mathematics & Science',
+                          style: dim,
+                        ),
+                      ],
+                    ),
+                  )
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(text: 'Powered by', style: dim),
+                            const TextSpan(
+                              text: ' ZeroScienceLab',
+                              style: brand,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        'Fall in love with Mathematics & Science',
+                        style: dim,
+                      ),
+                    ],
+                  ),
           ),
         ),
       ),

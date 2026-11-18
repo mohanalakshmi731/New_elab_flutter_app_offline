@@ -86,26 +86,34 @@ class ClassListState {
     Object? selectedBatch = _unset,
     Object? searchError = _unset,
     List<Object?>? selectedStudents,
-  }) =>
-      ClassListState(
-        institutes: institutes ?? this.institutes,
-        classes: classes ?? this.classes,
-        curriculums: curriculums ?? this.curriculums,
-        batches: batches ?? this.batches,
-        promoteBatchList: promoteBatchList ?? this.promoteBatchList,
-        instructors: instructors ?? this.instructors,
-        classInstructors: classInstructors ?? this.classInstructors,
-        classInstructorPagination: classInstructorPagination ?? this.classInstructorPagination,
-        instructorPagination: instructorPagination,
-        students: students ?? this.students,
-        studentPagination: studentPagination ?? this.studentPagination,
-        assignedInstructors: assignedInstructors ?? this.assignedInstructors,
-        selectedInstructor: identical(selectedInstructor, _unset) ? this.selectedInstructor : selectedInstructor,
-        selectedStudent: identical(selectedStudent, _unset) ? this.selectedStudent : selectedStudent,
-        selectedBatch: identical(selectedBatch, _unset) ? this.selectedBatch : selectedBatch,
-        searchError: identical(searchError, _unset) ? this.searchError : searchError as String?,
-        selectedStudents: selectedStudents ?? this.selectedStudents,
-      );
+  }) => ClassListState(
+    institutes: institutes ?? this.institutes,
+    classes: classes ?? this.classes,
+    curriculums: curriculums ?? this.curriculums,
+    batches: batches ?? this.batches,
+    promoteBatchList: promoteBatchList ?? this.promoteBatchList,
+    instructors: instructors ?? this.instructors,
+    classInstructors: classInstructors ?? this.classInstructors,
+    classInstructorPagination:
+        classInstructorPagination ?? this.classInstructorPagination,
+    instructorPagination: instructorPagination,
+    students: students ?? this.students,
+    studentPagination: studentPagination ?? this.studentPagination,
+    assignedInstructors: assignedInstructors ?? this.assignedInstructors,
+    selectedInstructor: identical(selectedInstructor, _unset)
+        ? this.selectedInstructor
+        : selectedInstructor,
+    selectedStudent: identical(selectedStudent, _unset)
+        ? this.selectedStudent
+        : selectedStudent,
+    selectedBatch: identical(selectedBatch, _unset)
+        ? this.selectedBatch
+        : selectedBatch,
+    searchError: identical(searchError, _unset)
+        ? this.searchError
+        : searchError as String?,
+    selectedStudents: selectedStudents ?? this.selectedStudents,
+  );
 }
 
 /// Store actions mapped by `classlist.vue`, ported 1:1.
@@ -116,7 +124,8 @@ class ClassListController extends Notifier<ClassListState> {
     listenSelf((prev, next) {
       if (prev == null) return;
       final handoff = ref.read(lmsHandoffProvider.notifier);
-      if (!identical(prev.institutes, next.institutes)) handoff.set('institutes', next.institutes);
+      if (!identical(prev.institutes, next.institutes))
+        handoff.set('institutes', next.institutes);
     });
     return const ClassListState();
   }
@@ -145,13 +154,17 @@ class ClassListController extends Notifier<ClassListState> {
   /// `setClassDetails(classInfo)` — any map (the web assigned whole responses).
   void setClassDetails(Object? classInfo) {
     final m = asMap(classInfo);
-    ref.read(sessionProvider.notifier).setClassDetails(m == null ? null : IdName.fromJson(m));
+    ref
+        .read(sessionProvider.notifier)
+        .setClassDetails(m == null ? null : IdName.fromJson(m));
   }
 
   /// `setBatchDetails(batchInfo)`
   void setBatchDetails(Object? batchInfo) {
     final m = asMap(batchInfo);
-    ref.read(sessionProvider.notifier).setBatchDetails(m == null ? null : IdName.fromJson(m));
+    ref
+        .read(sessionProvider.notifier)
+        .setBatchDetails(m == null ? null : IdName.fromJson(m));
   }
 
   /// `clearClassDetailsData()`
@@ -180,9 +193,11 @@ class ClassListController extends Notifier<ClassListState> {
 
   /// `this.institutes[index] = { ...this.institutes[index], status }` (toggleClassStatus).
   void patchInstitute(Object? id, Json fields) {
-    state = state.copyWith(institutes: [
-      for (final i in state.institutes) i['id'] == id ? {...i, ...fields} : i,
-    ]);
+    state = state.copyWith(
+      institutes: [
+        for (final i in state.institutes) i['id'] == id ? {...i, ...fields} : i,
+      ],
+    );
   }
 
   // ── classes ─────────────────────────────────────────────────────────────
@@ -192,16 +207,18 @@ class ClassListController extends Notifier<ClassListState> {
     final iid = _instituteId;
     if (iid == null) return;
     final data = await ref.read(classServiceProvider).getAllCurriculums(iid);
-    state = state.copyWith(curriculums: [
-      for (final item in _maps(data))
-        {
-          'id': item['id'],
-          'institute_id': item['institute_id'],
-          'name': item['name'],
-          'status': orJs(item['status']?.toString().toLowerCase(), 'draft'),
-          'created_at': item['created_at'],
-        },
-    ]);
+    state = state.copyWith(
+      curriculums: [
+        for (final item in _maps(data))
+          {
+            'id': item['id'],
+            'institute_id': item['institute_id'],
+            'name': item['name'],
+            'status': orJs(item['status']?.toString().toLowerCase(), 'draft'),
+            'created_at': item['created_at'],
+          },
+      ],
+    );
   }
 
   /// `getClasses(institute_id_or_filter?, filter?)`
@@ -219,19 +236,31 @@ class ClassListController extends Notifier<ClassListState> {
 
     final svc = ref.read(classServiceProvider);
     final data = _maps(await svc.getAllClasses(instituteId!));
-    final filtered = finalFilter == 'published' ? data.where((c) => c['status'] == 'published').toList() : data;
-    final mapped = await Future.wait(filtered.map((item) async {
-      final counts = await svc.getClassesCount(instituteId!, item['id']);
-      return mapClassItem(item, counts);
-    }));
+    final filtered = finalFilter == 'published'
+        ? data.where((c) => c['status'] == 'published').toList()
+        : data;
+    final mapped = await Future.wait(
+      filtered.map((item) async {
+        final counts = await svc.getClassesCount(instituteId!, item['id']);
+        return mapClassItem(item, counts);
+      }),
+    );
     state = state.copyWith(
       institutes: mapped,
-      classes: [for (final m in mapped) {'id': m['id'], 'name': m['year'], 'status': m['status']}],
+      classes: [
+        for (final m in mapped)
+          {'id': m['id'], 'name': m['year'], 'status': m['status']},
+      ],
     );
   }
 
   /// `createClass(name, curriculumId, status, classLevel)`
-  Future<void> createClass(String name, Object curriculumId, String status, int? classLevel) async {
+  Future<void> createClass(
+    String name,
+    Object curriculumId,
+    String status,
+    int? classLevel,
+  ) async {
     await ref.read(classServiceProvider).createClass({
       'institute_id': _instituteId ?? 1,
       'name': name,
@@ -243,7 +272,12 @@ class ClassListController extends Notifier<ClassListState> {
   }
 
   /// `updateClass(id, payload)` — the response replaces `classDetails`.
-  Future<dynamic> updateClass(String id, {required String? name, required Object? status, int? classLevel}) async {
+  Future<dynamic> updateClass(
+    String id, {
+    required String? name,
+    required Object? status,
+    int? classLevel,
+  }) async {
     final data = {
       'institute_id': _instituteIdOrThrow,
       'name': name,
@@ -257,8 +291,10 @@ class ClassListController extends Notifier<ClassListState> {
 
   /// `updateClassStatus(id, { status })` — the response replaces `classDetails`.
   Future<dynamic> updateClassStatus(String id, String status) async {
-    final response =
-        await ref.read(classServiceProvider).updateClassStatus(id, {'institute_id': _instituteIdOrThrow, 'status': status});
+    final response = await ref.read(classServiceProvider).updateClassStatus(
+      id,
+      {'institute_id': _instituteIdOrThrow, 'status': status},
+    );
     setClassDetails(response);
     return response;
   }
@@ -268,7 +304,8 @@ class ClassListController extends Notifier<ClassListState> {
     final iid = _instituteId;
     if (iid == null) return;
     final instituteId = '$iid';
-    final instructorId = _session.role == Role.instructor && jsTruthy(_session.instructorId)
+    final instructorId =
+        _session.role == Role.instructor && jsTruthy(_session.instructorId)
         ? '${_session.instructorId}'
         : null;
     final svc = ref.read(classServiceProvider);
@@ -277,27 +314,37 @@ class ClassListController extends Notifier<ClassListState> {
       'term': term,
       'instructor_id': instructorId,
     });
-    final mapped = await Future.wait(searchClassRows(raw).map((item) async {
-      Object? counts = const <String, dynamic>{};
-      if (searchItemNeedsCounts(item)) {
-        counts = await svc.getClassesCount(iid, jsNumber(item['id']) ?? item['id']);
-      }
-      return mapSearchClassItem(item, counts);
-    }));
+    final mapped = await Future.wait(
+      searchClassRows(raw).map((item) async {
+        Object? counts = const <String, dynamic>{};
+        if (searchItemNeedsCounts(item)) {
+          counts = await svc.getClassesCount(
+            iid,
+            jsNumber(item['id']) ?? item['id'],
+          );
+        }
+        return mapSearchClassItem(item, counts);
+      }),
+    );
     state = state.copyWith(institutes: mapped);
   }
 
   /// `fetchClassDetails(classId?)` — ignores stale answers like the web.
   Future<dynamic> fetchClassDetails([Object? classId]) async {
     final instituteId = _instituteIdOrThrow;
-    final cid = jsTruthy(classId) ? '$classId' : (_classId != null ? '$_classId' : null);
+    final cid = jsTruthy(classId)
+        ? '$classId'
+        : (_classId != null ? '$_classId' : null);
     if (cid == null) throw const ApiError('Class ID not available');
-    final response = await ref
-        .read(classServiceProvider)
-        .getClassDetails(cid, {'institute_id': instituteId, 'withCourses': 'yes'});
+    final response = await ref.read(classServiceProvider).getClassDetails(cid, {
+      'institute_id': instituteId,
+      'withCourses': 'yes',
+    });
     if (cid != (_classId == null ? null : '$_classId')) return null;
     final m = asMap(response);
-    final next = m == null ? response : {...m, 'c_id': m['curricula_id'] ?? m['c_id']};
+    final next = m == null
+        ? response
+        : {...m, 'c_id': m['curricula_id'] ?? m['c_id']};
     setClassDetails(next);
     return next;
   }
@@ -310,7 +357,9 @@ class ClassListController extends Notifier<ClassListState> {
     final curriculumId = orJs(cd?['c_id'], cd?['curricula_id']);
     if (!jsTruthy(curriculumId)) return;
     try {
-      final data = await ref.read(classServiceProvider).getClassCourses('$iid', '$curriculumId');
+      final data = await ref
+          .read(classServiceProvider)
+          .getClassCourses('$iid', '$curriculumId');
       _handoff.set('courses', data is List ? data : asList(data));
     } catch (_) {
       // console.error in the web.
@@ -326,7 +375,11 @@ class ClassListController extends Notifier<ClassListState> {
     }
     final result = await ref
         .read(classServiceProvider)
-        .attachSelectedCourseToClass({'institute_id': '$iid', 'course_id': courseId, 'class_id': '$cid'});
+        .attachSelectedCourseToClass({
+          'institute_id': '$iid',
+          'course_id': courseId,
+          'class_id': '$cid',
+        });
     await fetchClassCourse();
     await fetchClassDetails();
     return result;
@@ -352,7 +405,9 @@ class ClassListController extends Notifier<ClassListState> {
     final iid = _instituteId;
     if (cid == null || cid == 0 || iid == null) return;
     final data = await ref.read(batchServiceProvider).getBatches(cid, iid);
-    state = state.copyWith(promoteBatchList: [for (final b in _maps(data)) mapPromoteBatch(b)]);
+    state = state.copyWith(
+      promoteBatchList: [for (final b in _maps(data)) mapPromoteBatch(b)],
+    );
   }
 
   /// `createBatch(name, classId?)`
@@ -360,7 +415,11 @@ class ClassListController extends Notifier<ClassListState> {
     final cid = classId ?? _classId;
     final iid = _instituteId;
     if (cid == null || cid == 0 || iid == null) return;
-    await ref.read(batchServiceProvider).createBatch({'name': batchName, 'institute_id': iid, 'class_id': cid});
+    await ref.read(batchServiceProvider).createBatch({
+      'name': batchName,
+      'institute_id': iid,
+      'class_id': cid,
+    });
     await getBatches(cid);
   }
 
@@ -369,7 +428,9 @@ class ClassListController extends Notifier<ClassListState> {
     final iid = _instituteId;
     if (iid == null) throw const ApiError('Institute ID not available');
     try {
-      final data = await ref.read(batchServiceProvider).getBatchById(batchId ?? '', iid);
+      final data = await ref
+          .read(batchServiceProvider)
+          .getBatchById(batchId ?? '', iid);
       state = state.copyWith(selectedBatch: data);
       return data;
     } catch (_) {
@@ -378,9 +439,16 @@ class ClassListController extends Notifier<ClassListState> {
   }
 
   /// `updateBatch(id, name, status)`
-  Future<dynamic> updateBatch(Object? batchId, String? name, String? status) async {
+  Future<dynamic> updateBatch(
+    Object? batchId,
+    String? name,
+    String? status,
+  ) async {
     final iid = _instituteId;
-    if (!jsTruthy(batchId) || iid == null || !jsTruthy(name) || !jsTruthy(status)) {
+    if (!jsTruthy(batchId) ||
+        iid == null ||
+        !jsTruthy(name) ||
+        !jsTruthy(status)) {
       throw const ApiError('Missing required fields for updating batch');
     }
     final updated = await ref.read(batchServiceProvider).updateBatch(batchId!, {
@@ -412,14 +480,21 @@ class ClassListController extends Notifier<ClassListState> {
     }
     state = state.copyWith(searchError: null);
     try {
-      final raw = await ref.read(batchServiceProvider).searchBatch('$iid', term, '$cid');
+      final raw = await ref
+          .read(batchServiceProvider)
+          .searchBatch('$iid', term, '$cid');
       final arr = raw is List ? raw : const [];
-      state = state.copyWith(batches: [
-        for (final item in arr)
-          if (jsTruthy(item) && asMap(item) != null) mapSearchBatch(asMap(item)!),
-      ]);
+      state = state.copyWith(
+        batches: [
+          for (final item in arr)
+            if (jsTruthy(item) && asMap(item) != null)
+              mapSearchBatch(asMap(item)!),
+        ],
+      );
     } catch (e) {
-      state = state.copyWith(searchError: e is ApiError ? e.message : 'Failed to search batch');
+      state = state.copyWith(
+        searchError: e is ApiError ? e.message : 'Failed to search batch',
+      );
     }
   }
 
@@ -439,21 +514,35 @@ class ClassListController extends Notifier<ClassListState> {
     }
     state = state.copyWith(searchError: null);
     try {
-      final response = await ref.read(instructorServiceProvider).searchInstructors('$iid', term, '$cid');
-      state = state.copyWith(instructors: [for (final i in asList(response ?? const [])) ?i]);
+      final response = await ref
+          .read(instructorServiceProvider)
+          .searchInstructors('$iid', term, '$cid');
+      state = state.copyWith(
+        instructors: [for (final i in asList(response ?? const [])) ?i],
+      );
     } catch (e) {
-      state = state.copyWith(searchError: e is ApiError ? e.message : 'Failed to search instructors');
+      state = state.copyWith(
+        searchError: e is ApiError ? e.message : 'Failed to search instructors',
+      );
     }
   }
 
   /// `getAssignedInstructors(classId?)`
   Future<void> getAssignedInstructors([Object? classId]) async {
     final iid = _instituteId;
-    final cid = jsTruthy(classId) ? '$classId' : (_classId == null ? null : '$_classId');
+    final cid = jsTruthy(classId)
+        ? '$classId'
+        : (_classId == null ? null : '$_classId');
     if (iid == null || cid == null) return;
-    final res = await ref.read(instructorServiceProvider).getAssignedInstructors('$iid', cid);
+    final res = await ref
+        .read(instructorServiceProvider)
+        .getAssignedInstructors('$iid', cid);
     if (cid != (_classId == null ? null : '$_classId')) return;
-    state = state.copyWith(assignedInstructors: [for (final i in _maps(res ?? const [])) mapAssignedInstructor(i)]);
+    state = state.copyWith(
+      assignedInstructors: [
+        for (final i in _maps(res ?? const [])) mapAssignedInstructor(i),
+      ],
+    );
   }
 
   /// `assignInstructorToAdmin(instructorId)`
@@ -463,23 +552,38 @@ class ClassListController extends Notifier<ClassListState> {
     if (iid == null || cid == null || instructorId.isEmpty) {
       throw const ApiError('All parameters are required');
     }
-    return ref
-        .read(instructorServiceProvider)
-        .assignInstructorToAdmin({'institute_id': '$iid', 'class_id': '$cid', 'instructor_id': instructorId});
+    return ref.read(instructorServiceProvider).assignInstructorToAdmin({
+      'institute_id': '$iid',
+      'class_id': '$cid',
+      'instructor_id': instructorId,
+    });
   }
 
   /// `deleteClassAdminById(adminId, instituteId, classId)`
-  Future<dynamic> deleteClassAdminById(String adminId, String instituteId, String classId) =>
-      ref.read(instructorServiceProvider).deleteClassAdmin(adminId, instituteId, classId);
+  Future<dynamic> deleteClassAdminById(
+    String adminId,
+    String instituteId,
+    String classId,
+  ) => ref
+      .read(instructorServiceProvider)
+      .deleteClassAdmin(adminId, instituteId, classId);
 
   /// `getInstructors(classId, page?)`
   Future<void> getInstructors(int? classId, [int? page]) async {
     if (classId == null || classId == 0) return;
     final currentPage = page ?? state.classInstructorPagination.currentPage;
-    final res = asMap(await ref.read(instructorServiceProvider).getInstructors(classId, currentPage)) ?? const {};
+    final res =
+        asMap(
+          await ref
+              .read(instructorServiceProvider)
+              .getInstructors(classId, currentPage),
+        ) ??
+        const {};
     if (classId != _classId) return;
     state = state.copyWith(
-      classInstructors: [for (final i in _maps(res['data'])) withUserFallback(i)],
+      classInstructors: [
+        for (final i in _maps(res['data'])) withUserFallback(i),
+      ],
       classInstructorPagination: PageMeta.fromMap(res),
     );
   }
@@ -493,7 +597,13 @@ class ClassListController extends Notifier<ClassListState> {
     final all = <dynamic>[];
     try {
       do {
-        final res = asMap(await ref.read(instructorServiceProvider).getInstructors(classId, currentPage)) ?? const {};
+        final res =
+            asMap(
+              await ref
+                  .read(instructorServiceProvider)
+                  .getInstructors(classId, currentPage),
+            ) ??
+            const {};
         all.addAll([for (final i in _maps(res['data'])) withUserFallback(i)]);
         lastPage = asInt(res['last_page']) ?? 1;
         currentPage++;
@@ -520,10 +630,25 @@ class ClassListController extends Notifier<ClassListState> {
   }) async {
     final svc = ref.read(instructorServiceProvider);
     final res = await svc.createUser(
-        firstName, lastName, email, countryCode, phone, gender, dob, photo, password, designation, enableZoom);
+      firstName,
+      lastName,
+      email,
+      countryCode,
+      phone,
+      gender,
+      dob,
+      photo,
+      password,
+      designation,
+      enableZoom,
+    );
     final userId = dig(res, ['data', 'id']);
     if (!jsTruthy(userId)) return;
-    final instructorRes = await svc.createInstructor(userId, joiningDate, designation, enableZoom,
+    final instructorRes = await svc.createInstructor(
+      userId,
+      joiningDate,
+      designation,
+      enableZoom,
       isLabAdmin,
     );
     state = state.copyWith(instructors: [...state.instructors, instructorRes]);
@@ -532,9 +657,12 @@ class ClassListController extends Notifier<ClassListState> {
   /// `attachInstructor(userId)` — errors are logged.
   Future<void> attachInstructor(Object userId) async {
     try {
-      final res = await ref.read(instructorServiceProvider).createInstructor(userId);
+      final res = await ref
+          .read(instructorServiceProvider)
+          .createInstructor(userId);
       final data = asMap(res)?['data'];
-      if (jsTruthy(data)) state = state.copyWith(instructors: [...state.instructors, data]);
+      if (jsTruthy(data))
+        state = state.copyWith(instructors: [...state.instructors, data]);
     } catch (_) {}
   }
 
@@ -542,14 +670,20 @@ class ClassListController extends Notifier<ClassListState> {
   /// `instructors` too (kept). Errors are logged.
   Future<void> attachstudent(Object studentId) async {
     try {
-      final res = await ref.read(studentServiceProvider).attachStudent(studentId);
+      final res = await ref
+          .read(studentServiceProvider)
+          .attachStudent(studentId);
       final data = asMap(res)?['data'];
-      if (jsTruthy(data)) state = state.copyWith(instructors: [...state.instructors, data]);
+      if (jsTruthy(data))
+        state = state.copyWith(instructors: [...state.instructors, data]);
     } catch (_) {}
   }
 
   /// `attachInstructorToCurrentClass(instructorId, is_admin)`
-  Future<dynamic> attachInstructorToCurrentClass(String instructorId, [bool isAdmin = false]) {
+  Future<dynamic> attachInstructorToCurrentClass(
+    String instructorId, [
+    bool isAdmin = false,
+  ]) {
     final iid = _instituteId;
     final cid = _classId;
     if (iid == null) throw const ApiError('Institute ID not available');
@@ -565,31 +699,42 @@ class ClassListController extends Notifier<ClassListState> {
 
   /// `fetchInstructorById(id)`
   Future<dynamic> fetchInstructorById(Object? instructorId) async {
-    if (!jsTruthy(instructorId)) throw const ApiError('Instructor ID is required');
-    final instructor = await ref.read(instructorServiceProvider).getInstructorById(instructorId!);
+    if (!jsTruthy(instructorId))
+      throw const ApiError('Instructor ID is required');
+    final instructor = await ref
+        .read(instructorServiceProvider)
+        .getInstructorById(instructorId!);
     state = state.copyWith(selectedInstructor: instructor);
     return instructor;
   }
 
   /// `updateInstructor(id, data)`
   Future<dynamic> updateInstructor(Object? instructorId, Json data) async {
-    if (!jsTruthy(instructorId)) throw const ApiError('Instructor id is required');
-    final instructor = await ref.read(instructorServiceProvider).updateInstructor(instructorId!, data);
+    if (!jsTruthy(instructorId))
+      throw const ApiError('Instructor id is required');
+    final instructor = await ref
+        .read(instructorServiceProvider)
+        .updateInstructor(instructorId!, data);
     state = state.copyWith(selectedInstructor: instructor);
     return instructor;
   }
 
   /// `detachInstructorFromClass(instructorId, classId)`
-  Future<dynamic> detachInstructorFromClass(String instructorId, String classId) async {
+  Future<dynamic> detachInstructorFromClass(
+    String instructorId,
+    String classId,
+  ) async {
     final res = await ref.read(classServiceProvider).detachInstructorFromClass({
       'institute_id': _instituteIdOrThrow,
       'class_id': classId,
       'instructor_id': instructorId,
     });
-    state = state.copyWith(instructors: [
-      for (final i in state.instructors)
-        if ('${asMap(i)?['id']}' != instructorId) i,
-    ]);
+    state = state.copyWith(
+      instructors: [
+        for (final i in state.instructors)
+          if ('${asMap(i)?['id']}' != instructorId) i,
+      ],
+    );
     return res;
   }
 
@@ -609,10 +754,19 @@ class ClassListController extends Notifier<ClassListState> {
     }
     state = state.copyWith(searchError: null);
     try {
-      final response = await ref.read(studentServiceProvider).searchStudents('$iid', term, '$bid');
-      state = state.copyWith(students: [for (final s in dataOrArray(response)) if (asMap(s) case final m?) mapSearchStudent(m)]);
+      final response = await ref
+          .read(studentServiceProvider)
+          .searchStudents('$iid', term, '$bid');
+      state = state.copyWith(
+        students: [
+          for (final s in dataOrArray(response))
+            if (asMap(s) case final m?) mapSearchStudent(m),
+        ],
+      );
     } catch (e) {
-      state = state.copyWith(searchError: e is ApiError ? e.message : 'Failed to search students');
+      state = state.copyWith(
+        searchError: e is ApiError ? e.message : 'Failed to search students',
+      );
     }
   }
 
@@ -621,13 +775,16 @@ class ClassListController extends Notifier<ClassListState> {
     final iid = _instituteId;
     final cid = _classId;
     if (iid == null || iid == 0 || cid == null || cid == 0) return;
-    final res = asMap(await ref.read(studentServiceProvider).getStudents({
-          'institute_id': iid,
-          'class_id': cid,
-          'batch_id': _batchId,
-          'page': page,
-          'paginate': paginate,
-        })) ??
+    final res =
+        asMap(
+          await ref.read(studentServiceProvider).getStudents({
+            'institute_id': iid,
+            'class_id': cid,
+            'batch_id': _batchId,
+            'page': page,
+            'paginate': paginate,
+          }),
+        ) ??
         const {};
     state = state.copyWith(
       students: [for (final s in _maps(res['data'])) mapStudent(s)],
@@ -670,7 +827,9 @@ class ClassListController extends Notifier<ClassListState> {
       'batch_id': _batchId,
       'paginate': 0,
     });
-    state = state.copyWith(students: [for (final s in objectValuesWithId(res)) mapAllStudent(s)]);
+    state = state.copyWith(
+      students: [for (final s in objectValuesWithId(res)) mapAllStudent(s)],
+    );
   }
 
   /// `addStudent(payload)` — `POST /user`, `POST /student`, then reload.
@@ -687,8 +846,18 @@ class ClassListController extends Notifier<ClassListState> {
     required UploadFile? photo,
   }) async {
     final svc = ref.read(studentServiceProvider);
-    final res =
-        await svc.createUsers(firstName, lastName, email, password, confirmpassword, countryCode, phone, gender, dob, photo);
+    final res = await svc.createUsers(
+      firstName,
+      lastName,
+      email,
+      password,
+      confirmpassword,
+      countryCode,
+      phone,
+      gender,
+      dob,
+      photo,
+    );
     final userId = dig(res, ['data', 'id']);
     if (!jsTruthy(userId)) return;
     final studentRes = await svc.createStudent(userId);
@@ -706,7 +875,9 @@ class ClassListController extends Notifier<ClassListState> {
   /// `fetchStudentById(id)`
   Future<dynamic> fetchStudentById(Object? studentId) async {
     if (!jsTruthy(studentId)) throw const ApiError('Student ID is required');
-    final student = await ref.read(studentServiceProvider).getStudentById(studentId!);
+    final student = await ref
+        .read(studentServiceProvider)
+        .getStudentById(studentId!);
     state = state.copyWith(selectedStudent: student);
     return student;
   }
@@ -714,41 +885,59 @@ class ClassListController extends Notifier<ClassListState> {
   /// `updateStudent(id, data)`
   Future<dynamic> updateStudent(Object? studentId, Json data) async {
     if (!jsTruthy(studentId)) throw const ApiError('Student ID is required');
-    final result = await ref
-        .read(studentServiceProvider)
-        .updateStudent(studentId, {'institute_id': _instituteId == null ? '' : '$_instituteId', ...data});
+    final result = await ref.read(studentServiceProvider).updateStudent(
+      studentId,
+      {'institute_id': _instituteId == null ? '' : '$_instituteId', ...data},
+    );
     state = state.copyWith(selectedStudent: result);
     return result;
   }
 
   /// `detachStudentFromClass(studentId, classId)`
-  Future<dynamic> detachStudentFromClass(String studentId, String classId) async {
+  Future<dynamic> detachStudentFromClass(
+    String studentId,
+    String classId,
+  ) async {
     final res = await ref.read(classServiceProvider).detachStudentFromClass({
       'institute_id': _instituteIdOrThrow,
       'class_id': classId,
       'student_id': studentId,
     });
-    state = state.copyWith(students: [
-      for (final s in state.students)
-        if ('${asMap(s)?['id']}' != studentId) s,
-    ]);
+    state = state.copyWith(
+      students: [
+        for (final s in state.students)
+          if ('${asMap(s)?['id']}' != studentId) s,
+      ],
+    );
     return res;
   }
 
   /// `transferStudents(from, to, ids)`
-  Future<dynamic> transferStudents(Object fromBatchId, Object toBatchId, List<Object?> studentIds) async {
+  Future<dynamic> transferStudents(
+    Object fromBatchId,
+    Object toBatchId,
+    List<Object?> studentIds,
+  ) async {
     final iid = _instituteId;
     if (iid == null) throw const ApiError('Institute ID not available');
-    final res = await ref.read(studentServiceProvider).transferStudents(iid, fromBatchId, toBatchId, studentIds);
+    final res = await ref
+        .read(studentServiceProvider)
+        .transferStudents(iid, fromBatchId, toBatchId, studentIds);
     await pivotStudents();
     return res;
   }
 
   /// `promoteStudents(from, to, ids)`
-  Future<dynamic> promoteStudents(Object fromBatchId, Object toBatchId, List<Object?> studentIds) async {
+  Future<dynamic> promoteStudents(
+    Object fromBatchId,
+    Object toBatchId,
+    List<Object?> studentIds,
+  ) async {
     final iid = _instituteId;
     if (iid == null) throw const ApiError('Institute ID not available');
-    final res = await ref.read(studentServiceProvider).promoteStudents(iid, fromBatchId, toBatchId, studentIds);
+    final res = await ref
+        .read(studentServiceProvider)
+        .promoteStudents(iid, fromBatchId, toBatchId, studentIds);
     await pivotStudents();
     return res;
   }
@@ -761,34 +950,45 @@ class ClassListController extends Notifier<ClassListState> {
     final iid = jsTruthy(_instituteId) ? _instituteId! : '';
     final bid = jsTruthy(_batchId) ? _batchId! : '';
     if (file == null) {
-      return ref
-          .read(apiClientProvider)
-          .postMultipart('/student/import', {'institute_id': '$iid', 'batch_id': '$bid', 'file': 'null'});
+      return ref.read(apiClientProvider).postMultipart('/student/import', {
+        'institute_id': '$iid',
+        'batch_id': '$bid',
+        'file': 'null',
+      });
     }
     return ref.read(studentServiceProvider).importStudents(iid, bid, file);
   }
 
   /// `downloadTemplate()` — opens the template site.
   Future<void> downloadTemplate() async {
-    await openExternal('https://new-elab-e4akcrhfetbfdkh0.centralindia-01.azurewebsites.net');
+    await openExternal(
+      'https://new-elab-e4akcrhfetbfdkh0.centralindia-01.azurewebsites.net',
+    );
   }
 
   /// `getQuizSysCards` (called from the page through `studentService`).
-  Future<dynamic> getQuizSysCards(Json payload) => ref.read(studentServiceProvider).getQuizSysCards(payload);
+  Future<dynamic> getQuizSysCards(Json payload) =>
+      ref.read(studentServiceProvider).getQuizSysCards(payload);
 
   // ── user search ─────────────────────────────────────────────────────────
 
   /// `searchByUser(term)`
-  Future<dynamic> searchByUser(String term) => ref.read(userServiceProvider).searchByUser(term, _instituteId?.toString());
+  Future<dynamic> searchByUser(String term) => ref
+      .read(userServiceProvider)
+      .searchByUser(term, _instituteId?.toString());
 
   /// `searchUserByIns(term)`
-  Future<dynamic> searchUserByIns(String term) =>
-      ref.read(userServiceProvider).searchUserByIns(term, _instituteId?.toString());
+  Future<dynamic> searchUserByIns(String term) => ref
+      .read(userServiceProvider)
+      .searchUserByIns(term, _instituteId?.toString());
 
   /// `searchUserByStu(term)`
-  Future<dynamic> searchUserByStu(String term) =>
-      ref.read(userServiceProvider).searchUserByStu(term, _instituteId?.toString());
+  Future<dynamic> searchUserByStu(String term) => ref
+      .read(userServiceProvider)
+      .searchUserByStu(term, _instituteId?.toString());
 }
 
 final classListControllerProvider =
-    NotifierProvider<ClassListController, ClassListState>(ClassListController.new);
+    NotifierProvider<ClassListController, ClassListState>(
+      ClassListController.new,
+    );

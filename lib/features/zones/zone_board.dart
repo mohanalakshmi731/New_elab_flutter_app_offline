@@ -422,7 +422,7 @@ class _ActivityCardState extends State<_ActivityCard> {
                   opacity: hover ? 1 : 0.9,
                   duration: const Duration(milliseconds: 500),
                   curve: kTwEase,
-                  child: Image.network(
+                  child: contentImage(
                     jsStr(filePath)!,
                     fit: BoxFit.cover,
                     errorBuilder: (_, _, _) => const SizedBox.shrink(),
@@ -660,7 +660,7 @@ class _ActivityRowState extends State<_ActivityRow> {
               ),
             ),
             if (jsTruthy(filePath))
-              Image.network(
+              contentImage(
                 jsStr(filePath)!,
                 fit: BoxFit.cover,
                 errorBuilder: (_, _, _) => const SizedBox.shrink(),
