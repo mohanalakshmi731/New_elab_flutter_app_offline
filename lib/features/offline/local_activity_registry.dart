@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 
 import 'activities/math/registry.dart';
+import 'activities/class9/math/registry.dart';
+import 'activities/class9/science/registry.dart';
 import 'activities/science/registry.dart';
 
 Widget? localActivity(Map<String, dynamic> activity) {
   final id = localMappingId(activity);
-  return mathActivityWidgets[id] ?? scienceActivityWidgets[id];
+  return mathActivityWidgets[id] ??
+      scienceActivityWidgets[id] ??
+      class9MathActivityWidgets[id] ??
+      class9ScienceActivityWidgets[id];
 }
 
 bool supportsLocalActivity(Map<String, dynamic> activity) =>
@@ -17,7 +22,11 @@ int? localMappingId(Map<String, dynamic> activity) => int.tryParse(
 
 String? localActivityZone(Map<String, dynamic> activity) {
   final id = localMappingId(activity);
-  if (mathActivityWidgets.containsKey(id)) return 'math';
-  if (scienceActivityWidgets.containsKey(id)) return 'science';
+  if (mathActivityWidgets.containsKey(id) ||
+      class9MathActivityWidgets.containsKey(id))
+    return 'math';
+  if (scienceActivityWidgets.containsKey(id) ||
+      class9ScienceActivityWidgets.containsKey(id))
+    return 'science';
   return null;
 }

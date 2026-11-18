@@ -442,9 +442,13 @@ class OfflineService {
     return PreparedCatalog(entries);
   }
 
-  static Future<Map<String, dynamic>> bundledCatalog() async => asMap(
+  static Future<Map<String, dynamic>> bundledCatalog({
+    int classLevel = 10,
+  }) async => asMap(
     jsonDecode(
-      await rootBundle.loadString('assets/offline/class10_catalog.json'),
+      await rootBundle.loadString(
+        'assets/offline/class${classLevel}_catalog.json',
+      ),
     ),
   )!;
 }

@@ -1,4 +1,4 @@
-# Offline learning — Class 10
+# Offline learning — Class 9 and Class 10
 
 The Windows/native Flutter app bundles 70 Math and 49 Science activities copied from `D:/new-elab-app`. Provider mapping IDs are matched locally. Only activities returned for the signed-in account and matching this registry can be installed. Some chapters have no native activity; activities without a matching native widget are skipped during preparation.
 

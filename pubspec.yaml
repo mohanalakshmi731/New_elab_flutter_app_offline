@@ -88,6 +88,7 @@ flutter:
     - assets/offline/
     - assets/audio/math/
     - assets/audio/science/
+    - assets/audio/class9/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
