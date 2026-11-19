@@ -28,6 +28,7 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  vector_math: ^2.2.0
   flutter:
     sdk: flutter
 
@@ -90,6 +91,7 @@ flutter:
     - assets/audio/science/
     - assets/audio/class9/
     - assets/audio/class8/
+    - assets/audio/class7/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -1,4 +1,4 @@
-# Offline learning — Classes 8, 9 and 10
+# Offline learning — Classes 7, 8, 9 and 10
 
 The Windows/native Flutter app bundles 70 Math and 49 Science activities copied from `D:/new-elab-app`. Provider mapping IDs are matched locally. Only activities returned for the signed-in account and matching this registry can be installed. Some chapters have no native activity; activities without a matching native widget are skipped during preparation.
 
@@ -50,3 +50,9 @@ Backend tests use isolated in-memory SQLite, not the configured development data
 ## Class 8 bundled content
 
 Class 8 imports use the registries from D:/new-elab-app-8: 74 mathematics and 65 science mapping entries, backed by 137 distinct native activity widgets. The source maps two pairs of IDs to shared widgets; those mappings are preserved. All 23 referenced sounds are bundled under assets/audio/class8/ and verified against the source files. Only activities returned by the authorized class package are shown.
+
+## Class 7 bundled content
+
+Imported from D:/new-elab-app-7: 89 maths and 65 science mapping entries, backed by 152 distinct activity widgets. Source mappings that share a widget are preserved. All 66 source sound files are bundled under assets/audio/class7/, including filenames chosen dynamically by the science sound enums. Each copied sound has the same SHA-256 as its source. Mapping 2326 (BioDigital hormonal regulation anatomy models) requires internet and is deliberately excluded from offline preparation; its online availability is unchanged. One decorative network texture uses the existing bundled offline texture instead.
+
+Class 7 emotional-development mappings 2320 and 2324 are pending four source assets: assets/images/ch6_a4_avatar_default.jpg, ch6_a4_avatar_neutral.jpg, ch6_a4_avatar_happy.jpg and ch6_a4_avatar_very_sad.jpg. They are absent from the provided source, so the activity source is retained as .dart.pending-assets and not registered offline. Restore the images, the source .dart extension and registry entries together before re-enabling it.

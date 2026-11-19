@@ -1,0 +1,1084 @@
+{
+  "version": 1,
+  "class_level": 7,
+  "activities": [
+    {
+      "mapping_id": 2457,
+      "zone": "math",
+      "chapter_number": 1,
+      "title": "Scale Of Lakh App",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2460,
+      "zone": "math",
+      "chapter_number": 1,
+      "title": "Global Number Packers App",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2462,
+      "zone": "math",
+      "chapter_number": 1,
+      "title": "Number Composition App",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2465,
+      "zone": "math",
+      "chapter_number": 1,
+      "title": "Estimation Rounding Large Numbers",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2468,
+      "zone": "math",
+      "chapter_number": 1,
+      "title": "Efficient Multiplication Division Strategies",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2470,
+      "zone": "math",
+      "chapter_number": 1,
+      "title": "Complex Problem Solvingwith Large Numbers",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2473,
+      "zone": "math",
+      "chapter_number": 2,
+      "title": "Simple Arithmetic Expressions Lab",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2474,
+      "zone": "math",
+      "chapter_number": 2,
+      "title": "Understanding Ambiguity Lab",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2475,
+      "zone": "math",
+      "chapter_number": 2,
+      "title": "Identifyingand Manipulating Terms",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2477,
+      "zone": "math",
+      "chapter_number": 2,
+      "title": "Evaluating Expressionswith Multiple Operations",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2478,
+      "zone": "math",
+      "chapter_number": 2,
+      "title": "Removing Brackets Preceded Subtraction",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3870,
+      "zone": "math",
+      "chapter_number": 2,
+      "title": "Applying Distributive Property",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2481,
+      "zone": "math",
+      "chapter_number": 3,
+      "title": "The Needfor Smaller Units",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2483,
+      "zone": "math",
+      "chapter_number": 3,
+      "title": "Representingand Ordering Numbers",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2485,
+      "zone": "math",
+      "chapter_number": 3,
+      "title": "Decimal Place Value System",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2486,
+      "zone": "math",
+      "chapter_number": 3,
+      "title": "Decimal Conversionsof Units",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2488,
+      "zone": "math",
+      "chapter_number": 3,
+      "title": "Additionand Subtraction Decimal Numbers",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3889,
+      "zone": "math",
+      "chapter_number": 3,
+      "title": "Locatingand Comparing Decimal Number",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2490,
+      "zone": "math",
+      "chapter_number": 4,
+      "title": "Introductionto Algebraic Expressionsand Variables",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2492,
+      "zone": "math",
+      "chapter_number": 4,
+      "title": "Evaluating Algebraic Expressions",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2493,
+      "zone": "math",
+      "chapter_number": 4,
+      "title": "Conventionsin Writingand Interpreting Algebraic",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2495,
+      "zone": "math",
+      "chapter_number": 4,
+      "title": "Simplifying Algebraic Expressions",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2497,
+      "zone": "math",
+      "chapter_number": 4,
+      "title": "Algebraic Modelingof Patternsand Relationships",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2498,
+      "zone": "math",
+      "chapter_number": 5,
+      "title": "Intersecting Linesand Angle Relationships",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2499,
+      "zone": "math",
+      "chapter_number": 5,
+      "title": "Perpendicular Lines",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2501,
+      "zone": "math",
+      "chapter_number": 5,
+      "title": "Parallel Lines and Identification explainer",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2503,
+      "zone": "math",
+      "chapter_number": 5,
+      "title": "Transversals and Angle Formation",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2506,
+      "zone": "math",
+      "chapter_number": 5,
+      "title": "Corresponding Angles and Parallelism",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2849,
+      "zone": "math",
+      "chapter_number": 5,
+      "title": "Corresponding Angles and Parallelism",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3891,
+      "zone": "math",
+      "chapter_number": 5,
+      "title": "Alternate and Interior Angles with Parallel Lines",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2509,
+      "zone": "math",
+      "chapter_number": 6,
+      "title": "Understanding and Applying Parity",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2511,
+      "zone": "math",
+      "chapter_number": 6,
+      "title": "Constructing and Analyzing Number Grids",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2513,
+      "zone": "math",
+      "chapter_number": 6,
+      "title": "Exploring Magic Squares",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2515,
+      "zone": "math",
+      "chapter_number": 6,
+      "title": "Discovering the Virah  ka Fibonacci Sequence",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3895,
+      "zone": "math",
+      "chapter_number": 6,
+      "title": "Solving Cryptarithms",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2518,
+      "zone": "math",
+      "chapter_number": 7,
+      "title": "Constructing Triangles from Side Lengths  SSS",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2519,
+      "zone": "math",
+      "chapter_number": 7,
+      "title": "Exploring Triangle Existence  The Triangle Inequality",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2520,
+      "zone": "math",
+      "chapter_number": 7,
+      "title": "Constructing Triangles from Sides and Angles  SAS   ASA",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2521,
+      "zone": "math",
+      "chapter_number": 7,
+      "title": "The Angle Sum Property of Triangles",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2522,
+      "zone": "math",
+      "chapter_number": 7,
+      "title": "Understanding Exterior Angles of a Triangle",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3900,
+      "zone": "math",
+      "chapter_number": 7,
+      "title": "Altitudes and Classification of Triangles",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2523,
+      "zone": "math",
+      "chapter_number": 8,
+      "title": "Multiplication of Whole Numbers and Fractions",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2524,
+      "zone": "math",
+      "chapter_number": 8,
+      "title": "Multiplication of Two Fractions",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2525,
+      "zone": "math",
+      "chapter_number": 8,
+      "title": "Understanding Product Size in Fraction Multiplication",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2850,
+      "zone": "math",
+      "chapter_number": 8,
+      "title": "Division of Fractions",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2526,
+      "zone": "math",
+      "chapter_number": 8,
+      "title": "Understanding Quotient Size in Fraction Division",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3901,
+      "zone": "math",
+      "chapter_number": 8,
+      "title": "Solving Real World Problems with Fraction Operations",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3903,
+      "zone": "math",
+      "chapter_number": 9,
+      "title": "Understanding Geometric Congruence",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3904,
+      "zone": "math",
+      "chapter_number": 9,
+      "title": "SSS  Side Side Side  Congruence",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3905,
+      "zone": "math",
+      "chapter_number": 9,
+      "title": "SAS  Side Angle Side  Congruence",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3906,
+      "zone": "math",
+      "chapter_number": 9,
+      "title": "ASA  Angle Side Angle  Congruence",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3907,
+      "zone": "math",
+      "chapter_number": 9,
+      "title": "AAS  Angle Angle Side  Congruence",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3908,
+      "zone": "math",
+      "chapter_number": 9,
+      "title": "RHS  Right Hypotenuse Side  Congruence",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3909,
+      "zone": "math",
+      "chapter_number": 10,
+      "title": "Integer Models  Number Line   Tokens",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3910,
+      "zone": "math",
+      "chapter_number": 10,
+      "title": "Token Model for Integer Multiplication",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3911,
+      "zone": "math",
+      "chapter_number": 10,
+      "title": "Patterns in Integer Multiplication",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3912,
+      "zone": "math",
+      "chapter_number": 10,
+      "title": "Integer Division  The Inverse of Multiplication",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3913,
+      "zone": "math",
+      "chapter_number": 10,
+      "title": "Commutative  Associative  and Distributive Properties",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3914,
+      "zone": "math",
+      "chapter_number": 10,
+      "title": "Real World Integer Problem Solving",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3915,
+      "zone": "math",
+      "chapter_number": 11,
+      "title": "Exploring Factors and Multiples",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3916,
+      "zone": "math",
+      "chapter_number": 11,
+      "title": "Mastering Prime Factorization",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3917,
+      "zone": "math",
+      "chapter_number": 11,
+      "title": "Calculating the Highest Common Factor  HCF",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3918,
+      "zone": "math",
+      "chapter_number": 11,
+      "title": "Calculating the Lowest Common Multiple  LCM",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3944,
+      "zone": "math",
+      "chapter_number": 11,
+      "title": "Streamlined HCF and LCM Calculation",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3919,
+      "zone": "math",
+      "chapter_number": 11,
+      "title": "Investigating HCF LCM Properties and Relationships",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3920,
+      "zone": "math",
+      "chapter_number": 12,
+      "title": "Understanding Decimal Place Value and Representation",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3925,
+      "zone": "math",
+      "chapter_number": 12,
+      "title": "Multiplying and Dividing Decimals by Powers of 10",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3923,
+      "zone": "math",
+      "chapter_number": 12,
+      "title": "Multiplication of Decimals  General Method",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3922,
+      "zone": "math",
+      "chapter_number": 12,
+      "title": "Division of Decimals by Natural Numbers  Long Division",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3921,
+      "zone": "math",
+      "chapter_number": 12,
+      "title": "Division of Decimals by Decimals",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3924,
+      "zone": "math",
+      "chapter_number": 12,
+      "title": "Analyzing Properties and Real World Applications of Decimal Operations",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3926,
+      "zone": "math",
+      "chapter_number": 13,
+      "title": "Statistical Thinking and Questions",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3927,
+      "zone": "math",
+      "chapter_number": 13,
+      "title": "Measures of Central Tendency  Arithmetic Mean",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3928,
+      "zone": "math",
+      "chapter_number": 13,
+      "title": "Measures of Central Tendency  Median and Outliers",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3929,
+      "zone": "math",
+      "chapter_number": 13,
+      "title": "Data Variability and Dot Plots",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3930,
+      "zone": "math",
+      "chapter_number": 13,
+      "title": "Data Visualization  Clustered Bar Graphs",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3931,
+      "zone": "math",
+      "chapter_number": 13,
+      "title": "Analyzing Properties and Real World Applications of Decimal Operations",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3932,
+      "zone": "math",
+      "chapter_number": 14,
+      "title": "Perpendicular Bisector and Perpendicular Line Construction",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3933,
+      "zone": "math",
+      "chapter_number": 14,
+      "title": "Angle Bisection",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3934,
+      "zone": "math",
+      "chapter_number": 14,
+      "title": "Copying an Angle",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3935,
+      "zone": "math",
+      "chapter_number": 14,
+      "title": "Constructing Parallel Lines",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3961,
+      "zone": "math",
+      "chapter_number": 14,
+      "title": "Constructing Regular Hexagons and 60  Angles",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3963,
+      "zone": "math",
+      "chapter_number": 14,
+      "title": "Principles of Tiling and Tileability",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3936,
+      "zone": "math",
+      "chapter_number": 15,
+      "title": "Understanding Unknowns and Balance  Weighing Scales",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3937,
+      "zone": "math",
+      "chapter_number": 15,
+      "title": "Framing and Solving Simple Linear Equations",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3938,
+      "zone": "math",
+      "chapter_number": 15,
+      "title": "Systematic Solving of Linear Equations  Balancing and Inverse Operations",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3939,
+      "zone": "math",
+      "chapter_number": 15,
+      "title": "Solving Multi Step Linear Equations and Equations with Variables on Both Sides",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3940,
+      "zone": "math",
+      "chapter_number": 15,
+      "title": "Algebraic Modeling and Problem Solving",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3941,
+      "zone": "math",
+      "chapter_number": 15,
+      "title": "Error Analysis and Equation Generation",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2263,
+      "zone": "science",
+      "chapter_number": 1,
+      "title": "properties of materials and chemical changes",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2265,
+      "zone": "science",
+      "chapter_number": 1,
+      "title": "electricity and material classification",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2267,
+      "zone": "science",
+      "chapter_number": 1,
+      "title": "reversible and irreversible changes",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2269,
+      "zone": "science",
+      "chapter_number": 1,
+      "title": "heat transfer and the water cycle",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2271,
+      "zone": "science",
+      "chapter_number": 1,
+      "title": "light shadows and celestial movements",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2273,
+      "zone": "science",
+      "chapter_number": 2,
+      "title": "introduction to acid base indicators litmus",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2275,
+      "zone": "science",
+      "chapter_number": 2,
+      "title": "exploring natural acid base indicators",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2277,
+      "zone": "science",
+      "chapter_number": 2,
+      "title": "investigating olfactory indicators",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2279,
+      "zone": "science",
+      "chapter_number": 2,
+      "title": "the process of neutralization",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2282,
+      "zone": "science",
+      "chapter_number": 2,
+      "title": "identifying unknown substances using indicators",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2284,
+      "zone": "science",
+      "chapter_number": 3,
+      "title": "electric cells and batteries",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2286,
+      "zone": "science",
+      "chapter_number": 3,
+      "title": "electric lamps incandescent and led",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2288,
+      "zone": "science",
+      "chapter_number": 3,
+      "title": "constructing a simple electrical circuit",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2290,
+      "zone": "science",
+      "chapter_number": 3,
+      "title": "the electric switch",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3863,
+      "zone": "science",
+      "chapter_number": 3,
+      "title": "circuit diagrams and symbols",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2292,
+      "zone": "science",
+      "chapter_number": 3,
+      "title": "electrical conductors and insulators",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2294,
+      "zone": "science",
+      "chapter_number": 4,
+      "title": "investigating physical properties of materials",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2297,
+      "zone": "science",
+      "chapter_number": 4,
+      "title": "chemical reactions of metals with air and water",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2299,
+      "zone": "science",
+      "chapter_number": 4,
+      "title": "chemical reactions of non metals with air and water",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2851,
+      "zone": "science",
+      "chapter_number": 4,
+      "title": "everyday applications of metals and non metals",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 4396,
+      "zone": "science",
+      "chapter_number": 4,
+      "title": "ductility sonority and essential nonmetals simulation strategy",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2304,
+      "zone": "science",
+      "chapter_number": 5,
+      "title": "physical changes appearance changes substance remains",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2308,
+      "zone": "science",
+      "chapter_number": 5,
+      "title": "chemical changes formation of new substances",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2310,
+      "zone": "science",
+      "chapter_number": 5,
+      "title": "combustion conditions and products",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2313,
+      "zone": "science",
+      "chapter_number": 5,
+      "title": "combined physical and chemical changes",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2315,
+      "zone": "science",
+      "chapter_number": 5,
+      "title": "reversible and irreversible changes",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3864,
+      "zone": "science",
+      "chapter_number": 5,
+      "title": "natural changes weathering and erosion",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2318,
+      "zone": "science",
+      "chapter_number": 6,
+      "title": "introduction to adolescence",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2322,
+      "zone": "science",
+      "chapter_number": 6,
+      "title": "holistic well being and responsible choices",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2329,
+      "zone": "science",
+      "chapter_number": 7,
+      "title": "conduction of heat",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2331,
+      "zone": "science",
+      "chapter_number": 7,
+      "title": "convection of heat",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2333,
+      "zone": "science",
+      "chapter_number": 7,
+      "title": "land and sea breezes",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2335,
+      "zone": "science",
+      "chapter_number": 7,
+      "title": "radiation of heat",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2338,
+      "zone": "science",
+      "chapter_number": 7,
+      "title": "the water cycle",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3867,
+      "zone": "science",
+      "chapter_number": 7,
+      "title": "groundwater and infiltration",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2340,
+      "zone": "science",
+      "chapter_number": 8,
+      "title": "investigating ancient timekeeping devices",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2343,
+      "zone": "science",
+      "chapter_number": 8,
+      "title": "exploring simple pendulum motion",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2345,
+      "zone": "science",
+      "chapter_number": 8,
+      "title": "measuring and calculating speed",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2347,
+      "zone": "science",
+      "chapter_number": 8,
+      "title": "analyzing uniform and non uniform linear motion",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2349,
+      "zone": "science",
+      "chapter_number": 8,
+      "title": "the evolution of time measurement precision",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3869,
+      "zone": "science",
+      "chapter_number": 8,
+      "title": "uniform and non uniform linear motion",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2351,
+      "zone": "science",
+      "chapter_number": 9,
+      "title": "investigating salivas action on starch",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2352,
+      "zone": "science",
+      "chapter_number": 9,
+      "title": "mechanism of human breathing",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2355,
+      "zone": "science",
+      "chapter_number": 9,
+      "title": "gas exchange and cellular respiration",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2357,
+      "zone": "science",
+      "chapter_number": 9,
+      "title": "diverse digestive adaptations in animals",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2359,
+      "zone": "science",
+      "chapter_number": 9,
+      "title": "diverse respiratory systems in animals",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 4339,
+      "zone": "science",
+      "chapter_number": 9,
+      "title": "diverse digestive adaptations in animals",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2361,
+      "zone": "science",
+      "chapter_number": 10,
+      "title": "factors essential for plant growth",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2363,
+      "zone": "science",
+      "chapter_number": 10,
+      "title": "photosynthesis the process of food synthesis",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2365,
+      "zone": "science",
+      "chapter_number": 10,
+      "title": "role of carbon dioxide in photosynthesis",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 4151,
+      "zone": "science",
+      "chapter_number": 10,
+      "title": "gas exchange and oxygen release in plants",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2366,
+      "zone": "science",
+      "chapter_number": 10,
+      "title": "transport systems in plants",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2367,
+      "zone": "science",
+      "chapter_number": 10,
+      "title": "plant respiration",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2368,
+      "zone": "science",
+      "chapter_number": 11,
+      "title": "sources of light",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2369,
+      "zone": "science",
+      "chapter_number": 11,
+      "title": "rectilinear propagation of light",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2370,
+      "zone": "science",
+      "chapter_number": 11,
+      "title": "light through transparent translucent and opaque materials",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2371,
+      "zone": "science",
+      "chapter_number": 11,
+      "title": "reflection of light and plane mirror images",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2372,
+      "zone": "science",
+      "chapter_number": 11,
+      "title": "shadow formation",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3865,
+      "zone": "science",
+      "chapter_number": 11,
+      "title": "pinhole camera",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2373,
+      "zone": "science",
+      "chapter_number": 12,
+      "title": "earths rotation and apparent celestial motion",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2374,
+      "zone": "science",
+      "chapter_number": 12,
+      "title": "earths revolution and changing night sky",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2375,
+      "zone": "science",
+      "chapter_number": 12,
+      "title": "the earths axial tilt and seasons",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2376,
+      "zone": "science",
+      "chapter_number": 12,
+      "title": "lunar eclipses",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 2377,
+      "zone": "science",
+      "chapter_number": 12,
+      "title": "solar eclipses",
+      "class_level": 7
+    },
+    {
+      "mapping_id": 3876,
+      "zone": "science",
+      "chapter_number": 12,
+      "title": "safe eclipse viewing",
+      "class_level": 7
+    }
+  ]
+}
