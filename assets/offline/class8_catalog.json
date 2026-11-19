@@ -1,0 +1,979 @@
+{
+  "version": 1,
+  "class_level": 8,
+  "activities": [
+    {
+      "mapping_id": 2661,
+      "zone": "math",
+      "chapter_number": 1,
+      "title": "Cube Roots Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2662,
+      "zone": "math",
+      "chapter_number": 1,
+      "title": "Cubic Numbers Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2663,
+      "zone": "math",
+      "chapter_number": 1,
+      "title": "Properties Of Squares Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2664,
+      "zone": "math",
+      "chapter_number": 1,
+      "title": "Square Roots Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2665,
+      "zone": "math",
+      "chapter_number": 1,
+      "title": "Square Numbers Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2666,
+      "zone": "math",
+      "chapter_number": 2,
+      "title": "Division Exponents Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2667,
+      "zone": "math",
+      "chapter_number": 2,
+      "title": "Exponential Growth Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2668,
+      "zone": "math",
+      "chapter_number": 2,
+      "title": "Laws Of Exponents Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2669,
+      "zone": "math",
+      "chapter_number": 2,
+      "title": "Scientific Notation Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4070,
+      "zone": "math",
+      "chapter_number": 2,
+      "title": "Cl8M Ch2 A1 Exponent Builder",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2670,
+      "zone": "math",
+      "chapter_number": 3,
+      "title": "Early Counting Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2671,
+      "zone": "math",
+      "chapter_number": 3,
+      "title": "Grouping Numerals Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2672,
+      "zone": "math",
+      "chapter_number": 3,
+      "title": "Positional Place Value Screen",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2673,
+      "zone": "math",
+      "chapter_number": 3,
+      "title": "Idea Of Base Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2674,
+      "zone": "math",
+      "chapter_number": 3,
+      "title": "Indian System Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2675,
+      "zone": "math",
+      "chapter_number": 4,
+      "title": "Angle Sum Property Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2676,
+      "zone": "math",
+      "chapter_number": 4,
+      "title": "Kite Trapeziums Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2677,
+      "zone": "math",
+      "chapter_number": 4,
+      "title": "Parallelograms Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2678,
+      "zone": "math",
+      "chapter_number": 4,
+      "title": "Rectangles Squares Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2679,
+      "zone": "math",
+      "chapter_number": 4,
+      "title": "Rhombus Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2680,
+      "zone": "math",
+      "chapter_number": 5,
+      "title": "Divisibility Logic Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2681,
+      "zone": "math",
+      "chapter_number": 5,
+      "title": "Modular Arithmetic Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2682,
+      "zone": "math",
+      "chapter_number": 5,
+      "title": "Divisibility Proofs Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4071,
+      "zone": "math",
+      "chapter_number": 5,
+      "title": "Cl8M Ch5 A2 Cryptarithm Cracker",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4072,
+      "zone": "math",
+      "chapter_number": 5,
+      "title": "Cl8M Ch5 A3 Digit Detective",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2683,
+      "zone": "math",
+      "chapter_number": 6,
+      "title": "Generalised Distributivity Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2684,
+      "zone": "math",
+      "chapter_number": 6,
+      "title": "Increments In Products Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2685,
+      "zone": "math",
+      "chapter_number": 6,
+      "title": "Polynomials Like Terms Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4073,
+      "zone": "math",
+      "chapter_number": 6,
+      "title": "Cl8MCh6A4Square Builder Identities",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4074,
+      "zone": "math",
+      "chapter_number": 6,
+      "title": "Cl8M Ch6 A5 Difference of Squares",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2686,
+      "zone": "math",
+      "chapter_number": 7,
+      "title": "Inverse Variation Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2687,
+      "zone": "math",
+      "chapter_number": 7,
+      "title": "Ratios Proportions Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2688,
+      "zone": "math",
+      "chapter_number": 7,
+      "title": "Unitary Method Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2689,
+      "zone": "math",
+      "chapter_number": 7,
+      "title": "Unequal Sharing Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2690,
+      "zone": "math",
+      "chapter_number": 7,
+      "title": "Unit Conversions Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2691,
+      "zone": "math",
+      "chapter_number": 7,
+      "title": "Visual Similarity Ratios Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2692,
+      "zone": "math",
+      "chapter_number": 8,
+      "title": "Comparing Proportions Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2693,
+      "zone": "math",
+      "chapter_number": 8,
+      "title": "Financial Literacy Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2694,
+      "zone": "math",
+      "chapter_number": 8,
+      "title": "Growth Compounding Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2695,
+      "zone": "math",
+      "chapter_number": 8,
+      "title": "Percentage Change Error Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2696,
+      "zone": "math",
+      "chapter_number": 8,
+      "title": "Percentage Quantity Estimation Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2697,
+      "zone": "math",
+      "chapter_number": 8,
+      "title": "Tricky Percentages Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2698,
+      "zone": "math",
+      "chapter_number": 9,
+      "title": "Applications In Real Life App",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2699,
+      "zone": "math",
+      "chapter_number": 9,
+      "title": "Baudhayana Lab App",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2700,
+      "zone": "math",
+      "chapter_number": 9,
+      "title": "Irrational Numbers Lab App",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2701,
+      "zone": "math",
+      "chapter_number": 9,
+      "title": "Pythagoras Lab App",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4076,
+      "zone": "math",
+      "chapter_number": 9,
+      "title": "Cl8MCh9A1Halving Doubling ASquare",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2702,
+      "zone": "math",
+      "chapter_number": 10,
+      "title": "Inverse Proportion Lab App",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2703,
+      "zone": "math",
+      "chapter_number": 10,
+      "title": "Pie Charts Lab App",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2704,
+      "zone": "math",
+      "chapter_number": 10,
+      "title": "Sharing Ratios Lab App",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2705,
+      "zone": "math",
+      "chapter_number": 10,
+      "title": "Unit Conversion Lab App",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4077,
+      "zone": "math",
+      "chapter_number": 10,
+      "title": "Cl8MCh10A1Direct Proportion Lab",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2706,
+      "zone": "math",
+      "chapter_number": 11,
+      "title": "Euler Formula Lab App",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2707,
+      "zone": "math",
+      "chapter_number": 11,
+      "title": "Prisms Vs Pyramids Lab App",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2708,
+      "zone": "math",
+      "chapter_number": 11,
+      "title": "Nets Lab App",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2709,
+      "zone": "math",
+      "chapter_number": 11,
+      "title": "Visualising Sections Lab App",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2710,
+      "zone": "math",
+      "chapter_number": 11,
+      "title": "Visualising Sections Lab App",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4133,
+      "zone": "math",
+      "chapter_number": 12,
+      "title": "Histograms",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4134,
+      "zone": "math",
+      "chapter_number": 12,
+      "title": "Organizing Data",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4135,
+      "zone": "math",
+      "chapter_number": 12,
+      "title": "Pie Charts",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4136,
+      "zone": "math",
+      "chapter_number": 12,
+      "title": "Real Life Probability",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4137,
+      "zone": "math",
+      "chapter_number": 12,
+      "title": "Mean And Median",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4138,
+      "zone": "math",
+      "chapter_number": 12,
+      "title": "Visualising Data",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4139,
+      "zone": "math",
+      "chapter_number": 13,
+      "title": "Number Pyramids",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4140,
+      "zone": "math",
+      "chapter_number": 13,
+      "title": "Fun With Grids",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4141,
+      "zone": "math",
+      "chapter_number": 13,
+      "title": "Algebra Grids",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4142,
+      "zone": "math",
+      "chapter_number": 13,
+      "title": "Decoding Divisibility",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4078,
+      "zone": "math",
+      "chapter_number": 14,
+      "title": "Triangles",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4143,
+      "zone": "math",
+      "chapter_number": 14,
+      "title": "Rectangles And Squares",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4144,
+      "zone": "math",
+      "chapter_number": 14,
+      "title": "Perimeter And Area",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4145,
+      "zone": "math",
+      "chapter_number": 14,
+      "title": "Area Of Any Polygon",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4146,
+      "zone": "math",
+      "chapter_number": 14,
+      "title": "Parallelogram",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4147,
+      "zone": "math",
+      "chapter_number": 14,
+      "title": "Rhombus",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4148,
+      "zone": "math",
+      "chapter_number": 14,
+      "title": "Areaof Trapezium",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2725,
+      "zone": "science",
+      "chapter_number": 1,
+      "title": "nature of investigation",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2726,
+      "zone": "science",
+      "chapter_number": 1,
+      "title": "biology health",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2727,
+      "zone": "science",
+      "chapter_number": 1,
+      "title": "physics forces pressure",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2728,
+      "zone": "science",
+      "chapter_number": 1,
+      "title": "environmental science astronomy",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2729,
+      "zone": "science",
+      "chapter_number": 1,
+      "title": "puri scientist",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2730,
+      "zone": "science",
+      "chapter_number": 4,
+      "title": "magnetic effect",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2731,
+      "zone": "science",
+      "chapter_number": 4,
+      "title": "heating effect",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2732,
+      "zone": "science",
+      "chapter_number": 4,
+      "title": "electric cells batteries",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4385,
+      "zone": "science",
+      "chapter_number": 4,
+      "title": "electromagnets lifting cranes",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4386,
+      "zone": "science",
+      "chapter_number": 4,
+      "title": "dry cells rechargeable batteries",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2733,
+      "zone": "science",
+      "chapter_number": 5,
+      "title": "force and its effects",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2734,
+      "zone": "science",
+      "chapter_number": 5,
+      "title": "contact forces",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2735,
+      "zone": "science",
+      "chapter_number": 5,
+      "title": "non contact forces",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2736,
+      "zone": "science",
+      "chapter_number": 5,
+      "title": "gravitational force weight",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2737,
+      "zone": "science",
+      "chapter_number": 5,
+      "title": "buoyancy flotation",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2738,
+      "zone": "science",
+      "chapter_number": 6,
+      "title": "pressure force per unit area",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2739,
+      "zone": "science",
+      "chapter_number": 6,
+      "title": "liquid pressure",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2740,
+      "zone": "science",
+      "chapter_number": 6,
+      "title": "atmospheric pressure",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2741,
+      "zone": "science",
+      "chapter_number": 6,
+      "title": "wind formation",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2742,
+      "zone": "science",
+      "chapter_number": 6,
+      "title": "storms lightning cyclones",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2743,
+      "zone": "science",
+      "chapter_number": 7,
+      "title": "particulate nature of matter",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2744,
+      "zone": "science",
+      "chapter_number": 7,
+      "title": "properties states of matter",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2745,
+      "zone": "science",
+      "chapter_number": 7,
+      "title": "interparticle space attraction",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2746,
+      "zone": "science",
+      "chapter_number": 7,
+      "title": "effect of heat on particles",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2747,
+      "zone": "science",
+      "chapter_number": 8,
+      "title": "mixtures",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2748,
+      "zone": "science",
+      "chapter_number": 8,
+      "title": "pure substances elements",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2749,
+      "zone": "science",
+      "chapter_number": 8,
+      "title": "pure substances compounds",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4388,
+      "zone": "science",
+      "chapter_number": 8,
+      "title": "pure in science testing air",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4389,
+      "zone": "science",
+      "chapter_number": 8,
+      "title": "alloys metals minerals",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2750,
+      "zone": "science",
+      "chapter_number": 9,
+      "title": "solutes solvents solutions",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2751,
+      "zone": "science",
+      "chapter_number": 9,
+      "title": "saturated unsaturated solutions",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2752,
+      "zone": "science",
+      "chapter_number": 9,
+      "title": "density measurement",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4390,
+      "zone": "science",
+      "chapter_number": 9,
+      "title": "solubility of gases",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4391,
+      "zone": "science",
+      "chapter_number": 9,
+      "title": "floating sinking density",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2753,
+      "zone": "science",
+      "chapter_number": 10,
+      "title": "spherical mirrors",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2754,
+      "zone": "science",
+      "chapter_number": 10,
+      "title": "laws of reflection",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2755,
+      "zone": "science",
+      "chapter_number": 10,
+      "title": "lenses light behavior",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4392,
+      "zone": "science",
+      "chapter_number": 10,
+      "title": "spherical mirrors sunlight focus",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4393,
+      "zone": "science",
+      "chapter_number": 10,
+      "title": "lenses sunlight focus",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2756,
+      "zone": "science",
+      "chapter_number": 11,
+      "title": "phases of the moon",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2757,
+      "zone": "science",
+      "chapter_number": 11,
+      "title": "artificial satellites",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 2785,
+      "zone": "science",
+      "chapter_number": 11,
+      "title": "calendars timekeeping",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4394,
+      "zone": "science",
+      "chapter_number": 11,
+      "title": "lunar solar calendars festivals",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4395,
+      "zone": "science",
+      "chapter_number": 11,
+      "title": "spotting satellites",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4344,
+      "zone": "science",
+      "chapter_number": 12,
+      "title": "invisible living world",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4345,
+      "zone": "science",
+      "chapter_number": 12,
+      "title": "cell structure function",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4346,
+      "zone": "science",
+      "chapter_number": 12,
+      "title": "microorganisms observation classification",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4347,
+      "zone": "science",
+      "chapter_number": 12,
+      "title": "microorganisms in daily life",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4348,
+      "zone": "science",
+      "chapter_number": 12,
+      "title": "beneficial microorganisms",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4349,
+      "zone": "science",
+      "chapter_number": 13,
+      "title": "holistic health",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4350,
+      "zone": "science",
+      "chapter_number": 13,
+      "title": "noncommunicable diseases lifestyle",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4351,
+      "zone": "science",
+      "chapter_number": 13,
+      "title": "communicable diseases transmission",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4352,
+      "zone": "science",
+      "chapter_number": 13,
+      "title": "noncommunicable diseases lifestyle",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4353,
+      "zone": "science",
+      "chapter_number": 13,
+      "title": "immunity vaccination",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4354,
+      "zone": "science",
+      "chapter_number": 13,
+      "title": "antibiotics resistance",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4355,
+      "zone": "science",
+      "chapter_number": 14,
+      "title": "habitat components ecosystems",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4356,
+      "zone": "science",
+      "chapter_number": 14,
+      "title": "population community",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4358,
+      "zone": "science",
+      "chapter_number": 14,
+      "title": "biological interactions",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4359,
+      "zone": "science",
+      "chapter_number": 14,
+      "title": "food chains trophic levels",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4360,
+      "zone": "science",
+      "chapter_number": 14,
+      "title": "ecological balance interdependence",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4361,
+      "zone": "science",
+      "chapter_number": 15,
+      "title": "unique conditions life earth",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4362,
+      "zone": "science",
+      "chapter_number": 15,
+      "title": "planets solar system",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4363,
+      "zone": "science",
+      "chapter_number": 15,
+      "title": "factors earth suitable",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4364,
+      "zone": "science",
+      "chapter_number": 15,
+      "title": "sustenance of life",
+      "class_level": 8
+    },
+    {
+      "mapping_id": 4365,
+      "zone": "science",
+      "chapter_number": 15,
+      "title": "reproduction continuity life",
+      "class_level": 8
+    }
+  ]
+}

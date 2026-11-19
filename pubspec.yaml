@@ -89,6 +89,7 @@ flutter:
     - assets/audio/math/
     - assets/audio/science/
     - assets/audio/class9/
+    - assets/audio/class8/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

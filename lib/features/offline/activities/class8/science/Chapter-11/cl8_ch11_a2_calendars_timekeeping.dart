@@ -1,0 +1,6161 @@
+// Imported from new-elab-app-8; Class 8 local activity.
+// ignore_for_file: type=lint
+// ignore_for_file: camel_case_types, constant_identifier_names, no_leading_underscores_for_local_identifiers, non_constant_identifier_names, unnecessary_import, unused_element, unused_element_parameter, unused_field, unused_import, duplicate_ignore
+// Class 8, Activity 11.2: Calendars and Timekeeping
+// Converted from Cl8S-Ch11-A2-CalendarsandTimekeeping.html (three.js -> mini3d).
+//
+// Two guided investigations picked from the sidebar:
+// (1) Measuring the Solar Day - plant a stick on a sunny ground, mark the
+//     tip of its shadow with chalk dots at 10-minute intervals across Day 1
+//     and Day 2, measure the dots to find the shortest shadow (local noon at
+//     12:04 PM) and validate that a solar day lasts 24 hours.
+// (2) The Luni-Solar Mismatch - run the solar ring (365 days) against the
+//     lunar ring (354 days) for three years, measure the growing gap with
+//     the Gap Caliper (11 / 22 / 33 days), then drop an "Adhika Maasa"
+//     (+30 days) onto the rings to re-synchronise the calendars.
+//
+// Every canvas interaction has a sidebar / HUD twin: marking and measuring
+// dots have sidebar buttons, and the two draggable chips (caliper, Adhika
+// Maasa) have tap twins next to them. The sun path, shadow-tip math, ring
+// rotation targets and gap-arc geometry mirror the source exactly.
+//
+// Source bugs fixed here (see the project brief):
+// * The source keeps the red "Desynchronization Detected" beam/alert on
+//   screen even after a successful resynchronisation; here the alert clears
+//   when the investigation completes.
+// * The source converts shadow distances with 0.3 m/unit although the stick
+//   is labelled 1 m and drawn 4 units tall; 0.25 m/unit is used so the noon
+//   shadow of a 1 m stick at 45 deg elevation measures ~1.00 m.
+// * Clicking the ground in step "Day 2" before pressing Start Day 2 created
+//   a NaN time marker in the source; marking is now gated on Day 2 start.
+
+
+
+
+
+// --- TRANSLATION DATA (source `I18N`, en + hi; te ignored) ---
+// Keys keep the source names. `tab`, `controls`, `twinTip`, `chipTip`,
+// `gotIt`, `ttLabels`, `btnMarkTip` and `btnMeasureDot` have no source key
+// (the HTML relies on raw canvas pointer events); their Hindi is written to
+// match. KaTeX fragments ($\Delta t$, $$Duration = T_{noon2} - T_{noon1}$$)
+// are rendered as plain unicode.
+
+import 'dart:async';
+import 'dart:math' as math;
+
+
+import 'package:audioplayers/audioplayers.dart' as ap;
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'dart:ui' as ui;
+import 'package:flutter/gestures.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter/rendering.dart';
+// BEGIN ACTIVITY-LOCAL RUNTIME — copied into this page for portability.
+
+
+
+/// Supported UI languages.
+enum _rt_AppLang { en, hi }
+
+/// Global language state shared by the home screen and every activity.
+///
+/// Toggling it rebuilds everything listening through [_rt_LangBuilder] or
+/// [ValueListenableBuilder], so the whole UI switches English <-> Hindi.
+class _rt_AppLanguage extends ValueNotifier<_rt_AppLang> {
+  _rt_AppLanguage._() : super(_rt_AppLang.en);
+
+  static final _rt_AppLanguage instance = _rt_AppLanguage._();
+
+  bool get isHindi => value == _rt_AppLang.hi;
+  String get code => value.name;
+
+  void toggle() => value = value == _rt_AppLang.en ? _rt_AppLang.hi : _rt_AppLang.en;
+}
+
+_rt_AppLanguage get _rt_appLanguage => _rt_AppLanguage.instance;
+
+/// Picks the string for the current language from an `{en, hi}` pair.
+String _rt_tr(String en, String hi) => _rt_appLanguage.isHindi ? hi : en;
+
+/// Rebuilds [builder] whenever the language *or* the theme changes.
+///
+/// Every activity already wraps its `build` in this, so hooking the theme in
+/// here is what makes a dark/light toggle reach all of them.
+class _rt_LangBuilder extends StatelessWidget {
+  const _rt_LangBuilder({super.key, required this.builder});
+
+  final Widget Function(BuildContext context, _rt_AppLang lang) builder;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<_rt_LabThemeMode>(
+      valueListenable: _rt_appTheme,
+      builder: (context, _, _) => ValueListenableBuilder<_rt_AppLang>(
+        valueListenable: _rt_appLanguage,
+        builder: (context, lang, _) => builder(context, lang),
+      ),
+    );
+  }
+}
+
+/// Read-only view over a translation table shaped like the HTML `LAB_TEXT`
+/// objects: `{'en': {...}, 'hi': {...}}`.
+///
+/// Lookups use dotted paths, e.g. `t.s('tabs.explore')` or
+/// `t.list('scenarios')`. Missing Hindi keys fall back to English so a gap in
+/// a translation never crashes an activity.
+class _rt_Tx {
+  _rt_Tx(this.table);
+
+  final Map<String, Map<String, dynamic>> table;
+
+  Map<String, dynamic> get _cur => table[_rt_appLanguage.code] ?? table['en']!;
+  Map<String, dynamic> get _en => table['en']!;
+
+  dynamic _lookup(Map<String, dynamic> root, String path) {
+    dynamic node = root;
+    for (final part in path.split('.')) {
+      if (node is Map) {
+        node = node[part];
+      } else if (node is List) {
+        final i = int.tryParse(part);
+        node = (i != null && i < node.length) ? node[i] : null;
+      } else {
+        return null;
+      }
+      if (node == null) return null;
+    }
+    return node;
+  }
+
+  /// Raw value at [path] (Map, List, String, num...).
+  dynamic get(String path) => _lookup(_cur, path) ?? _lookup(_en, path);
+
+  /// String at [path]; returns [path] itself if missing (easy to spot).
+  String s(String path) => get(path)?.toString() ?? path;
+
+  List<dynamic> list(String path) => (get(path) as List?) ?? const [];
+
+  Map<String, dynamic> map(String path) =>
+      (get(path) as Map?)?.cast<String, dynamic>() ?? const {};
+}
+
+
+
+/// Which school year an activity belongs to. Activities, chapter numbers and
+/// chapter names all repeat across years, so everything is keyed by this.
+enum _rt_SchoolClass {
+  class8(8, 'Class 8', 'कक्षा 8'),
+  class9(9, 'Class 9', 'कक्षा 9'),
+  class10(10, 'Class 10', 'कक्षा 10');
+
+  const _rt_SchoolClass(this.number, this.labelEn, this.labelHi);
+
+  final int number;
+  final String labelEn;
+  final String labelHi;
+
+  String get label => _rt_tr(labelEn, labelHi);
+}
+
+class _rt_ActivityInfo {
+  const _rt_ActivityInfo({
+    required this.schoolClass,
+    required this.chapter,
+    required this.code,
+    required this.titleEn,
+    required this.titleHi,
+    required this.htmlFile,
+    required this.builder,
+  });
+
+  final _rt_SchoolClass schoolClass;
+  final int chapter;
+
+  /// Chapter.activity, e.g. '11.3'. Only unique within a [schoolClass].
+  final String code;
+  final String titleEn;
+  final String titleHi;
+
+  /// Source HTML file this page was converted from.
+  final String htmlFile;
+  final WidgetBuilder builder;
+
+  String get title => _rt_tr(titleEn, titleHi);
+
+  /// Unique across every class, e.g. 'c10-11.3'.
+  String get id => 'c${schoolClass.number}-$code';
+}
+
+class _rt_ChapterInfo {
+  const _rt_ChapterInfo(this.schoolClass, this.number, this.nameEn, this.nameHi);
+
+  final _rt_SchoolClass schoolClass;
+  final int number;
+  final String nameEn;
+  final String nameHi;
+
+  String get name => _rt_tr(nameEn, nameHi);
+}
+
+
+
+/// Dark / light appearance, mirroring the `--bg-*` / `--text-*` CSS custom
+/// properties every source activity defines. The HTML labs open in dark, so
+/// that is the default here too.
+enum _rt_LabThemeMode { dark, light }
+
+class _rt_AppTheme extends ValueNotifier<_rt_LabThemeMode> {
+  _rt_AppTheme._() : super(_rt_LabThemeMode.dark);
+
+  static final _rt_AppTheme instance = _rt_AppTheme._();
+
+  bool get isDark => value == _rt_LabThemeMode.dark;
+
+  void set(_rt_LabThemeMode mode) => value = mode;
+  void toggle() => value = isDark ? _rt_LabThemeMode.light : _rt_LabThemeMode.dark;
+}
+
+_rt_AppTheme get _rt_appTheme => _rt_AppTheme.instance;
+
+/// Semantic colours resolved against the current [_rt_appTheme].
+///
+/// Widgets should reach for these instead of a literal `Colors.white` or a
+/// fixed `_rt_Tw.slate*` so a single toggle re-skins every activity. The names
+/// follow the CSS variables in the source files.
+class _rt_Lab {
+  const _rt_Lab._();
+
+  static bool get _d => _rt_appTheme.isDark;
+
+  /// `--bg-panel-solid`: cards, sidebar rows, popups.
+  static Color get surface => _d ? const Color(0xFF1E293B) : Colors.white;
+
+  /// `--bg-base`: the sidebar and page background behind [surface].
+  static Color get base => _d ? const Color(0xFF0F172A) : _rt_Tw.slate50;
+
+  /// `--bg-overlay`: subtle fills inside a surface.
+  static Color get overlay =>
+      _d ? Colors.white.withValues(alpha: 0.06) : _rt_Tw.slate100;
+
+  /// `--canvas-bg`: the simulation area behind a 2D station.
+  static Color get canvas => _d ? const Color(0xFF020617) : _rt_Tw.slate100;
+
+  /// `--text-main`, `--text-muted`, and a third step for captions.
+  static Color get text => _d ? const Color(0xFFF8FAFC) : _rt_Tw.slate800;
+  static Color get textMuted => _d ? const Color(0xFF94A3B8) : _rt_Tw.slate600;
+  static Color get textFaint => _d ? const Color(0xFF64748B) : _rt_Tw.slate400;
+
+  /// `--border-color`.
+  static Color get border =>
+      _d ? Colors.white.withValues(alpha: 0.16) : _rt_Tw.slate200;
+  static Color get borderStrong =>
+      _d ? Colors.white.withValues(alpha: 0.28) : _rt_Tw.slate300;
+
+  /// Tinted card backgrounds that stay legible in both themes. [tint] is the
+  /// light-theme fill (e.g. `_rt_Tw.green50`); in dark it becomes a low-alpha
+  /// wash of [accent] over [surface].
+  static Color tinted(Color tint, Color accent) =>
+      _d ? Color.alphaBlend(accent.withValues(alpha: 0.18), surface) : tint;
+
+  /// Border for a [tinted] surface.
+  static Color tintedBorder(Color accent) =>
+      _d ? accent.withValues(alpha: 0.45) : Color.lerp(accent, Colors.white, 0.8)!;
+
+  /// Foreground for text sitting on a [tinted] background.
+  static Color onTinted(Color darkAccent, Color lightAccent) =>
+      _d ? Color.lerp(darkAccent, Colors.white, 0.45)! : lightAccent;
+
+  /// Shadow strength; dark surfaces need a heavier, flatter shadow.
+  static Color get shadow =>
+      Colors.black.withValues(alpha: _d ? 0.45 : 0.16);
+}
+
+/// Rebuilds [builder] whenever the theme changes.
+class _rt_ThemeBuilder extends StatelessWidget {
+  const _rt_ThemeBuilder({super.key, required this.builder});
+
+  final Widget Function(BuildContext context, _rt_LabThemeMode mode) builder;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<_rt_LabThemeMode>(
+      valueListenable: _rt_appTheme,
+      builder: (context, mode, _) => builder(context, mode),
+    );
+  }
+}
+
+
+
+/// Strings used by the shared shell and home screen (not activity content).
+class _rt_CommonStrings {
+  static String get appTitle => _rt_tr('Science _rt_Lab', 'विज्ञान प्रयोगशाला');
+
+  /// Subtitle naming the class currently being browsed.
+  static String appSubtitleFor(_rt_SchoolClass c) => _rt_tr(
+        'Interactive 3D activities • NCERT ${c.labelEn}',
+        'इंटरैक्टिव 3D गतिविधियाँ • एनसीईआरटी ${c.labelHi}',
+      );
+  static String get selectClass => _rt_tr('Select class', 'कक्षा चुनें');
+  static String get footer =>
+      _rt_tr('© ZeroScienceLab - Fall in love with math and Science',
+          '© ZeroScienceLab - गणित और विज्ञान से प्यार करें');
+  static String get langButton => _rt_tr('EN', 'हि');
+  static String get switchLanguage => _rt_tr('Switch to Hindi', 'अंग्रेज़ी में बदलें');
+  static String get restart => _rt_tr('Restart', 'पुनः आरंभ');
+  static String get done => _rt_tr('Done', 'पूर्ण');
+  static String get currentStep => _rt_tr('Current Step', 'वर्तमान चरण');
+  static String get zoomIn => _rt_tr('Zoom in', 'ज़ूम इन');
+  static String get zoomOut => _rt_tr('Zoom out', 'ज़ूम आउट');
+  static String get resetView => _rt_tr('Reset view', 'दृश्य रीसेट करें');
+  static String get close => _rt_tr('Close', 'बंद करें');
+  static String get continueLabel => _rt_tr('Continue', 'जारी रखें');
+  static String get wellDone => _rt_tr('Well Done!', 'बहुत बढ़िया!');
+  static String get activities => _rt_tr('activities', 'गतिविधियाँ');
+  static String get chapter => _rt_tr('Chapter', 'अध्याय');
+  static String get activity => _rt_tr('Activity', 'गतिविधि');
+  static String get open => _rt_tr('Open', 'खोलें');
+  static String get search => _rt_tr('Search activities', 'गतिविधियाँ खोजें');
+  static String get back => _rt_tr('Back', 'वापस');
+  static String get resizeSidebar =>
+      _rt_tr('Drag to resize • double-tap to reset', 'आकार बदलने के लिए खींचें • रीसेट के लिए डबल-टैप');
+  static String get dragHint => _rt_tr(
+        'Drag to rotate • Pinch or scroll to zoom',
+        'घुमाने के लिए खींचें • ज़ूम के लिए पिंच या स्क्रॉल करें',
+      );
+}
+
+// ---------------------------------------------------------------------------
+// Activity-local feedback service: short tones bundled in assets/audio/class8/ (the
+// same files the Math Zone pages use). Moving this page to another app means
+// taking those files and the `audioplayers` dependency along with it.
+enum _rt_Sfx { click, tap, toggle, scenario, correct, wrong, success, curtain, pop, magic }
+
+class _rt_SoundService {
+  _rt_SoundService._();
+  static final _rt_SoundService instance = _rt_SoundService._();
+  bool enabled = true;
+
+  /// The tone (path under assets/) played for each effect.
+  static const Map<_rt_Sfx, String> _files = {
+    _rt_Sfx.click: 'audio/class8/mixkit_2568.mp3',
+    _rt_Sfx.tap: 'audio/class8/mixkit_2568.mp3',
+    _rt_Sfx.toggle: 'audio/class8/mixkit_2568.mp3',
+    _rt_Sfx.scenario: 'audio/class8/mixkit_2574.mp3',
+    _rt_Sfx.correct: 'audio/class8/mixkit_2013.mp3',
+    _rt_Sfx.wrong: 'audio/class8/mixkit_955.mp3',
+    _rt_Sfx.success: 'audio/class8/mixkit_2018.mp3',
+    _rt_Sfx.curtain: 'audio/class8/mixkit_2988.mp3',
+    _rt_Sfx.pop: 'audio/class8/mixkit_2690.mp3',
+    _rt_Sfx.magic: 'audio/class8/mixkit_2000.mp3',
+  };
+
+  /// One player per effect, created on first use.
+  final Map<_rt_Sfx, ap.AudioPlayer> _players = {};
+
+  void preload() {}
+
+  Future<void> play(_rt_Sfx sfx, {double volume = 1.0}) async {
+    if (!enabled) return;
+    try {
+      final player = _players.putIfAbsent(sfx, ap.AudioPlayer.new);
+      await player.stop();
+      await player.play(ap.AssetSource(_files[sfx]!), volume: volume);
+    } catch (_) {
+      // No audio output (or no audio plugin, as in widget tests): fall back
+      // to the platform click so the action still gets feedback.
+      try {
+        await SystemSound.play(SystemSoundType.click);
+      } catch (_) {}
+    }
+  }
+
+  Future<void> stop(_rt_Sfx sfx) async {
+    try {
+      await _players[sfx]?.stop();
+    } catch (_) {}
+  }
+}
+
+void _rt_playSfx(_rt_Sfx sfx, {double volume = 1.0}) =>
+    _rt_SoundService.instance.play(sfx, volume: volume);
+
+
+
+
+
+
+
+/// Palette taken from the Tailwind classes used by the HTML activities.
+class _rt_Tw {
+  static const slate50 = Color(0xFFF8FAFC);
+  static const slate100 = Color(0xFFF1F5F9);
+  static const slate200 = Color(0xFFE2E8F0);
+  static const slate300 = Color(0xFFCBD5E1);
+  static const slate400 = Color(0xFF94A3B8);
+  static const slate500 = Color(0xFF64748B);
+  static const slate600 = Color(0xFF475569);
+  static const slate700 = Color(0xFF334155);
+  static const slate800 = Color(0xFF1E293B);
+  static const slate900 = Color(0xFF0F172A);
+  static const slate950 = Color(0xFF020617);
+  static const gray50 = Color(0xFFF9FAFB);
+  static const gray100 = Color(0xFFF3F4F6);
+  static const gray200 = Color(0xFFE5E7EB);
+  static const gray400 = Color(0xFF9CA3AF);
+  static const gray500 = Color(0xFF6B7280);
+  static const gray600 = Color(0xFF4B5563);
+  static const gray700 = Color(0xFF374151);
+  static const gray800 = Color(0xFF1F2937);
+  static const teal50 = Color(0xFFF0FDFA);
+  static const teal100 = Color(0xFFCCFBF1);
+  static const teal200 = Color(0xFF99F6E4);
+  static const teal400 = Color(0xFF2DD4BF);
+  static const teal500 = Color(0xFF14B8A6);
+  static const teal600 = Color(0xFF0D9488);
+  static const teal700 = Color(0xFF0F766E);
+  static const teal800 = Color(0xFF115E59);
+  static const teal900 = Color(0xFF134E4A);
+  static const cyan400 = Color(0xFF22D3EE);
+  static const cyan500 = Color(0xFF06B6D4);
+  static const cyan600 = Color(0xFF0891B2);
+  static const sky400 = Color(0xFF38BDF8);
+  static const sky500 = Color(0xFF0EA5E9);
+  static const blue50 = Color(0xFFEFF6FF);
+  static const blue100 = Color(0xFFDBEAFE);
+  static const blue400 = Color(0xFF60A5FA);
+  static const blue500 = Color(0xFF3B82F6);
+  static const blue600 = Color(0xFF2563EB);
+  static const blue700 = Color(0xFF1D4ED8);
+  static const blue800 = Color(0xFF1E40AF);
+  static const blue900 = Color(0xFF1E3A8A);
+  static const indigo50 = Color(0xFFEEF2FF);
+  static const indigo100 = Color(0xFFE0E7FF);
+  static const indigo500 = Color(0xFF6366F1);
+  static const indigo600 = Color(0xFF4F46E5);
+  static const indigo700 = Color(0xFF4338CA);
+  static const indigo900 = Color(0xFF312E81);
+  static const violet500 = Color(0xFF8B5CF6);
+  static const violet600 = Color(0xFF7C3AED);
+  static const purple500 = Color(0xFFA855F7);
+  static const purple600 = Color(0xFF9333EA);
+  static const pink500 = Color(0xFFEC4899);
+  static const rose500 = Color(0xFFF43F5E);
+  static const red50 = Color(0xFFFEF2F2);
+  static const red100 = Color(0xFFFEE2E2);
+  static const red400 = Color(0xFFF87171);
+  static const red500 = Color(0xFFEF4444);
+  static const red600 = Color(0xFFDC2626);
+  static const red700 = Color(0xFFB91C1C);
+  static const orange50 = Color(0xFFFFF7ED);
+  static const orange100 = Color(0xFFFFEDD5);
+  static const orange400 = Color(0xFFFB923C);
+  static const orange500 = Color(0xFFF97316);
+  static const orange600 = Color(0xFFEA580C);
+  static const orange800 = Color(0xFF9A3412);
+  static const amber50 = Color(0xFFFFFBEB);
+  static const amber100 = Color(0xFFFEF3C7);
+  static const amber200 = Color(0xFFFDE68A);
+  static const amber400 = Color(0xFFFBBF24);
+  static const amber500 = Color(0xFFF59E0B);
+  static const amber600 = Color(0xFFD97706);
+  static const amber700 = Color(0xFFB45309);
+  static const yellow400 = Color(0xFFFACC15);
+  static const yellow500 = Color(0xFFEAB308);
+  static const green50 = Color(0xFFF0FDF4);
+  static const green100 = Color(0xFFDCFCE7);
+  static const green400 = Color(0xFF4ADE80);
+  static const green500 = Color(0xFF22C55E);
+  static const green600 = Color(0xFF16A34A);
+  static const green700 = Color(0xFF15803D);
+  static const emerald50 = Color(0xFFECFDF5);
+  static const emerald100 = Color(0xFFD1FAE5);
+  static const emerald400 = Color(0xFF34D399);
+  static const emerald500 = Color(0xFF10B981);
+  static const emerald600 = Color(0xFF059669);
+  static const emerald700 = Color(0xFF047857);
+  static const lime500 = Color(0xFF84CC16);
+}
+
+/// Pill action button (the HTML `.action-btn`). Plays a click sound.
+class _rt_ActionButton extends StatelessWidget {
+  const _rt_ActionButton({
+    super.key,
+    required this.label,
+    this.icon,
+    this.onPressed,
+    this.color = _rt_Tw.teal600,
+    this.done = false,
+    this.expand = false,
+    this.sound = _rt_Sfx.click,
+  });
+
+  final String label;
+  final IconData? icon;
+  final VoidCallback? onPressed;
+  final Color color;
+  final bool done;
+  final bool expand;
+  final _rt_Sfx? sound;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onPressed != null && !done;
+    final bg = done ? _rt_Tw.slate400 : (enabled ? color : color.withValues(alpha: 0.45));
+    final child = Row(
+      mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(done ? Icons.check : (icon ?? Icons.play_arrow), size: 14, color: Colors.white),
+        const SizedBox(width: 6),
+        Flexible(
+          child: Text(
+            (done ? _rt_CommonStrings.done : label).toUpperCase(),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ),
+      ],
+    );
+    return Material(
+      color: bg,
+      shape: const StadiumBorder(),
+      elevation: enabled ? 2 : 0,
+      child: InkWell(
+        customBorder: const StadiumBorder(),
+        onTap: enabled
+            ? () {
+                if (sound != null) _rt_playSfx(sound!);
+                onPressed!();
+              }
+            : null,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+/// Scenario / objective header (the HTML `#scenario-header` with bullseye).
+class _rt_ObjectiveCard extends StatelessWidget {
+  const _rt_ObjectiveCard({
+    super.key,
+    required this.title,
+    required this.desc,
+    this.accent = _rt_Tw.teal600,
+    this.icon = Icons.gps_fixed,
+    this.trailing,
+  });
+
+  final String title;
+  final String desc;
+  final Color accent;
+  final IconData icon;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _rt_Lab.tinted(Color.lerp(accent, Colors.white, 0.92)!, accent),
+        border: Border(
+            bottom: BorderSide(
+                color: _rt_Lab.tintedBorder(accent))),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(icon, size: 14, color: accent),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                title.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.2,
+                  color: _rt_Lab.onTinted(accent, Color.lerp(accent, Colors.black, 0.35)!),
+                ),
+              ),
+            ),
+            ?trailing,
+          ]),
+          const SizedBox(height: 6),
+          Text(desc,
+              style: TextStyle(
+                  fontSize: 13, fontWeight: FontWeight.w700, color: _rt_Lab.text, height: 1.25)),
+        ],
+      ),
+    );
+  }
+}
+
+/// Numbered step card with action button (the HTML `.step-card`).
+class _rt_StepCard extends StatelessWidget {
+  const _rt_StepCard({
+    super.key,
+    required this.number,
+    required this.title,
+    required this.desc,
+    required this.actionLabel,
+    required this.onAction,
+    this.active = false,
+    this.done = false,
+    this.locked = false,
+    this.accent = _rt_Tw.teal600,
+    this.actionIcon,
+    this.extra,
+  });
+
+  final int number;
+  final String title;
+  final String desc;
+  final String actionLabel;
+  final VoidCallback? onAction;
+  final bool active;
+  final bool done;
+  final bool locked;
+  final Color accent;
+  final IconData? actionIcon;
+  final Widget? extra;
+
+  @override
+  Widget build(BuildContext context) {
+    final dim = !active && !done;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: active ? _rt_Lab.tinted(Color.lerp(accent, Colors.white, 0.93)!, accent) : _rt_Lab.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: active ? accent : _rt_Lab.border, width: 2),
+        boxShadow: active
+            ? [BoxShadow(color: accent.withValues(alpha: 0.15), blurRadius: 6, offset: const Offset(0, 3))]
+            : null,
+      ),
+      child: Opacity(
+        opacity: dim ? 0.65 : 1,
+        child: Stack(
+          children: [
+            Positioned(
+              top: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _rt_Lab.tinted(Color.lerp(accent, Colors.white, 0.8)!, accent)
+                      .withValues(alpha: active ? 1 : 0.5),
+                  borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(12), topRight: Radius.circular(10)),
+                ),
+                child: Text('$number',
+                    style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: _rt_Lab.onTinted(accent, Color.lerp(accent, Colors.black, 0.3)!),
+                        height: 1)),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 34),
+                    child: Text(title,
+                        style: TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w800, color: _rt_Lab.text)),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(desc, style: TextStyle(fontSize: 12, color: _rt_Lab.textMuted, height: 1.3)),
+                  ?extra,
+                  const SizedBox(height: 10),
+                  _rt_ActionButton(
+                    label: actionLabel,
+                    icon: actionIcon,
+                    color: accent,
+                    done: done,
+                    onPressed: locked ? null : onAction,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Generic content card (challenges, explainers, definitions, outcomes).
+class _rt_InfoCard extends StatelessWidget {
+  const _rt_InfoCard({
+    super.key,
+    this.title,
+    this.body,
+    this.hint,
+    this.tag,
+    this.color = _rt_Tw.teal600,
+    this.icon,
+    this.child,
+    this.leftBorder = false,
+  });
+
+  final String? title;
+  final String? body;
+  final String? hint;
+  final String? tag;
+  final Color color;
+  final IconData? icon;
+  final Widget? child;
+  final bool leftBorder;
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = leftBorder
+        ? _rt_Lab.surface
+        : _rt_Lab.tinted(Color.lerp(color, Colors.white, 0.94)!, color);
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(12),
+        border: leftBorder
+            ? Border(left: BorderSide(color: color, width: 4))
+            : Border.all(color: _rt_Lab.tintedBorder(color)),
+        boxShadow: leftBorder ? [BoxShadow(color: _rt_Lab.shadow, blurRadius: 4)] : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (tag != null)
+            Text(tag!.toUpperCase(),
+                style: TextStyle(
+                    fontSize: 10, fontWeight: FontWeight.w900, color: color, letterSpacing: 0.8)),
+          if (title != null)
+            Row(children: [
+              if (icon != null) ...[Icon(icon, size: 16, color: color), const SizedBox(width: 6)],
+              Expanded(
+                child: Text(title!,
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: _rt_Lab.onTinted(color, Color.lerp(color, Colors.black, 0.35)!))),
+              ),
+            ]),
+          if (body != null) ...[
+            const SizedBox(height: 6),
+            Text(body!, style: TextStyle(fontSize: 12.5, color: _rt_Lab.text, height: 1.4)),
+          ],
+          if (hint != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: _rt_Lab.overlay,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: _rt_Lab.tintedBorder(color)),
+              ),
+              child: Text(hint!,
+                  style: TextStyle(
+                      fontSize: 11.5, color: _rt_Lab.textMuted, fontStyle: FontStyle.italic)),
+            ),
+          ],
+          ?child,
+        ],
+      ),
+    );
+  }
+}
+
+/// HUD read-out card shown over the 3D view (the HTML `.hud-card`).
+class _rt_HudCard extends StatelessWidget {
+  const _rt_HudCard({super.key, required this.value, required this.label, this.color = _rt_Tw.teal700, this.minWidth = 90});
+
+  final String value;
+  final String label;
+  final Color color;
+  final double minWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: BoxConstraints(minWidth: minWidth),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: _rt_Lab.surface.withValues(alpha: 0.94),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _rt_Lab.tintedBorder(color), width: 2),
+        boxShadow: [BoxShadow(color: _rt_Lab.shadow, blurRadius: 6)],
+      ),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Text(value,
+            style: TextStyle(
+                fontFamily: 'monospace',
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: _rt_Lab.onTinted(color, color))),
+        Text(label.toUpperCase(),
+            style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: _rt_Lab.textMuted)),
+      ]),
+    );
+  }
+}
+
+/// Small section heading inside the sidebar.
+class _rt_SectionLabel extends StatelessWidget {
+  const _rt_SectionLabel(this.text, {super.key, this.color, this.icon});
+
+  final String text;
+
+  /// Defaults to the theme's muted text colour.
+  final Color? color;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = this.color ?? _rt_Lab.textMuted;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8, top: 4),
+      child: Row(children: [
+        if (icon != null) ...[Icon(icon, size: 14, color: color), const SizedBox(width: 6)],
+        Expanded(
+          child: Text(text.toUpperCase(),
+              style: TextStyle(
+                  fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1, color: color)),
+        ),
+      ]),
+    );
+  }
+}
+
+/// Labelled slider (HTML `<input type="range">`). Plays a tap on release.
+class _rt_LabeledSlider extends StatelessWidget {
+  const _rt_LabeledSlider({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.onChanged,
+    this.divisions,
+    this.valueText,
+    this.color = _rt_Tw.teal600,
+  });
+
+  final String label;
+  final double value;
+  final double min;
+  final double max;
+  final int? divisions;
+  final String? valueText;
+  final ValueChanged<double>? onChanged;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(children: [
+          Expanded(
+            child: Text(label,
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: _rt_Lab.textMuted)),
+          ),
+          Text(valueText ?? value.toStringAsFixed(1),
+              style: TextStyle(
+                  fontSize: 12, fontWeight: FontWeight.w900, color: color, fontFamily: 'monospace')),
+        ]),
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            trackHeight: 4,
+            activeTrackColor: color,
+            thumbColor: color,
+            overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+          ),
+          child: Slider(
+            value: value.clamp(min, max),
+            min: min,
+            max: max,
+            divisions: divisions,
+            onChanged: onChanged,
+            onChangeEnd: onChanged == null ? null : (_) => _rt_playSfx(_rt_Sfx.tap, volume: 0.6),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Multiple-choice option button used in quizzes / challenges.
+class _rt_ChoiceButton extends StatelessWidget {
+  const _rt_ChoiceButton({
+    super.key,
+    required this.label,
+    required this.onTap,
+    this.state = _rt_ChoiceState.idle,
+  });
+
+  final String label;
+  final VoidCallback? onTap;
+  final _rt_ChoiceState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final (bg, border, fg) = switch (state) {
+      _rt_ChoiceState.correct =>
+        (_rt_Lab.tinted(_rt_Tw.green100, _rt_Tw.green500), _rt_Tw.green500, _rt_Lab.onTinted(_rt_Tw.green400, _rt_Tw.green700)),
+      _rt_ChoiceState.wrong =>
+        (_rt_Lab.tinted(_rt_Tw.red100, _rt_Tw.red500), _rt_Tw.red500, _rt_Lab.onTinted(_rt_Tw.red400, _rt_Tw.red700)),
+      _rt_ChoiceState.selected =>
+        (_rt_Lab.tinted(_rt_Tw.blue100, _rt_Tw.blue500), _rt_Tw.blue500, _rt_Lab.onTinted(_rt_Tw.blue400, _rt_Tw.blue700)),
+      _rt_ChoiceState.idle => (_rt_Lab.surface, _rt_Lab.border, _rt_Lab.text),
+    };
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Material(
+        color: bg,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: onTap,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: border, width: 2),
+            ),
+            child: Text(label,
+                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: fg)),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+enum _rt_ChoiceState { idle, selected, correct, wrong }
+
+/// Language-aware wrapper for a `{en, hi}` literal pair.
+class _rt_L10nText extends StatelessWidget {
+  const _rt_L10nText(this.en, this.hi, {super.key, this.style, this.textAlign});
+
+  final String en;
+  final String hi;
+  final TextStyle? style;
+  final TextAlign? textAlign;
+
+  @override
+  Widget build(BuildContext context) =>
+      _rt_LangBuilder(builder: (_, _) => Text(_rt_tr(en, hi), style: style, textAlign: textAlign));
+}
+
+/// Builds [child] only once the available width reaches [minWidth].
+///
+/// The app starts in portrait and activity pages switch to landscape in
+/// initState, so their first frames are laid out with the portrait width
+/// minus the sidebar (about 110 dp on a phone). Wrapping a landscape-only
+/// layout in this gate skips those frames instead of overflowing.
+class _rt_MinWidthGate extends StatelessWidget {
+  const _rt_MinWidthGate({super.key, this.minWidth = 200, required this.child});
+
+  final double minWidth;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+      builder: (_, c) => c.maxWidth < minWidth ? const SizedBox.shrink() : child);
+}
+
+/// Floating back button pinned to the top-right of an activity screen.
+///
+/// Renders nothing when there is no route to pop (the home screen), so it is
+/// safe to drop into any page unconditionally.
+class _rt_FloatingBackButton extends StatelessWidget {
+  const _rt_FloatingBackButton({super.key, this.onPressed});
+
+  /// Overrides the default `Navigator.maybePop` (e.g. to confirm first).
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!Navigator.canPop(context)) return const SizedBox.shrink();
+    return Tooltip(
+      message: _rt_CommonStrings.back,
+      child: IconButton(
+        icon: const Icon(Icons.arrow_back),
+        color: Colors.orangeAccent,
+        iconSize: 28,
+        onPressed: () {
+          HapticFeedback.lightImpact();
+          _rt_playSfx(_rt_Sfx.tap);
+          if (onPressed != null) {
+            onPressed!();
+          } else {
+            Navigator.maybePop(context);
+          }
+        },
+        style: IconButton.styleFrom(
+          backgroundColor: Colors.black.withValues(alpha: 0.8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Colors.orange.withValues(alpha: 0.8)),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+
+
+
+
+
+
+
+
+/// Sidebar resize limits. [_rt_kSidebarDefaultWidth] is the original fixed width.
+const double _rt_kSidebarMinWidth = 240;
+const double _rt_kSidebarMaxWidth = 560;
+const double _rt_kSidebarDefaultWidth = 300;
+
+/// Width the user last dragged the sidebar to. Global so the choice carries
+/// across activities for the session. Not persisted to disk -- assign to it on
+/// startup (and read it after a resize) to remember the width between launches.
+double _rt_rememberedSidebarWidth = _rt_kSidebarDefaultWidth;
+
+/// One sidebar tab (Experiment, Challenges, Explainer, Definitions, ...).
+class _rt_ShellTab {
+  const _rt_ShellTab({required this.label, required this.icon, required this.builder});
+
+  final String label;
+  final IconData icon;
+
+  /// Builds the tab body. It lives inside the sidebar's single scroll view, so
+  /// it must not contain its own unbounded scrollables / Expanded widgets.
+  final WidgetBuilder builder;
+}
+
+/// Intro "screen raiser" / curtain shown before the lab starts.
+class _rt_IntroConfig {
+  const _rt_IntroConfig({
+    required this.title,
+    required this.subtitle,
+    required this.buttonLabel,
+    this.icon = Icons.science,
+    this.footnote,
+    this.buttonIcon = Icons.fingerprint,
+  });
+
+  final String title;
+  final String subtitle;
+  final String buttonLabel;
+  final IconData icon;
+  final IconData buttonIcon;
+  final String? footnote;
+}
+
+/// Colours of one activity (header/footer gradient + accent).
+class _rt_ShellTheme {
+  const _rt_ShellTheme({
+    this.accent = _rt_Tw.teal600,
+    this.headerGradient = const [_rt_Tw.slate900, _rt_Tw.teal900],
+    this.headerSubtitleColor = _rt_Tw.teal200,
+  });
+
+  final Color accent;
+  final List<Color> headerGradient;
+  final Color headerSubtitleColor;
+}
+
+/// Current-step hint shown at the bottom of the canvas when the sidebar is
+/// collapsed (the HTML `#step-hint-box`).
+class _rt_StepHint {
+  const _rt_StepHint({required this.number, required this.text, this.label});
+
+  final String number;
+  final String text;
+  final String? label;
+}
+
+/// Lets an activity show toasts and popups through the shell.
+class _rt_ShellController {
+  _ActivityShellState? _state;
+
+  /// Top-right toast (the HTML `showToast`).
+  void showToast(String message,
+      {Color color = _rt_Tw.green500, IconData icon = Icons.check, int ms = 3000}) {
+    _state?._showToast(message, color, icon, ms);
+  }
+
+  /// Scrollable success popup with sound.
+  ///
+  /// Completes with true when its button was pressed (false when it was
+  /// dismissed by tapping outside or Back). [onClose] runs after any
+  /// dismissal, [onConfirm] only after the button: use it for actions such as
+  /// restarting the lab, which a stray tap outside must not trigger.
+  Future<bool> showSuccess({
+    required String title,
+    String? message,
+    Widget? body,
+    String? buttonLabel,
+    IconData icon = Icons.emoji_events,
+    Color color = _rt_Tw.green500,
+    VoidCallback? onClose,
+    VoidCallback? onConfirm,
+    _rt_Sfx sound = _rt_Sfx.success,
+  }) async {
+    final ctx = _state?.context;
+    if (ctx == null) return false;
+    _rt_playSfx(sound);
+    final confirmed = await _rt_showShellPopup(
+      ctx,
+      title: title,
+      message: message,
+      body: body,
+      icon: icon,
+      color: color,
+      buttonLabel: buttonLabel ?? _rt_CommonStrings.continueLabel,
+    );
+    onClose?.call();
+    if (confirmed) onConfirm?.call();
+    return confirmed;
+  }
+
+  bool get isSidebarOpen => _state?._isSidebarOpen ?? true;
+
+  void setSidebarOpen(bool open) => _state?._setSidebar(open);
+
+  /// Switches the sidebar to tab [index] (HTML `switchTab`).
+}
+
+/// Scrollable popup used for success / feedback / info dialogs.
+///
+/// The card can be dragged anywhere on screen (the sources' panels are
+/// draggable too), so an observation never has to hide the simulation behind
+/// it. It is clamped so it can always be grabbed again.
+///
+/// Completes with true when the default button was pressed.
+Future<bool> _rt_showShellPopup(
+  BuildContext context, {
+  required String title,
+  String? message,
+  Widget? body,
+  IconData icon = Icons.emoji_events,
+  Color color = _rt_Tw.green500,
+  String? buttonLabel,
+  List<Widget>? actions,
+  bool barrierDismissible = true,
+}) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    barrierDismissible: barrierDismissible,
+    // A lighter scrim: the point of moving the card is to watch the canvas.
+    barrierColor: Colors.black.withValues(alpha: 0.35),
+    builder: (ctx) => _DraggablePopup(
+      title: title,
+      message: message,
+      body: body,
+      icon: icon,
+      color: color,
+      buttonLabel: buttonLabel,
+      actions: actions,
+    ),
+  );
+  return confirmed == true;
+}
+
+class _DraggablePopup extends StatefulWidget {
+  const _DraggablePopup({
+    required this.title,
+    this.message,
+    this.body,
+    required this.icon,
+    required this.color,
+    this.buttonLabel,
+    this.actions,
+  });
+
+  final String title;
+  final String? message;
+  final Widget? body;
+  final IconData icon;
+  final Color color;
+  final String? buttonLabel;
+  final List<Widget>? actions;
+
+  @override
+  State<_DraggablePopup> createState() => _DraggablePopupState();
+}
+
+class _DraggablePopupState extends State<_DraggablePopup> {
+  /// Offset from the centred resting position.
+  Offset _offset = Offset.zero;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    // Landscape phones are short: cap the card and let its content scroll.
+    final maxW = math.min(520.0, size.width - 32);
+    final maxH = size.height * 0.86;
+    // Keep at least a corner of the card on screen at all times.
+    final limitX = math.max(0.0, (size.width - maxW) / 2 + maxW / 2 - 40);
+    final limitY = math.max(0.0, (size.height - maxH) / 2 + maxH / 2 - 40);
+
+    // Kept as a real Dialog so `find.byType(Dialog)` and the usual dialog
+    // semantics keep working; the drag lives inside it.
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      insetPadding: EdgeInsets.zero,
+      child: Transform.translate(
+        offset: _offset,
+        child: Material(
+          color: _rt_Lab.surface,
+          elevation: 12,
+          borderRadius: BorderRadius.circular(24),
+          clipBehavior: Clip.antiAlias,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxW, maxHeight: maxH),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Drag handle strip along the top of the card.
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onPanUpdate: (d) => setState(() {
+                    _offset = Offset(
+                      (_offset.dx + d.delta.dx).clamp(-limitX, limitX),
+                      (_offset.dy + d.delta.dy).clamp(-limitY, limitY),
+                    );
+                  }),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    color: _rt_Lab.overlay,
+                    alignment: Alignment.center,
+                    child: Container(
+                      width: 46,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: _rt_Lab.borderStrong,
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                    ),
+                  ),
+                ),
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: widget.color.withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: widget.color, width: 3),
+                          ),
+                          child: Icon(widget.icon, color: widget.color, size: 34),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(widget.title,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                fontSize: 22, fontWeight: FontWeight.w900, color: _rt_Lab.text)),
+                        if (widget.message != null) ...[
+                          const SizedBox(height: 8),
+                          Text(widget.message!,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 14, color: _rt_Lab.textMuted, height: 1.4)),
+                        ],
+                        if (widget.body != null) ...[
+                          const SizedBox(height: 12),
+                          widget.body!,
+                        ],
+                        const SizedBox(height: 16),
+                        if (widget.actions != null)
+                          Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              alignment: WrapAlignment.center,
+                              children: widget.actions!)
+                        else
+                          _rt_ActionButton(
+                            label: widget.buttonLabel ?? _rt_CommonStrings.close,
+                            icon: Icons.check,
+                            color: widget.color,
+                            onPressed: () => Navigator.of(context).pop(true),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Standard landscape activity layout:
+///
+/// * left sidebar = 300 px wide (screen width on narrower screens), slides over the canvas, fully
+///   scrollable, holding header, tabs (with all step buttons) and footer;
+/// * fixed menu button (top-left) toggling the sidebar, drawn above it;
+/// * responsive centre canvas with zoom / reset toolbar, HUD overlays,
+///   toasts and current-step hint;
+/// * optional intro curtain.
+class _rt_ActivityShell extends StatefulWidget {
+  const _rt_ActivityShell({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.tabs,
+    required this.canvas,
+    required this.onRestart,
+    this.controller,
+    this.theme = const _rt_ShellTheme(),
+    this.intro,
+    this.onStart,
+    this.canvasOverlays = const [],
+    this.onZoomIn,
+    this.onZoomOut,
+    this.onResetView,
+    this.toolbarExtras = const [],
+    this.hint,
+    this.initialTab = 0,
+    this.onTabChanged,
+    this.sidebarTop,
+    this.canvasBackground,
+  });
+
+  final String title;
+  final String subtitle;
+  final List<_rt_ShellTab> tabs;
+
+  /// The activity (usually a _rt_Scene3DView). Fills the area right of the
+  /// sidebar and resizes responsively when the sidebar opens/closes.
+  final Widget canvas;
+
+  /// Extra widgets stacked over the canvas (HUD, legends, overlays). Use
+  /// Positioned / Align children.
+  final List<Widget> canvasOverlays;
+
+  final VoidCallback onRestart;
+  final _rt_ShellController? controller;
+  final _rt_ShellTheme theme;
+  final _rt_IntroConfig? intro;
+  final VoidCallback? onStart;
+
+  final VoidCallback? onZoomIn;
+  final VoidCallback? onZoomOut;
+  final VoidCallback? onResetView;
+  final List<Widget> toolbarExtras;
+
+  final _rt_StepHint? hint;
+
+  /// Ignored: the sidebar always shows the first (experiment) tab.
+  final int initialTab;
+
+  /// Ignored: there is no tab bar to switch with.
+  final ValueChanged<int>? onTabChanged;
+
+  /// Optional content above the tabs (e.g. scenario selector).
+  final Widget? sidebarTop;
+  final Color? canvasBackground;
+
+  @override
+  State<_rt_ActivityShell> createState() => _ActivityShellState();
+}
+
+class _ActivityShellState extends State<_rt_ActivityShell> with TickerProviderStateMixin {
+  bool _isSidebarOpen = true;
+  double _sidebarWidth = _rt_rememberedSidebarWidth;
+  bool _isResizing = false;
+
+  late bool _introVisible = widget.intro != null;
+  late final AnimationController _curtain =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 1500));
+  late final AnimationController _introContent =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
+
+  String? _toast;
+  Color _toastColor = _rt_Tw.green500;
+  IconData _toastIcon = Icons.check;
+  Timer? _toastTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller?._state = this;
+  }
+
+  /// The sidebar shows only the experiment tab -- the one carrying the steps
+  /// needed to complete the activity. Every activity declares it first.
+  _rt_ShellTab get _primaryTab => widget.tabs.first;
+
+  @override
+  void didUpdateWidget(_rt_ActivityShell old) {
+    super.didUpdateWidget(old);
+    widget.controller?._state = this;
+  }
+
+  @override
+  void dispose() {
+    if (widget.controller?._state == this) widget.controller?._state = null;
+    _toastTimer?.cancel();
+    _curtain.dispose();
+    _introContent.dispose();
+    _rt_SoundService.instance.stop(_rt_Sfx.curtain);
+    super.dispose();
+  }
+
+  void _setSidebar(bool open) {
+    if (open == _isSidebarOpen) return;
+    _rt_playSfx(_rt_Sfx.toggle);
+    setState(() => _isSidebarOpen = open);
+  }
+
+  void _showToast(String m, Color c, IconData i, int ms) {
+    _toastTimer?.cancel();
+    setState(() {
+      _toast = m;
+      _toastColor = c;
+      _toastIcon = i;
+    });
+    _toastTimer = Timer(Duration(milliseconds: ms), () {
+      if (mounted) setState(() => _toast = null);
+    });
+  }
+
+  Future<void> _start() async {
+    _rt_playSfx(_rt_Sfx.click);
+    await _introContent.forward();
+    _rt_playSfx(_rt_Sfx.curtain, volume: 0.8);
+    await _curtain.forward();
+    _rt_SoundService.instance.stop(_rt_Sfx.curtain);
+    if (mounted) setState(() => _introVisible = false);
+    widget.onStart?.call();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    // Phones narrower than the minimum keep the old full-bleed sidebar and
+    // cannot be resized -- there is no canvas left to trade width with.
+    final isNarrow = size.width < _rt_kSidebarDefaultWidth;
+    final maxWidth = math.min(_rt_kSidebarMaxWidth, size.width * 0.85);
+    final sidebarWidth = isNarrow ? size.width : _sidebarWidth.clamp(_rt_kSidebarMinWidth, maxWidth);
+    // Follow the finger exactly while dragging; animate only open/close.
+    final dur = _isResizing ? Duration.zero : const Duration(milliseconds: 300);
+    const curve = Curves.easeOutCubic;
+
+    return _KeyboardLift(child: Scaffold(
+      backgroundColor: widget.canvasBackground ?? _rt_Lab.canvas,
+      resizeToAvoidBottomInset: false,
+      body: Stack(
+        children: [
+          // ---------------------------------------------------- canvas ---
+          AnimatedPositioned(
+            duration: dur,
+            curve: curve,
+            left: _isSidebarOpen ? sidebarWidth : 0,
+            top: 0,
+            right: 0,
+            bottom: 0,
+            child: ClipRect(child: _buildCanvasArea()),
+          ),
+
+          // --------------------------------------------------- sidebar ---
+          AnimatedPositioned(
+            duration: dur,
+            curve: curve,
+            left: _isSidebarOpen ? 0 : -sidebarWidth - 12,
+            top: 0,
+            bottom: 0,
+            width: sidebarWidth,
+            child: Stack(
+              children: [
+                Positioned.fill(child: _buildSidebar()),
+                if (!isNarrow)
+                  Positioned(
+                    top: 0,
+                    bottom: 0,
+                    right: 0,
+                    // 12px matches the sidebar's content gutter, so the strip
+                    // never sits on top of a full-width control.
+                    width: 12,
+                    child: _buildResizeHandle(sidebarWidth, maxWidth),
+                  ),
+              ],
+            ),
+          ),
+
+          // Menu button: fixed position, above the sidebar.
+          Positioned(
+            top: 16,
+            left: 16, // Fixed position, won't slide with sidebar
+            child: IconButton(
+              icon: Icon(_isSidebarOpen ? Icons.menu_open : Icons.menu),
+              color: Colors.orangeAccent,
+              iconSize: 28,
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                _rt_playSfx(_rt_Sfx.toggle);
+                setState(() {
+                  _isSidebarOpen = !_isSidebarOpen;
+                });
+              },
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.black.withValues(alpha: 0.8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: Colors.orange.withValues(alpha: 0.8)),
+                ),
+              ),
+            ),
+          ),
+
+          if (_introVisible && widget.intro != null) _buildIntro(widget.intro!),
+
+          // Back button: mirrors the menu button on the opposite corner. Last
+          // in the stack so it stays tappable while the intro curtain is up.
+          const Positioned(
+            top: 16,
+            right: 16,
+            child: _rt_FloatingBackButton(),
+          ),
+        ],
+      ),
+    ));
+  }
+
+  // ------------------------------------------------------------ canvas ----
+  Widget _buildCanvasArea() {
+    final hasToolbar = widget.onZoomIn != null ||
+        widget.onZoomOut != null ||
+        widget.onResetView != null ||
+        widget.toolbarExtras.isNotEmpty;
+    return Stack(
+      children: [
+        Positioned.fill(child: widget.canvas),
+        ...widget.canvasOverlays,
+        if (hasToolbar)
+          // Starts below the floating back button in the shell's outer Stack.
+          Positioned(top: 68, right: 10, child: _buildToolbar()),
+        // Toast (below HUDs, left of the vertical toolbar)
+        Positioned(
+          top: 140,
+          right: hasToolbar ? 66 : 16,
+          child: IgnorePointer(
+            child: AnimatedSlide(
+              duration: const Duration(milliseconds: 300),
+              offset: _toast == null ? const Offset(0.3, 0) : Offset.zero,
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 300),
+                opacity: _toast == null ? 0 : 1,
+                child: _buildToast(),
+              ),
+            ),
+          ),
+        ),
+        // Current-step hint (visible while the sidebar is collapsed).
+        if (widget.hint != null)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 16,
+            child: IgnorePointer(
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 400),
+                opacity: _isSidebarOpen ? 0 : 1,
+                child: Center(child: _buildHint(widget.hint!)),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildToolbar() {
+    Widget btn(IconData icon, String tip, VoidCallback? onTap) => Tooltip(
+          message: tip,
+          child: InkResponse(
+            onTap: onTap == null
+                ? null
+                : () {
+                    _rt_playSfx(_rt_Sfx.tap);
+                    onTap();
+                  },
+            radius: 22,
+            child: Container(
+              width: 36,
+              height: 36,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(color: _rt_Lab.surface, shape: BoxShape.circle),
+              child: Icon(icon, size: 18, color: _rt_Lab.textMuted),
+            ),
+          ),
+        );
+    return Container(
+      padding: const EdgeInsets.all(5),
+      decoration: BoxDecoration(
+        color: _rt_Lab.surface.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(40),
+        boxShadow: [BoxShadow(color: _rt_Lab.shadow, blurRadius: 10)],
+      ),
+      // Vertical strip on the right edge keeps the top of the canvas free
+      // for HUD overlays on narrow phones.
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ...widget.toolbarExtras,
+          if (widget.toolbarExtras.isNotEmpty) _divider(),
+          if (widget.onZoomIn != null) btn(Icons.add, _rt_CommonStrings.zoomIn, widget.onZoomIn),
+          if (widget.onZoomOut != null) ...[
+            const SizedBox(height: 4),
+            btn(Icons.remove, _rt_CommonStrings.zoomOut, widget.onZoomOut),
+          ],
+          if (widget.onResetView != null) ...[
+            _divider(),
+            btn(Icons.center_focus_strong, _rt_CommonStrings.resetView, widget.onResetView),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _divider() => Container(
+      width: 24, height: 1, margin: const EdgeInsets.symmetric(vertical: 6), color: _rt_Lab.border);
+
+  Widget _buildToast() {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 320),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: _rt_Lab.surface.withValues(alpha: 0.97),
+        borderRadius: BorderRadius.circular(16),
+        border: Border(left: BorderSide(color: _toastColor, width: 6)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 16)],
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(color: _toastColor.withValues(alpha: 0.15), shape: BoxShape.circle),
+          child: Icon(_toastIcon, size: 16, color: _toastColor),
+        ),
+        const SizedBox(width: 10),
+        Flexible(
+          child: Text(_toast ?? '',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: _rt_Lab.text)),
+        ),
+      ]),
+    );
+  }
+
+  Widget _buildHint(_rt_StepHint h) {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 560),
+      margin: const EdgeInsets.symmetric(horizontal: 90),
+      padding: const EdgeInsets.fromLTRB(14, 10, 16, 10),
+      decoration: BoxDecoration(
+        color: _rt_Lab.surface.withValues(alpha: 0.96),
+        borderRadius: const BorderRadius.horizontal(right: Radius.circular(16)),
+        border: Border(left: BorderSide(color: widget.theme.accent, width: 6)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 16)],
+      ),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Container(
+          width: 32,
+          height: 32,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: _rt_Lab.tinted(
+                Color.lerp(widget.theme.accent, Colors.white, 0.85)!, widget.theme.accent),
+            shape: BoxShape.circle,
+            border: Border.all(color: _rt_Lab.tintedBorder(widget.theme.accent), width: 2),
+          ),
+          child: Text(h.number,
+              style: TextStyle(fontWeight: FontWeight.w900, color: widget.theme.accent, fontSize: 15)),
+        ),
+        const SizedBox(width: 10),
+        Flexible(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+            Text((h.label ?? _rt_CommonStrings.currentStep).toUpperCase(),
+                style: TextStyle(
+                    fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1.2, color: widget.theme.accent)),
+            Text(h.text,
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: _rt_Lab.text, height: 1.25)),
+          ]),
+        ),
+      ]),
+    );
+  }
+
+  // ----------------------------------------------------------- sidebar ----
+  /// Grab strip on the sidebar's trailing edge. Drag to resize, double-tap to
+  /// restore the default width.
+  Widget _buildResizeHandle(double currentWidth, double maxWidth) {
+    void commit() {
+      _rt_rememberedSidebarWidth = _sidebarWidth;
+    }
+
+    return MouseRegion(
+      key: const Key('sidebarResizeHandle'),
+      cursor: SystemMouseCursors.resizeLeftRight,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        // Start from the width actually on screen, so a clamped value does not
+        // make the sidebar jump on the first drag pixel.
+        onHorizontalDragStart: (_) => setState(() {
+          _sidebarWidth = currentWidth;
+          _isResizing = true;
+        }),
+        onHorizontalDragUpdate: (d) => setState(() {
+          _sidebarWidth = (_sidebarWidth + d.delta.dx).clamp(_rt_kSidebarMinWidth, maxWidth);
+        }),
+        onHorizontalDragEnd: (_) {
+          commit();
+          setState(() => _isResizing = false);
+          _rt_playSfx(_rt_Sfx.tap);
+        },
+        onHorizontalDragCancel: () {
+          commit();
+          setState(() => _isResizing = false);
+        },
+        onDoubleTap: () {
+          setState(() => _sidebarWidth = _rt_kSidebarDefaultWidth.clamp(_rt_kSidebarMinWidth, maxWidth));
+          commit();
+          _rt_playSfx(_rt_Sfx.toggle);
+        },
+        child: Tooltip(
+          message: _rt_CommonStrings.resizeSidebar,
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: Container(
+              width: 6,
+              height: 56,
+              margin: const EdgeInsets.only(right: 2),
+              decoration: BoxDecoration(
+                color: _isResizing ? widget.theme.accent : _rt_Tw.gray400.withValues(alpha: 0.55),
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSidebar() {
+    final t = widget.theme;
+    return Material(
+      elevation: 16,
+      color: _rt_Lab.base.withValues(alpha: 0.99),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+            // Header (title, subtitle, language + restart buttons).
+            Container(
+              padding: const EdgeInsets.fromLTRB(12, 76, 12, 12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: t.headerGradient),
+                border: Border(bottom: BorderSide(color: t.accent, width: 4)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(widget.title,
+                      style: const TextStyle(
+                          fontSize: 17, fontWeight: FontWeight.w900, color: Colors.white, height: 1.15)),
+                  const SizedBox(height: 4),
+                  Text(widget.subtitle,
+                      style: TextStyle(
+                          fontSize: 11, fontWeight: FontWeight.w700, color: t.headerSubtitleColor)),
+                  const SizedBox(height: 10),
+                  Wrap(spacing: 8, runSpacing: 8, children: [
+                    _headerButton(
+                      icon: Icons.translate,
+                      label: _rt_CommonStrings.langButton,
+                      tooltip: _rt_CommonStrings.switchLanguage,
+                      onTap: () {
+                        _rt_playSfx(_rt_Sfx.click);
+                        _rt_appLanguage.toggle();
+                      },
+                    ),
+                    _headerButton(
+                      icon: Icons.refresh,
+                      label: _rt_CommonStrings.restart,
+                      filled: true,
+                      onTap: () {
+                        _rt_playSfx(_rt_Sfx.scenario);
+                        widget.onRestart();
+                      },
+                    ),
+                  ]),
+                ],
+              ),
+            ),
+            ?widget.sidebarTop,
+            // Active tab body
+            Container(
+              color: _rt_Lab.base,
+              constraints: BoxConstraints(minHeight: MediaQuery.sizeOf(context).height * 0.4),
+              child: Builder(builder: _primaryTab.builder),
+            ),
+                ],
+              ),
+            ),
+          ),
+          // Footer: pinned to the bottom, outside the scroll view.
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: t.headerGradient),
+              border: Border(top: BorderSide(color: t.accent)),
+            ),
+            // The footer sits on the fixed dark header gradient, so its text
+            // stays white in both themes rather than following _rt_Lab.text.
+            child: Text(
+              _rt_CommonStrings.footer,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _headerButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    String? tooltip,
+    bool filled = false,
+  }) {
+    final btn = Material(
+      color: filled ? widget.theme.accent : Colors.white.withValues(alpha: 0.12),
+      shape: StadiumBorder(side: BorderSide(color: Colors.white.withValues(alpha: 0.25))),
+      child: InkWell(
+        customBorder: const StadiumBorder(),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(icon, size: 14, color: Colors.white),
+            const SizedBox(width: 6),
+            Text(label,
+                style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
+          ]),
+        ),
+      ),
+    );
+    return tooltip == null ? btn : Tooltip(message: tooltip, child: btn);
+  }
+
+
+  // ------------------------------------------------------------- intro ----
+  Widget _buildIntro(_rt_IntroConfig intro) {
+    return Positioned.fill(
+      child: AnimatedBuilder(
+        animation: Listenable.merge([_curtain, _introContent]),
+        builder: (context, _) {
+          final shutter = Curves.easeInOutCubic.transform(_curtain.value);
+          final content = _introContent.value;
+          return Stack(
+            children: [
+              // Heavy shutter panel sliding up.
+              FractionalTranslation(
+                translation: Offset(0, -1.05 * shutter),
+                child: const _ShutterPanel(),
+              ),
+              if (content < 1)
+                Center(
+                  child: Opacity(
+                    opacity: 1 - content,
+                    child: Transform.translate(
+                      offset: Offset(0, 20 * content),
+                      child: Transform.scale(
+                        scale: 1 - 0.1 * content,
+                        child: _introCard(intro),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _introCard(_rt_IntroConfig intro) {
+    final accent = widget.theme.accent;
+    final size = MediaQuery.sizeOf(context);
+    // Compact variant for short landscape phones.
+    final compact = size.height < 480;
+    final gap = compact ? 8.0 : 18.0;
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: compact ? 420 : 460, maxHeight: size.height - 16),
+      child: Container(
+        margin: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: _rt_Lab.surface.withValues(alpha: 0.97),
+          borderRadius: BorderRadius.circular(compact ? 22 : 30),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.4), blurRadius: 50, offset: const Offset(0, 25))],
+        ),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: compact ? 22 : 28, vertical: compact ? 14 : 28),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Transform.rotate(
+              angle: -0.1,
+              child: Container(
+                width: compact ? 52 : 76,
+                height: compact ? 52 : 76,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                      colors: [accent, _rt_Tw.slate800],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight),
+                  borderRadius: BorderRadius.circular(compact ? 16 : 22),
+                  border: Border.all(color: Colors.white, width: compact ? 3 : 4),
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 20)],
+                ),
+                child: Icon(intro.icon, color: Colors.white, size: compact ? 28 : 40),
+              ),
+            ),
+            SizedBox(height: gap),
+            Text(intro.title,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: compact ? 21 : 26, fontWeight: FontWeight.w900, color: _rt_Lab.text)),
+            const SizedBox(height: 4),
+            Text(intro.subtitle,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: compact ? 13 : 15, fontWeight: FontWeight.w700, color: _rt_Tw.slate500)),
+            SizedBox(height: gap + 4),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: _rt_Tw.slate900,
+                  padding: EdgeInsets.symmetric(vertical: compact ? 12 : 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                onPressed: _introContent.isAnimating ? null : _start,
+                icon: Icon(intro.buttonIcon, color: _rt_Tw.teal400),
+                label: Text(intro.buttonLabel,
+                    style: TextStyle(fontSize: compact ? 15 : 17, fontWeight: FontWeight.w800, color: Colors.white)),
+              ),
+            ),
+            if (intro.footnote != null) ...[
+              SizedBox(height: compact ? 8 : 14),
+              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                const Icon(Icons.shield_outlined, size: 12, color: _rt_Tw.slate400),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(intro.footnote!.toUpperCase(),
+                      style: const TextStyle(
+                          fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.5, color: _rt_Tw.slate400)),
+                ),
+              ]),
+            ],
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+/// Slides the activity up while the soft keyboard covers a focused text field
+/// inside it, far enough to show the field and the button usually below it.
+///
+/// The shell keeps its size when the keyboard opens (a landscape phone has no
+/// height to re-lay out a lab into), so without this the keyboard hid the
+/// calculator inputs drawn over the canvas. A paint offset leaves the layout
+/// untouched; dialogs are separate routes and already avoid the keyboard.
+class _KeyboardLift extends StatefulWidget {
+  const _KeyboardLift({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_KeyboardLift> createState() => _KeyboardLiftState();
+}
+
+class _KeyboardLiftState extends State<_KeyboardLift> {
+  /// Room kept below the field for its action button.
+  static const double _buttonRoom = 64;
+
+  double _lift = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    FocusManager.instance.addListener(_schedule);
+  }
+
+  @override
+  void dispose() {
+    FocusManager.instance.removeListener(_schedule);
+    super.dispose();
+  }
+
+  void _schedule() => WidgetsBinding.instance.addPostFrameCallback((_) => _measure());
+
+  /// Runs after layout: the field's position is only known then.
+  void _measure() {
+    if (!mounted) return;
+    final keyboard = MediaQuery.viewInsetsOf(context).bottom;
+    final focus = FocusManager.instance.primaryFocus;
+    final field = focus?.context;
+    var lift = 0.0;
+    if (keyboard > 0 &&
+        field != null &&
+        field.mounted &&
+        field.findAncestorStateOfType<_KeyboardLiftState>() == this) {
+      // Measured with the current lift applied: undo it.
+      final r = focus!.rect.shift(Offset(0, _lift));
+      final keyboardTop = MediaQuery.sizeOf(context).height - keyboard;
+      lift = (r.bottom + _buttonRoom - keyboardTop).clamp(0.0, math.max(0.0, r.top - 8));
+    }
+    if ((lift - _lift).abs() > 0.5) setState(() => _lift = lift);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Rebuilt on every keyboard animation frame through the inset dependency.
+    if (MediaQuery.viewInsetsOf(context).bottom > 0 || _lift > 0) _schedule();
+    return Transform.translate(offset: Offset(0, -_lift), child: widget.child);
+  }
+}
+
+/// Dark mechanical shutter.
+class _ShutterPanel extends StatelessWidget {
+  const _ShutterPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.expand(
+      child: CustomPaint(painter: _ShutterPainter()),
+    );
+  }
+}
+
+class _ShutterPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Slats: repeating 42px bands.
+    for (var y = 0.0; y < size.height; y += 42) {
+      final band = Rect.fromLTWH(0, y, size.width, 42);
+      canvas.drawRect(
+        band,
+        Paint()
+          ..shader = const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [_rt_Tw.slate900, _rt_Tw.slate800, _rt_Tw.slate700, _rt_Tw.slate950],
+            stops: [0, 0.48, 0.96, 1],
+          ).createShader(band),
+      );
+    }
+    // Side shading.
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()
+        ..shader = LinearGradient(colors: [
+          Colors.black.withValues(alpha: 0.4),
+          Colors.white.withValues(alpha: 0.05),
+          Colors.black.withValues(alpha: 0.4),
+        ]).createShader(Offset.zero & size),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+
+/// Mutable 3D vector (mirrors the parts of THREE.Vector3 the activities use).
+class _rt_V3 {
+  _rt_V3([this.x = 0, this.y = 0, this.z = 0]);
+
+  factory _rt_V3.zero() => _rt_V3();
+  factory _rt_V3.all(double v) => _rt_V3(v, v, v);
+
+  double x, y, z;
+
+  _rt_V3 clone() => _rt_V3(x, y, z);
+
+  _rt_V3 set(double nx, double ny, double nz) {
+    x = nx;
+    y = ny;
+    z = nz;
+    return this;
+  }
+
+  _rt_V3 copy(_rt_V3 o) => set(o.x, o.y, o.z);
+
+  _rt_V3 operator +(_rt_V3 o) => _rt_V3(x + o.x, y + o.y, z + o.z);
+  _rt_V3 operator -(_rt_V3 o) => _rt_V3(x - o.x, y - o.y, z - o.z);
+  _rt_V3 operator *(double s) => _rt_V3(x * s, y * s, z * s);
+  _rt_V3 operator /(double s) => _rt_V3(x / s, y / s, z / s);
+  _rt_V3 operator -() => _rt_V3(-x, -y, -z);
+
+  _rt_V3 add(_rt_V3 o) => set(x + o.x, y + o.y, z + o.z);
+  _rt_V3 sub(_rt_V3 o) => set(x - o.x, y - o.y, z - o.z);
+  _rt_V3 scaleBy(double s) => set(x * s, y * s, z * s);
+  _rt_V3 addScaled(_rt_V3 o, double s) => set(x + o.x * s, y + o.y * s, z + o.z * s);
+
+  double dot(_rt_V3 o) => x * o.x + y * o.y + z * o.z;
+  _rt_V3 cross(_rt_V3 o) => _rt_V3(y * o.z - z * o.y, z * o.x - x * o.z, x * o.y - y * o.x);
+
+  double get length => math.sqrt(x * x + y * y + z * z);
+  double get lengthSq => x * x + y * y + z * z;
+  double distanceTo(_rt_V3 o) => (this - o).length;
+
+  _rt_V3 normalized() {
+    final l = length;
+    return l == 0 ? _rt_V3() : _rt_V3(x / l, y / l, z / l);
+  }
+
+  _rt_V3 normalize() {
+    final l = length;
+    if (l != 0) scaleBy(1 / l);
+    return this;
+  }
+
+  _rt_V3 lerp(_rt_V3 to, double t) =>
+      _rt_V3(x + (to.x - x) * t, y + (to.y - y) * t, z + (to.z - z) * t);
+
+  _rt_V3 lerpTo(_rt_V3 to, double t) =>
+      set(x + (to.x - x) * t, y + (to.y - y) * t, z + (to.z - z) * t);
+
+  @override
+  String toString() =>
+      '_rt_V3(${x.toStringAsFixed(2)}, ${y.toStringAsFixed(2)}, ${z.toStringAsFixed(2)})';
+}
+
+/// 3x3 matrix, row-major.
+class _rt_M3 {
+  _rt_M3(this.m);
+
+  factory _rt_M3.identity() => _rt_M3([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+
+  /// Rotation matching THREE.Euler order 'XYZ': R = Rx * Ry * Rz.
+  factory _rt_M3.eulerXYZ(double ax, double ay, double az) {
+    final a = math.cos(ax), b = math.sin(ax);
+    final c = math.cos(ay), d = math.sin(ay);
+    final e = math.cos(az), f = math.sin(az);
+    final ae = a * e, af = a * f, be = b * e, bf = b * f;
+    return _rt_M3([
+      c * e, -c * f, d, //
+      af + be * d, ae - bf * d, -b * c,
+      bf - ae * d, be + af * d, a * c,
+    ]);
+  }
+
+  /// Rotation around an arbitrary unit [axis] by [angle].
+  factory _rt_M3.axisAngle(_rt_V3 axis, double angle) {
+    final n = axis.normalized();
+    final c = math.cos(angle), s = math.sin(angle), t = 1 - c;
+    final x = n.x, y = n.y, z = n.z;
+    return _rt_M3([
+      t * x * x + c, t * x * y - s * z, t * x * z + s * y, //
+      t * x * y + s * z, t * y * y + c, t * y * z - s * x,
+      t * x * z - s * y, t * y * z + s * x, t * z * z + c,
+    ]);
+  }
+
+  /// Rotation that maps the unit vector [from] onto [to]
+  /// (like THREE.Quaternion.setFromUnitVectors).
+  factory _rt_M3.fromUnitVectors(_rt_V3 from, _rt_V3 to) {
+    final f = from.normalized(), t = to.normalized();
+    final d = f.dot(t);
+    if (d > 0.999999) return _rt_M3.identity();
+    if (d < -0.999999) {
+      var axis = _rt_V3(1, 0, 0).cross(f);
+      if (axis.length < 1e-6) axis = _rt_V3(0, 1, 0).cross(f);
+      return _rt_M3.axisAngle(axis, math.pi);
+    }
+    return _rt_M3.axisAngle(f.cross(t), math.acos(d.clamp(-1.0, 1.0)));
+  }
+
+  final List<double> m;
+
+  _rt_M3 operator *(_rt_M3 o) {
+    final r = List<double>.filled(9, 0);
+    for (var i = 0; i < 3; i++) {
+      for (var j = 0; j < 3; j++) {
+        r[i * 3 + j] =
+            m[i * 3] * o.m[j] + m[i * 3 + 1] * o.m[3 + j] + m[i * 3 + 2] * o.m[6 + j];
+      }
+    }
+    return _rt_M3(r);
+  }
+
+  _rt_V3 apply(_rt_V3 v) => _rt_V3(
+        m[0] * v.x + m[1] * v.y + m[2] * v.z,
+        m[3] * v.x + m[4] * v.y + m[5] * v.z,
+        m[6] * v.x + m[7] * v.y + m[8] * v.z,
+      );
+
+  _rt_M3 scaled(_rt_V3 s) => _rt_M3([
+        m[0] * s.x, m[1] * s.y, m[2] * s.z, //
+        m[3] * s.x, m[4] * s.y, m[5] * s.z,
+        m[6] * s.x, m[7] * s.y, m[8] * s.z,
+      ]);
+}
+
+/// Affine transform: p' = m * p + t.
+class _rt_Xf {
+  _rt_Xf(this.m, this.t);
+
+  factory _rt_Xf.identity() => _rt_Xf(_rt_M3.identity(), _rt_V3());
+
+  final _rt_M3 m;
+  final _rt_V3 t;
+
+  _rt_V3 apply(_rt_V3 p) {
+    final r = m.apply(p);
+    return r..add(t);
+  }
+
+  _rt_Xf operator *(_rt_Xf o) => _rt_Xf(m * o.m, m.apply(o.t)..add(t));
+
+  /// Approximate uniform scale factor (used for sphere / label sizes).
+  double get maxScale {
+    final sx = math.sqrt(m.m[0] * m.m[0] + m.m[3] * m.m[3] + m.m[6] * m.m[6]);
+    final sy = math.sqrt(m.m[1] * m.m[1] + m.m[4] * m.m[4] + m.m[7] * m.m[7]);
+    final sz = math.sqrt(m.m[2] * m.m[2] + m.m[5] * m.m[5] + m.m[8] * m.m[8]);
+    return math.max(sx, math.max(sy, sz));
+  }
+}
+
+double _rt_degToRad(double d) => d * math.pi / 180;
+double _rt_radToDeg(double r) => r * 180 / math.pi;
+
+/// Easing helpers matching the curves used in the HTML activities.
+class _rt_Ease {
+  static double linear(double t) => t;
+  static double outCubic(double t) => 1 - math.pow(1 - t, 3).toDouble();
+  static double inCubic(double t) => t * t * t;
+  static double inOutCubic(double t) =>
+      t < 0.5 ? 4 * t * t * t : 1 - math.pow(-2 * t + 2, 3).toDouble() / 2;
+  static double inOutQuad(double t) =>
+      t < 0.5 ? 2 * t * t : 1 - math.pow(-2 * t + 2, 2).toDouble() / 2;
+  static double outQuad(double t) => 1 - (1 - t) * (1 - t);
+  static double inQuad(double t) => t * t;
+  static double outBack(double t) {
+    const c1 = 1.70158, c3 = c1 + 1;
+    return 1 + c3 * math.pow(t - 1, 3) + c1 * math.pow(t - 1, 2);
+  }
+
+  static double outBounce(double t) {
+    const n1 = 7.5625, d1 = 2.75;
+    if (t < 1 / d1) return n1 * t * t;
+    if (t < 2 / d1) return n1 * (t -= 1.5 / d1) * t + 0.75;
+    if (t < 2.5 / d1) return n1 * (t -= 2.25 / d1) * t + 0.9375;
+    return n1 * (t -= 2.625 / d1) * t + 0.984375;
+  }
+
+  static double outElastic(double t) {
+    const c4 = (2 * math.pi) / 3;
+    if (t == 0 || t == 1) return t;
+    return math.pow(2, -10 * t) * math.sin((t * 10 - 0.75) * c4) + 1;
+  }
+}
+
+
+
+
+/// Polygon mesh. Faces are lists of vertex indices wound counter-clockwise
+/// when viewed from the outside (same convention as three.js), so the face
+/// normal points outward.
+///
+/// Builders mirror the three.js geometry constructors and their axes:
+/// cylinders/cones/lathes stand on the Y axis, planes/circles/rings/torus lie
+/// in the XY plane facing +Z.
+class _rt_Geometry3D {
+  _rt_Geometry3D(this.vertices, this.faces, [this.faceGroups]);
+
+  final List<_rt_V3> vertices;
+  final List<List<int>> faces;
+
+  /// Optional material index per face (for per-face colours, e.g. dice/boxes).
+  final List<int>? faceGroups;
+
+  /// Merges several geometries, each placed with its own transform.
+  factory _rt_Geometry3D.merge(List<(_rt_Geometry3D, _rt_Xf)> parts) {
+    final verts = <_rt_V3>[];
+    final faces = <List<int>>[];
+    for (final (g, xf) in parts) {
+      final base = verts.length;
+      verts.addAll(g.vertices.map(xf.apply));
+      faces.addAll(g.faces.map((f) => f.map((i) => i + base).toList()));
+    }
+    return _rt_Geometry3D(verts, faces);
+  }
+
+  /// THREE.BoxGeometry(w, h, d). Face groups: 0 +x, 1 -x, 2 +y, 3 -y, 4 +z, 5 -z
+  /// (the three.js material-array order).
+  factory _rt_Geometry3D.box(double w, double h, double d) {
+    final x = w / 2, y = h / 2, z = d / 2;
+    final v = [
+      _rt_V3(-x, -y, -z), _rt_V3(x, -y, -z), _rt_V3(x, y, -z), _rt_V3(-x, y, -z), //
+      _rt_V3(-x, -y, z), _rt_V3(x, -y, z), _rt_V3(x, y, z), _rt_V3(-x, y, z),
+    ];
+    return _rt_Geometry3D(v, [
+      [5, 1, 2, 6], // +x
+      [0, 4, 7, 3], // -x
+      [7, 6, 2, 3], // +y
+      [0, 1, 5, 4], // -y
+      [4, 5, 6, 7], // +z
+      [1, 0, 3, 2], // -z
+    ], [0, 1, 2, 3, 4, 5]);
+  }
+
+  /// THREE.CylinderGeometry(radiusTop, radiusBottom, height, radialSegments,
+  /// heightSegments=1, openEnded, thetaStart, thetaLength).
+  factory _rt_Geometry3D.cylinder(
+    double radiusTop,
+    double radiusBottom,
+    double height, {
+    int segments = 24,
+    bool openEnded = false,
+    double thetaStart = 0,
+    double thetaLength = math.pi * 2,
+  }) {
+    final hy = height / 2;
+    final verts = <_rt_V3>[];
+    final faces = <List<int>>[];
+    final full = (thetaLength - math.pi * 2).abs() < 1e-6;
+    final count = full ? segments : segments + 1;
+    for (var i = 0; i < count; i++) {
+      final th = thetaStart + i / segments * thetaLength;
+      final s = math.sin(th), c = math.cos(th);
+      verts.add(_rt_V3(radiusTop * s, hy, radiusTop * c)); // top i -> 2i
+      verts.add(_rt_V3(radiusBottom * s, -hy, radiusBottom * c)); // bottom -> 2i+1
+    }
+    for (var i = 0; i < segments; i++) {
+      final a = i, b = full ? (i + 1) % segments : i + 1;
+      faces.add([2 * a + 1, 2 * b + 1, 2 * b, 2 * a]);
+    }
+    if (!openEnded) {
+      if (radiusTop > 0) {
+        final top = [for (var i = 0; i < count; i++) 2 * i];
+        if (!full) {
+          verts.add(_rt_V3(0, hy, 0));
+          top.insert(0, verts.length - 1);
+        }
+        faces.add(top);
+      }
+      if (radiusBottom > 0) {
+        final bottom = [for (var i = count - 1; i >= 0; i--) 2 * i + 1];
+        if (!full) {
+          verts.add(_rt_V3(0, -hy, 0));
+          bottom.add(verts.length - 1);
+        }
+        faces.add(bottom);
+      }
+    }
+    return _rt_Geometry3D(verts, faces);
+  }
+
+  /// THREE.ConeGeometry(radius, height, radialSegments).
+  factory _rt_Geometry3D.cone(double radius, double height,
+          {int segments = 24, bool openEnded = false}) =>
+      _rt_Geometry3D.cylinder(0, radius, height, segments: segments, openEnded: openEnded);
+
+  /// THREE.SphereGeometry(radius, widthSegments, heightSegments, phiStart,
+  /// phiLength, thetaStart, thetaLength). Use for partial spheres (bowls,
+  /// domes); full spheres render faster and smoother with [_rt_Sphere3D].
+  factory _rt_Geometry3D.sphere(
+    double radius, {
+    int widthSegments = 20,
+    int heightSegments = 14,
+    double phiStart = 0,
+    double phiLength = math.pi * 2,
+    double thetaStart = 0,
+    double thetaLength = math.pi,
+  }) {
+    final verts = <_rt_V3>[];
+    final grid = <List<int>>[];
+    for (var iy = 0; iy <= heightSegments; iy++) {
+      final row = <int>[];
+      final v = iy / heightSegments;
+      for (var ix = 0; ix <= widthSegments; ix++) {
+        final u = ix / widthSegments;
+        final phi = phiStart + u * phiLength;
+        final theta = thetaStart + v * thetaLength;
+        verts.add(_rt_V3(
+          -radius * math.cos(phi) * math.sin(theta),
+          radius * math.cos(theta),
+          radius * math.sin(phi) * math.sin(theta),
+        ));
+        row.add(verts.length - 1);
+      }
+      grid.add(row);
+    }
+    final faces = <List<int>>[];
+    for (var iy = 0; iy < heightSegments; iy++) {
+      for (var ix = 0; ix < widthSegments; ix++) {
+        final a = grid[iy][ix + 1], b = grid[iy][ix];
+        final c = grid[iy + 1][ix], d = grid[iy + 1][ix + 1];
+        final theta0 = thetaStart + iy / heightSegments * thetaLength;
+        final theta1 = thetaStart + (iy + 1) / heightSegments * thetaLength;
+        if (theta0.abs() < 1e-9) {
+          faces.add([a, c, d]); // top pole
+        } else if ((theta1 - math.pi).abs() < 1e-9) {
+          faces.add([a, b, c]); // bottom pole
+        } else {
+          faces.add([a, b, c, d]);
+        }
+      }
+    }
+    return _rt_Geometry3D(verts, faces);
+  }
+
+  /// THREE.TorusGeometry(radius, tube, radialSegments, tubularSegments, arc).
+  factory _rt_Geometry3D.torus(
+    double radius,
+    double tube, {
+    int radialSegments = 10,
+    int tubularSegments = 36,
+    double arc = math.pi * 2,
+  }) {
+    final verts = <_rt_V3>[];
+    for (var j = 0; j <= radialSegments; j++) {
+      for (var i = 0; i <= tubularSegments; i++) {
+        final u = i / tubularSegments * arc;
+        final v = j / radialSegments * math.pi * 2;
+        verts.add(_rt_V3(
+          (radius + tube * math.cos(v)) * math.cos(u),
+          (radius + tube * math.cos(v)) * math.sin(u),
+          tube * math.sin(v),
+        ));
+      }
+    }
+    final faces = <List<int>>[];
+    for (var j = 1; j <= radialSegments; j++) {
+      for (var i = 1; i <= tubularSegments; i++) {
+        final a = (tubularSegments + 1) * j + i - 1;
+        final b = (tubularSegments + 1) * (j - 1) + i - 1;
+        final c = (tubularSegments + 1) * (j - 1) + i;
+        final d = (tubularSegments + 1) * j + i;
+        faces.add([a, b, c, d]);
+      }
+    }
+    return _rt_Geometry3D(verts, faces);
+  }
+
+  /// THREE.PlaneGeometry(width, height, wSegs, hSegs) in the XY plane facing +Z.
+  factory _rt_Geometry3D.plane(double width, double height,
+      {int widthSegments = 1, int heightSegments = 1}) {
+    final verts = <_rt_V3>[];
+    for (var iy = 0; iy <= heightSegments; iy++) {
+      for (var ix = 0; ix <= widthSegments; ix++) {
+        verts.add(_rt_V3(-width / 2 + ix / widthSegments * width,
+            -height / 2 + iy / heightSegments * height, 0));
+      }
+    }
+    final faces = <List<int>>[];
+    final w = widthSegments + 1;
+    for (var iy = 0; iy < heightSegments; iy++) {
+      for (var ix = 0; ix < widthSegments; ix++) {
+        final a = iy * w + ix;
+        faces.add([a, a + 1, a + 1 + w, a + w]);
+      }
+    }
+    return _rt_Geometry3D(verts, faces);
+  }
+
+  /// THREE.CircleGeometry(radius, segments, thetaStart, thetaLength), XY plane.
+  factory _rt_Geometry3D.circle(double radius,
+      {int segments = 32, double thetaStart = 0, double thetaLength = math.pi * 2}) {
+    final full = (thetaLength - math.pi * 2).abs() < 1e-6;
+    final verts = <_rt_V3>[];
+    if (!full) verts.add(_rt_V3());
+    final count = full ? segments : segments + 1;
+    for (var i = 0; i < count; i++) {
+      final th = thetaStart + i / segments * thetaLength;
+      verts.add(_rt_V3(radius * math.cos(th), radius * math.sin(th), 0));
+    }
+    return _rt_Geometry3D(verts, [List.generate(verts.length, (i) => i)]);
+  }
+
+  /// THREE.RingGeometry(innerRadius, outerRadius, segments, ...), XY plane.
+  factory _rt_Geometry3D.ring(double innerRadius, double outerRadius,
+      {int segments = 32, double thetaStart = 0, double thetaLength = math.pi * 2}) {
+    final verts = <_rt_V3>[];
+    for (var i = 0; i <= segments; i++) {
+      final th = thetaStart + i / segments * thetaLength;
+      final c = math.cos(th), s = math.sin(th);
+      verts.add(_rt_V3(outerRadius * c, outerRadius * s, 0)); // 2i
+      verts.add(_rt_V3(innerRadius * c, innerRadius * s, 0)); // 2i+1
+    }
+    final faces = <List<int>>[];
+    for (var i = 0; i < segments; i++) {
+      faces.add([2 * i, 2 * (i + 1), 2 * (i + 1) + 1, 2 * i + 1]);
+    }
+    return _rt_Geometry3D(verts, faces);
+  }
+
+  /// THREE.LatheGeometry(points, segments, phiStart, phiLength). Each point is
+  /// (radius, y); list them bottom -> top for outward-facing normals.
+  factory _rt_Geometry3D.lathe(List<Offset> points,
+      {int segments = 24, double phiStart = 0, double phiLength = math.pi * 2}) {
+    final verts = <_rt_V3>[];
+    for (var i = 0; i <= segments; i++) {
+      final phi = phiStart + i / segments * phiLength;
+      final s = math.sin(phi), c = math.cos(phi);
+      for (final p in points) {
+        verts.add(_rt_V3(p.dx * s, p.dy, p.dx * c));
+      }
+    }
+    final n = points.length;
+    final faces = <List<int>>[];
+    for (var i = 0; i < segments; i++) {
+      for (var j = 0; j < n - 1; j++) {
+        final a = i * n + j, b = a + n, c = a + n + 1, d = a + 1;
+        faces.add([a, b, c, d]);
+      }
+    }
+    return _rt_Geometry3D(verts, faces);
+  }
+
+  /// Capsule standing on Y: total height = length + 2 * radius.
+  factory _rt_Geometry3D.capsule(double radius, double length,
+      {int segments = 16, int capSegments = 6}) {
+    final pts = <Offset>[];
+    for (var i = 0; i <= capSegments; i++) {
+      final a = -math.pi / 2 + i / capSegments * math.pi / 2;
+      pts.add(Offset(radius * math.cos(a), -length / 2 + radius * math.sin(a)));
+    }
+    for (var i = 0; i <= capSegments; i++) {
+      final a = i / capSegments * math.pi / 2;
+      pts.add(Offset(radius * math.cos(a), length / 2 + radius * math.sin(a)));
+    }
+    return _rt_Geometry3D.lathe(pts, segments: segments);
+  }
+
+  /// Extrudes a 2D polygon (XY, counter-clockwise) along +Z from 0 to [depth]
+  /// (THREE.ExtrudeGeometry without bevel).
+  factory _rt_Geometry3D.extrude(List<Offset> shape, double depth) {
+    final n = shape.length;
+    final verts = <_rt_V3>[
+      for (final p in shape) _rt_V3(p.dx, p.dy, 0),
+      for (final p in shape) _rt_V3(p.dx, p.dy, depth),
+    ];
+    final faces = <List<int>>[
+      [for (var i = n - 1; i >= 0; i--) i], // back
+      [for (var i = 0; i < n; i++) n + i], // front
+      for (var i = 0; i < n; i++) [i, (i + 1) % n, n + (i + 1) % n, n + i],
+    ];
+    return _rt_Geometry3D(verts, faces);
+  }
+
+  /// Round tube following a polyline (THREE.TubeGeometry for wires, pipes).
+  factory _rt_Geometry3D.tube(List<_rt_V3> path, double radius,
+      {int radialSegments = 8, bool closed = false}) {
+    final verts = <_rt_V3>[];
+    final faces = <List<int>>[];
+    var prevNormal = _rt_V3(0, 1, 0);
+    for (var i = 0; i < path.length; i++) {
+      final prev = path[i == 0 ? (closed ? path.length - 1 : 0) : i - 1];
+      final next = path[i == path.length - 1 ? (closed ? 0 : i) : i + 1];
+      var tangent = (next - prev).normalized();
+      if (tangent.lengthSq == 0) tangent = _rt_V3(1, 0, 0);
+      var normal = prevNormal - tangent * prevNormal.dot(tangent);
+      if (normal.lengthSq < 1e-8) {
+        normal = _rt_V3(0, 0, 1).cross(tangent);
+        if (normal.lengthSq < 1e-8) normal = _rt_V3(1, 0, 0).cross(tangent);
+      }
+      normal.normalize();
+      prevNormal = normal;
+      final binormal = tangent.cross(normal);
+      for (var j = 0; j < radialSegments; j++) {
+        final a = j / radialSegments * math.pi * 2;
+        verts.add(path[i] +
+            normal * (radius * math.cos(a)) +
+            binormal * (radius * math.sin(a)));
+      }
+    }
+    final rings = closed ? path.length : path.length - 1;
+    for (var i = 0; i < rings; i++) {
+      final i2 = (i + 1) % path.length;
+      for (var j = 0; j < radialSegments; j++) {
+        final j2 = (j + 1) % radialSegments;
+        faces.add([
+          i * radialSegments + j,
+          i * radialSegments + j2,
+          i2 * radialSegments + j2,
+          i2 * radialSegments + j,
+        ]);
+      }
+    }
+    return _rt_Geometry3D(verts, faces);
+  }
+
+  /// THREE.OctahedronGeometry(radius).
+  factory _rt_Geometry3D.octahedron(double r) {
+    final v = [_rt_V3(r, 0, 0), _rt_V3(-r, 0, 0), _rt_V3(0, r, 0), _rt_V3(0, -r, 0), _rt_V3(0, 0, r), _rt_V3(0, 0, -r)];
+    return _rt_Geometry3D(v, [
+      [0, 2, 4], [0, 4, 3], [0, 3, 5], [0, 5, 2], //
+      [1, 2, 5], [1, 5, 3], [1, 3, 4], [1, 4, 2],
+    ]);
+  }
+
+  /// THREE.TetrahedronGeometry(radius).
+  factory _rt_Geometry3D.tetrahedron(double r) {
+    final k = r / math.sqrt(3);
+    final v = [_rt_V3(k, k, k), _rt_V3(-k, -k, k), _rt_V3(-k, k, -k), _rt_V3(k, -k, -k)];
+    return _rt_Geometry3D(v, [
+      [2, 1, 0], [0, 3, 2], [1, 3, 0], [2, 3, 1],
+    ]);
+  }
+
+  /// THREE.IcosahedronGeometry(radius) (detail 0).
+  factory _rt_Geometry3D.icosahedron(double r) {
+    final t = (1 + math.sqrt(5)) / 2;
+    final raw = [
+      _rt_V3(-1, t, 0), _rt_V3(1, t, 0), _rt_V3(-1, -t, 0), _rt_V3(1, -t, 0), //
+      _rt_V3(0, -1, t), _rt_V3(0, 1, t), _rt_V3(0, -1, -t), _rt_V3(0, 1, -t),
+      _rt_V3(t, 0, -1), _rt_V3(t, 0, 1), _rt_V3(-t, 0, -1), _rt_V3(-t, 0, 1),
+    ];
+    final v = raw.map((p) => p.normalized()..scaleBy(r)).toList();
+    return _rt_Geometry3D(v, [
+      [0, 11, 5], [0, 5, 1], [0, 1, 7], [0, 7, 10], [0, 10, 11], //
+      [1, 5, 9], [5, 11, 4], [11, 10, 2], [10, 7, 6], [7, 1, 8],
+      [3, 9, 4], [3, 4, 2], [3, 2, 6], [3, 6, 8], [3, 8, 9],
+      [4, 9, 5], [2, 4, 11], [6, 2, 10], [8, 6, 7], [9, 8, 1],
+    ]);
+  }
+}
+
+
+
+
+
+/// Surface appearance (covers MeshBasic / Lambert / Phong / Standard /
+/// Physical materials closely enough for the activities).
+class _rt_Material3D {
+  _rt_Material3D({
+    this.color = const Color(0xFFFFFFFF),
+    this.opacity = 1.0,
+    this.unlit = false,
+    this.doubleSided = false,
+    this.emissive,
+    this.emissiveIntensity = 1.0,
+    this.shininess = 0.0,
+    this.metalness = 0.0,
+    this.wireframe = false,
+    this.edgeColor,
+    this.edgeWidth = 1.0,
+    this.faceColors,
+    this.visible = true,
+  });
+
+  /// Base colour (THREE `color`).
+  Color color;
+
+  /// 0..1 (THREE `opacity` with `transparent: true`).
+  double opacity;
+
+  /// MeshBasicMaterial: ignores lights.
+  bool unlit;
+
+  /// THREE.DoubleSide.
+  bool doubleSided;
+
+  /// Glow colour added regardless of lighting.
+  Color? emissive;
+  double emissiveIntensity;
+
+  /// 0..1 highlight strength (Phong/Standard shine; also sphere gloss).
+  double shininess;
+
+  /// 0..1 (MeshStandardMaterial `metalness`): darkens diffuse lighting.
+  double metalness;
+
+  /// Draws only polygon outlines.
+  bool wireframe;
+
+  /// Optional outline drawn around every face (EdgesGeometry look).
+  Color? edgeColor;
+  double edgeWidth;
+
+  /// Per-face-group colours, e.g. box sides (THREE material arrays).
+  List<Color>? faceColors;
+
+  /// THREE `material.visible`.
+  bool visible;
+
+  _rt_Material3D copyWith({Color? color, double? opacity}) => _rt_Material3D(
+        color: color ?? this.color,
+        opacity: opacity ?? this.opacity,
+        unlit: unlit,
+        doubleSided: doubleSided,
+        emissive: emissive,
+        emissiveIntensity: emissiveIntensity,
+        shininess: shininess,
+        metalness: metalness,
+        wireframe: wireframe,
+        edgeColor: edgeColor,
+        edgeWidth: edgeWidth,
+        faceColors: faceColors,
+        visible: visible,
+      );
+}
+
+/// Scene-graph node (THREE.Object3D / THREE.Group).
+class _rt_Node3D {
+  _rt_Node3D({this.name, _rt_V3? position, _rt_V3? rotation, _rt_V3? scale})
+      : position = position ?? _rt_V3(),
+        rotation = rotation ?? _rt_V3(),
+        scale = scale ?? _rt_V3(1, 1, 1);
+
+  String? name;
+  final _rt_V3 position;
+
+  /// Euler angles in radians, order XYZ (THREE default).
+  final _rt_V3 rotation;
+  final _rt_V3 scale;
+
+  /// When set, replaces [rotation] (use for arbitrary orientations, e.g.
+  /// [pointAlong] or quaternion-driven code).
+  _rt_M3? rotationMatrix;
+
+  bool visible = true;
+
+  /// Can be returned by hit tests (raycasting).
+  bool pickable = true;
+
+  /// Added to the sort depth; negative values draw on top (render order).
+  double depthBias = 0;
+
+  /// Arbitrary data (THREE `userData`).
+  Map<String, dynamic> userData = {};
+
+  _rt_Node3D? parent;
+  final List<_rt_Node3D> children = [];
+
+  T add<T extends _rt_Node3D>(T child) {
+    child.parent?.children.remove(child);
+    child.parent = this;
+    children.add(child);
+    return child;
+  }
+
+  void addAll(Iterable<_rt_Node3D> nodes) => nodes.forEach(add);
+
+  void remove(_rt_Node3D child) {
+    if (children.remove(child)) child.parent = null;
+  }
+
+  void removeFromParent() => parent?.remove(this);
+
+  void clear() {
+    for (final c in children) {
+      c.parent = null;
+    }
+    children.clear();
+  }
+
+  _rt_Xf get localTransform {
+    final r = rotationMatrix ?? _rt_M3.eulerXYZ(rotation.x, rotation.y, rotation.z);
+    return _rt_Xf(r.scaled(scale), position.clone());
+  }
+
+  _rt_Xf get worldTransform {
+    final local = localTransform;
+    return parent == null ? local : parent!.worldTransform * local;
+  }
+
+  _rt_V3 get worldPosition => worldTransform.t;
+
+  /// Rotates so the local +Y axis points along [dir] (cylinders, arrows).
+  void pointAlong(_rt_V3 dir) {
+    rotationMatrix = _rt_M3.fromUnitVectors(_rt_V3(0, 1, 0), dir);
+  }
+
+  /// Rotates so the local +Z axis faces [target] (THREE Object3D.lookAt).
+  void lookAt(_rt_V3 target) {
+    final wp = worldPosition;
+    rotationMatrix = _rt_M3.fromUnitVectors(_rt_V3(0, 0, 1), target - wp);
+  }
+
+  /// True if this node and all its ancestors are visible.
+  bool get isVisibleInTree => visible && (parent?.isVisibleInTree ?? true);
+
+  /// Depth-first search by [name].
+  _rt_Node3D? find(String n) {
+    if (name == n) return this;
+    for (final c in children) {
+      final r = c.find(n);
+      if (r != null) return r;
+    }
+    return null;
+  }
+
+  void traverse(void Function(_rt_Node3D) fn) {
+    fn(this);
+    for (final c in List.of(children)) {
+      c.traverse(fn);
+    }
+  }
+}
+
+/// Polygon mesh (THREE.Mesh).
+class _rt_Mesh3D extends _rt_Node3D {
+  _rt_Mesh3D(this.geometry, this.material, {super.name, super.position, super.rotation, super.scale});
+
+  _rt_Geometry3D geometry;
+  _rt_Material3D material;
+}
+
+/// Smooth sphere drawn as a shaded disc (fast and perfectly round). Use
+/// `_rt_Mesh3D(_rt_Geometry3D.sphere(...))` for partial spheres.
+class _rt_Sphere3D extends _rt_Node3D {
+  _rt_Sphere3D(this.radius, this.material, {super.name, super.position});
+
+  double radius;
+  _rt_Material3D material;
+}
+
+/// Polyline in 3D (THREE.Line / LineSegments). Width is in screen pixels.
+class _rt_Line3D extends _rt_Node3D {
+  _rt_Line3D(this.points,
+      {this.color = const Color(0xFFFFFFFF),
+      this.width = 2,
+      this.opacity = 1,
+      this.dashed = false,
+      this.segments = false,
+      this.closed = false,
+      super.name});
+
+  List<_rt_V3> points;
+  Color color;
+  double width;
+  double opacity;
+  bool dashed;
+
+  /// Treat points as pairs (THREE.LineSegments).
+  bool segments;
+  bool closed;
+}
+
+/// Point cloud (THREE.Points). Size is in screen pixels, scaled by
+/// perspective when [sizeAttenuation] is true.
+class _rt_Points3D extends _rt_Node3D {
+  _rt_Points3D(this.points,
+      {this.color = const Color(0xFFFFFFFF),
+      this.size = 4,
+      this.opacity = 1,
+      this.sizeAttenuation = true,
+      this.colors,
+      super.name});
+
+  List<_rt_V3> points;
+  Color color;
+  List<Color>? colors;
+  double size;
+  double opacity;
+  bool sizeAttenuation;
+}
+
+/// Billboard text (THREE.Sprite with a canvas texture, or CSS2D labels).
+class _rt_Label3D extends _rt_Node3D {
+  _rt_Label3D(
+    this.text, {
+    super.position,
+    super.name,
+    this.worldHeight = 1.0,
+    this.pixelHeight,
+    this.color = const Color(0xFFFFFFFF),
+    this.background,
+    this.borderColor,
+    this.bold = true,
+    this.alwaysOnTop = true,
+  });
+
+  String text;
+
+  /// Text height in world units (scales with distance like a sprite).
+  double worldHeight;
+
+  /// If set, fixed on-screen font size instead of [worldHeight].
+  double? pixelHeight;
+  Color color;
+  Color? background;
+  Color? borderColor;
+  bool bold;
+
+  /// THREE `depthTest: false` — drawn above all geometry.
+  bool alwaysOnTop;
+}
+
+/// THREE.ArrowHelper: shaft + cone head from [origin] along [dir].
+class _rt_Arrow3D extends _rt_Node3D {
+  _rt_Arrow3D({
+    required _rt_V3 dir,
+    required double length,
+    _rt_V3? origin,
+    Color color = const Color(0xFFFFFF00),
+    double? headLength,
+    double? headWidth,
+    this.shaftRadius = 0.06,
+    super.name,
+  }) : _color = color {
+    if (origin != null) position.copy(origin);
+    _shaft = add(_rt_Mesh3D(_rt_Geometry3D.cylinder(1, 1, 1, segments: 10), _rt_Material3D(color: color)));
+    _head = add(_rt_Mesh3D(_rt_Geometry3D.cone(1, 1, segments: 14), _rt_Material3D(color: color)));
+    setDirection(dir);
+    setLength(length, headLength: headLength, headWidth: headWidth);
+  }
+
+  late final _rt_Mesh3D _shaft;
+  late final _rt_Mesh3D _head;
+  Color _color;
+  double shaftRadius;
+  double _length = 1;
+
+  double get length => _length;
+  Color get color => _color;
+
+  void setDirection(_rt_V3 dir) {
+    if (dir.lengthSq == 0) return;
+    pointAlong(dir);
+  }
+
+  void setLength(double length, {double? headLength, double? headWidth}) {
+    _length = length;
+    final visibleArrow = length.abs() > 1e-4;
+    _shaft.visible = visibleArrow;
+    _head.visible = visibleArrow;
+    final hl = headLength ?? math.min(0.2 * length.abs(), 1.2);
+    final hw = headWidth ?? hl * 0.5;
+    final shaftLen = math.max(length.abs() - hl, 0.0001);
+    _shaft.scale.set(shaftRadius, shaftLen, shaftRadius);
+    _shaft.position.set(0, shaftLen / 2, 0);
+    _head.scale.set(hw, hl, hw);
+    _head.position.set(0, shaftLen + hl / 2, 0);
+  }
+
+  void setColor(Color c) {
+    _color = c;
+    _shaft.material.color = c;
+    _head.material.color = c;
+  }
+}
+
+/// Lights. Ambient + directional + point lights are supported (Lambert).
+class _rt_Light3D {
+  _rt_Light3D.ambient({this.color = const Color(0xFFFFFFFF), this.intensity = 0.6})
+      : kind = _rt_LightKind.ambient,
+        position = _rt_V3();
+  _rt_Light3D.directional(this.position,
+      {this.color = const Color(0xFFFFFFFF), this.intensity = 0.8})
+      : kind = _rt_LightKind.directional;
+  _rt_Light3D.point(this.position,
+      {this.color = const Color(0xFFFFFFFF), this.intensity = 1.0, this.distance = 0})
+      : kind = _rt_LightKind.point;
+  _rt_Light3D.hemisphere(
+      {this.color = const Color(0xFFFFFFFF),
+      this.groundColor = const Color(0xFF444444),
+      this.intensity = 0.6})
+      : kind = _rt_LightKind.hemisphere,
+        position = _rt_V3(0, 1, 0);
+
+  final _rt_LightKind kind;
+  _rt_V3 position;
+  Color color;
+  Color groundColor = const Color(0xFF444444);
+  double intensity;
+  double distance = 0;
+  bool enabled = true;
+}
+
+enum _rt_LightKind { ambient, directional, point, hemisphere }
+
+/// Root container: node tree + lights + background.
+class _rt_Scene3D {
+  _rt_Scene3D({this.background, this.backgroundGradient}) {
+    lights.addAll([
+      _rt_Light3D.ambient(intensity: 0.6),
+      _rt_Light3D.directional(_rt_V3(10, 20, 10), intensity: 0.8),
+    ]);
+  }
+
+  final _rt_Node3D root = _rt_Node3D(name: 'root');
+  final List<_rt_Light3D> lights = [];
+
+  /// Solid background; null = transparent.
+  Color? background;
+
+  /// Radial gradient [centre, edge] (the CSS backgrounds of #canvas-container).
+  List<Color>? backgroundGradient;
+
+  T add<T extends _rt_Node3D>(T n) => root.add(n);
+  void remove(_rt_Node3D n) => root.remove(n);
+  void clear() => root.clear();
+  _rt_Node3D? find(String name) => root.find(name);
+
+  /// Replaces the default lights.
+  void setLights(List<_rt_Light3D> l) {
+    lights
+      ..clear()
+      ..addAll(l);
+  }
+}
+
+
+
+
+/// Perspective (or orthographic) camera with built-in OrbitControls
+/// behaviour: drag to rotate, two fingers to pan, pinch / wheel / buttons to
+/// zoom. Mirrors THREE.PerspectiveCamera + THREE.OrbitControls.
+class _rt_Camera3D {
+  _rt_Camera3D({
+    this.fov = 45,
+    _rt_V3? position,
+    _rt_V3? target,
+    this.near = 0.1,
+    this.far = 5000,
+    this.orthographic = false,
+    this.orthoHeight = 20,
+  })  : position = position ?? _rt_V3(0, 10, 30),
+        target = target ?? _rt_V3() {
+    saveHome();
+  }
+
+  /// Vertical field of view in degrees.
+  double fov;
+  final _rt_V3 position;
+
+  /// OrbitControls.target (the point the camera looks at).
+  final _rt_V3 target;
+  double near;
+  double far;
+
+  /// THREE camera.zoom (scales the image without moving the camera).
+  double zoom = 1;
+
+  bool orthographic;
+
+  /// Visible world height for the orthographic camera at zoom 1.
+  double orthoHeight;
+
+  // --- OrbitControls settings ---
+  bool enableRotate = true;
+  bool enablePan = true;
+  bool enableZoom = true;
+  double rotateSpeed = 1;
+  double minDistance = 0.5;
+  double maxDistance = 2000;
+  double minPolarAngle = 0.001;
+  double maxPolarAngle = math.pi - 0.001;
+  double minAzimuthAngle = double.negativeInfinity;
+  double maxAzimuthAngle = double.infinity;
+  double minZoom = 0.2;
+  double maxZoom = 8;
+
+  /// OrbitControls.autoRotate / autoRotateSpeed (2.0 = one turn per 30 s).
+  bool autoRotate = false;
+  double autoRotateSpeed = 2.0;
+
+  late _rt_V3 _homePos;
+  late _rt_V3 _homeTarget;
+  late double _homeZoom;
+  late double _homeFov;
+
+  /// Remembers the current view for [reset] (call after positioning).
+  void saveHome() {
+    _homePos = position.clone();
+    _homeTarget = target.clone();
+    _homeZoom = zoom;
+    _homeFov = fov;
+  }
+
+  /// Restores the view saved by [saveHome] (the "reset camera" button).
+  void reset() {
+    position.copy(_homePos);
+    target.copy(_homeTarget);
+    zoom = _homeZoom;
+    fov = _homeFov;
+  }
+
+  void lookAt(_rt_V3 t) => target.copy(t);
+
+  double get distance => position.distanceTo(target);
+
+  // ---------------------------------------------------------------- basis ---
+  late _rt_V3 _right, _up, _fwd;
+
+  void _basis() {
+    _fwd = (target - position).normalized();
+    if (_fwd.lengthSq == 0) _fwd = _rt_V3(0, 0, -1);
+    var worldUp = _rt_V3(0, 1, 0);
+    if (_fwd.cross(worldUp).lengthSq < 1e-8) worldUp = _rt_V3(0, 0, -1);
+    _right = _fwd.cross(worldUp).normalized();
+    _up = _right.cross(_fwd);
+  }
+
+  double _focal(Size size) => orthographic
+      ? size.height / (orthoHeight / zoom)
+      : (size.height / 2) / math.tan(_rt_degToRad(fov) / 2) * zoom;
+
+  /// Prepares the per-frame projection (called by the renderer).
+  _rt_ProjectionFrame frame(Size size) {
+    _basis();
+    return _rt_ProjectionFrame._(this, size, _right, _up, _fwd, _focal(size));
+  }
+
+  // --------------------------------------------------------- orbit / pan ---
+  void _toSpherical(void Function(double r, double theta, double phi) fn) {
+    final off = position - target;
+    final r = off.length;
+    final theta = math.atan2(off.x, off.z);
+    final phi = math.acos((off.y / (r == 0 ? 1 : r)).clamp(-1.0, 1.0));
+    fn(r, theta, phi);
+  }
+
+  void _fromSpherical(double r, double theta, double phi) {
+    final s = math.sin(phi);
+    position.set(
+      target.x + r * s * math.sin(theta),
+      target.y + r * math.cos(phi),
+      target.z + r * s * math.cos(theta),
+    );
+  }
+
+  /// Rotates around the target by a screen drag of ([dx], [dy]) pixels.
+  void orbit(double dx, double dy, double viewportHeight) {
+    if (!enableRotate) return;
+    _toSpherical((r, theta, phi) {
+      theta -= 2 * math.pi * dx / viewportHeight * rotateSpeed;
+      phi -= 2 * math.pi * dy / viewportHeight * rotateSpeed;
+      theta = theta.clamp(minAzimuthAngle, maxAzimuthAngle);
+      phi = phi.clamp(minPolarAngle, maxPolarAngle);
+      _fromSpherical(r, theta, phi);
+    });
+  }
+
+  /// Rotates by angles directly (radians).
+  void rotateBy(double dTheta, double dPhi) {
+    _toSpherical((r, theta, phi) {
+      _fromSpherical(r, (theta + dTheta).clamp(minAzimuthAngle, maxAzimuthAngle),
+          (phi + dPhi).clamp(minPolarAngle, maxPolarAngle));
+    });
+  }
+
+  /// Moves camera + target by a screen drag of ([dx], [dy]) pixels.
+  void pan(double dx, double dy, Size size) {
+    if (!enablePan) return;
+    _basis();
+    final worldPerPixel = orthographic
+        ? (orthoHeight / zoom) / size.height
+        : 2 * distance * math.tan(_rt_degToRad(fov) / 2) / size.height / zoom;
+    final move = _right * (-dx * worldPerPixel) + _up * (dy * worldPerPixel);
+    position.add(move);
+    target.add(move);
+  }
+
+  /// Zoom by [factor] (< 1 zooms in). Perspective cameras dolly toward the
+  /// target; orthographic cameras change [zoom].
+  void dolly(double factor) {
+    if (!enableZoom) return;
+    if (orthographic) {
+      zoom = (zoom / factor).clamp(minZoom, maxZoom);
+      return;
+    }
+    final off = position - target;
+    final r = (off.length * factor).clamp(minDistance, maxDistance);
+    position.copy(target + off.normalized() * r);
+  }
+
+  void zoomIn() => dolly(0.85);
+  void zoomOut() => dolly(1 / 0.85);
+
+  /// Per-frame update (auto-rotate).
+  void update(double dt) {
+    if (autoRotate) rotateBy(-2 * math.pi / 60 * autoRotateSpeed * dt, 0);
+  }
+}
+
+/// Screen projection for one frame.
+class _rt_ProjectionFrame {
+  _rt_ProjectionFrame._(this.camera, this.size, this.right, this.up, this.fwd, this.focal)
+      : eye = camera.position.clone(),
+        cx = size.width / 2,
+        cy = size.height / 2;
+
+  final _rt_Camera3D camera;
+  final Size size;
+  final _rt_V3 right, up, fwd, eye;
+  final double focal, cx, cy;
+
+  /// Camera-space depth (distance along view direction).
+  double depthOf(_rt_V3 p) =>
+      (p.x - eye.x) * fwd.x + (p.y - eye.y) * fwd.y + (p.z - eye.z) * fwd.z;
+
+  /// Projects a world point; null if behind the near plane.
+  Offset? project(_rt_V3 p) {
+    final dx = p.x - eye.x, dy = p.y - eye.y, dz = p.z - eye.z;
+    final z = dx * fwd.x + dy * fwd.y + dz * fwd.z;
+    if (!camera.orthographic && z < camera.near) return null;
+    final x = dx * right.x + dy * right.y + dz * right.z;
+    final y = dx * up.x + dy * up.y + dz * up.z;
+    final k = camera.orthographic ? focal : focal / z;
+    return Offset(cx + x * k, cy - y * k);
+  }
+
+  /// Screen pixels per world unit at depth [z].
+  double pixelsPerUnit(double z) =>
+      camera.orthographic ? focal : focal / math.max(z, camera.near);
+
+  /// World-space ray through a screen point (for raycasting / dragging).
+  _rt_Ray3 ray(Offset screen) {
+    final x = (screen.dx - cx) / focal;
+    final y = -(screen.dy - cy) / focal;
+    if (camera.orthographic) {
+      final origin = eye + right * x + up * y;
+      return _rt_Ray3(origin, fwd.clone());
+    }
+    final dir = (fwd + right * x + up * y).normalized();
+    return _rt_Ray3(eye.clone(), dir);
+  }
+}
+
+class _rt_Ray3 {
+  _rt_Ray3(this.origin, this.direction);
+
+  final _rt_V3 origin;
+  final _rt_V3 direction;
+
+  _rt_V3 at(double t) => origin + direction * t;
+
+  /// Intersection with the plane through [point] with [normal]; null if
+  /// parallel or behind the ray.
+  _rt_V3? intersectPlane(_rt_V3 point, _rt_V3 normal) {
+    final denom = normal.dot(direction);
+    if (denom.abs() < 1e-9) return null;
+    final t = (point - origin).dot(normal) / denom;
+    if (t < 0) return null;
+    return at(t);
+  }
+
+  /// Intersection with the horizontal plane y = [y].
+  _rt_V3? intersectY(double y) => intersectPlane(_rt_V3(0, y, 0), _rt_V3(0, 1, 0));
+
+  /// Intersection with the vertical plane z = [z].
+  _rt_V3? intersectZ(double z) => intersectPlane(_rt_V3(0, 0, z), _rt_V3(0, 0, 1));
+}
+
+
+
+
+
+
+
+/// Pick record kept from the last painted frame (used for raycast hits).
+class _Pickable {
+  _Pickable.path(this.node, this.path, this.depth) : center = null, radius = 0;
+  _Pickable.circle(this.node, Offset c, this.radius, this.depth)
+      : center = c,
+        path = null;
+
+  final _rt_Node3D node;
+  final Path? path;
+  final Offset? center;
+  final double radius;
+  final double depth;
+
+  bool contains(Offset p) =>
+      path != null ? path!.contains(p) : (p - center!).distance <= radius;
+}
+
+/// Shared state between the painter and the view (projection + picking).
+class _rt_RenderState {
+  _rt_ProjectionFrame? frame;
+  List<_Pickable> _picks = const [];
+
+  /// Nearest pickable node under [p] in the last frame.
+  _rt_Node3D? hitTest(Offset p) {
+    _Pickable? best;
+    for (final k in _picks) {
+      if (k.contains(p) && (best == null || k.depth < best.depth)) best = k;
+    }
+    return best?.node;
+  }
+
+  /// All pickable nodes under [p], nearest first.
+  List<_rt_Node3D> hitTestAll(Offset p) {
+    final hits = _picks.where((k) => k.contains(p)).toList()
+      ..sort((a, b) => a.depth.compareTo(b.depth));
+    return [for (final h in hits) h.node];
+  }
+}
+
+class _Item {
+  _Item(this.depth, this.draw);
+  final double depth;
+  final void Function(Canvas c) draw;
+}
+
+class _LabelCache {
+  _LabelCache(this.key, this.painter);
+  final String key;
+  final TextPainter painter;
+}
+
+final Expando<_LabelCache> _labelCache = Expando();
+
+/// Paints a [_rt_Scene3D] from a [_rt_Camera3D]. Repaints whenever [repaint] ticks.
+class _rt_ScenePainter extends CustomPainter {
+  _rt_ScenePainter({
+    required this.scene,
+    required this.camera,
+    required this.state,
+    super.repaint,
+  });
+
+  final _rt_Scene3D scene;
+  final _rt_Camera3D camera;
+  final _rt_RenderState state;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
+    canvas.save();
+    canvas.clipRect(Offset.zero & size);
+    _paintBackground(canvas, size);
+
+    final pf = camera.frame(size);
+    state.frame = pf;
+    final items = <_Item>[];
+    final overlay = <_Item>[];
+    final picks = <_Pickable>[];
+
+    void visit(_rt_Node3D n, _rt_Xf parentXf) {
+      if (!n.visible) return;
+      final xf = parentXf * n.localTransform;
+      if (n is _rt_Mesh3D) {
+        _mesh(n, xf, pf, items, picks);
+      } else if (n is _rt_Sphere3D) {
+        _sphere(n, xf, pf, items, picks);
+      } else if (n is _rt_Line3D) {
+        _line(n, xf, pf, items);
+      } else if (n is _rt_Points3D) {
+        _points(n, xf, pf, items);
+      } else if (n is _rt_Label3D) {
+        _label(n, xf, pf, n.alwaysOnTop ? overlay : items, picks);
+      }
+      for (final c in n.children) {
+        visit(c, xf);
+      }
+    }
+
+    visit(scene.root, _rt_Xf.identity());
+
+    items.sort((a, b) => b.depth.compareTo(a.depth));
+    for (final it in items) {
+      it.draw(canvas);
+    }
+    overlay.sort((a, b) => b.depth.compareTo(a.depth));
+    for (final it in overlay) {
+      it.draw(canvas);
+    }
+    state._picks = picks;
+    canvas.restore();
+  }
+
+  void _paintBackground(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final g = scene.backgroundGradient;
+    if (g != null && g.length >= 2) {
+      canvas.drawRect(
+        rect,
+        Paint()
+          ..shader = ui.Gradient.radial(
+            size.center(Offset.zero),
+            math.max(size.width, size.height) * 0.75,
+            g,
+          ),
+      );
+    } else if (scene.background != null) {
+      canvas.drawRect(rect, Paint()..color = scene.background!);
+    }
+  }
+
+  // ------------------------------------------------------------ shading ---
+  Color _shade(_rt_Material3D m, Color base, _rt_V3 n, _rt_V3 p, _rt_V3 view) {
+    var r = 0.0, g = 0.0, b = 0.0;
+    var sr = 0.0, sg = 0.0, sb = 0.0;
+    if (m.unlit) {
+      r = g = b = 1;
+    } else {
+      for (final l in scene.lights) {
+        if (!l.enabled) continue;
+        final lc = l.color;
+        switch (l.kind) {
+          case _rt_LightKind.ambient:
+            r += lc.r * l.intensity;
+            g += lc.g * l.intensity;
+            b += lc.b * l.intensity;
+          case _rt_LightKind.hemisphere:
+            final w = 0.5 * n.y + 0.5;
+            final gc = l.groundColor;
+            r += (gc.r + (lc.r - gc.r) * w) * l.intensity;
+            g += (gc.g + (lc.g - gc.g) * w) * l.intensity;
+            b += (gc.b + (lc.b - gc.b) * w) * l.intensity;
+          case _rt_LightKind.directional:
+          case _rt_LightKind.point:
+            _rt_V3 dir;
+            var atten = 1.0;
+            if (l.kind == _rt_LightKind.directional) {
+              dir = l.position.normalized();
+            } else {
+              final d = l.position - p;
+              final dist = d.length;
+              dir = d / (dist == 0 ? 1 : dist);
+              if (l.distance > 0) {
+                atten = math.pow(math.max(0.0, 1 - dist / l.distance), 2).toDouble();
+              }
+            }
+            final ndl = math.max(0.0, n.dot(dir)) * l.intensity * atten;
+            r += lc.r * ndl;
+            g += lc.g * ndl;
+            b += lc.b * ndl;
+            if (m.shininess > 0 && ndl > 0) {
+              final h = (dir + view).normalized();
+              final spec = math.pow(math.max(0.0, n.dot(h)), 8 + m.shininess * 56) *
+                  m.shininess *
+                  l.intensity *
+                  atten;
+              sr += lc.r * spec;
+              sg += lc.g * spec;
+              sb += lc.b * spec;
+            }
+        }
+      }
+    }
+    final diffuse = 1 - 0.6 * m.metalness;
+    var cr = base.r * r * diffuse + sr,
+        cg = base.g * g * diffuse + sg,
+        cb = base.b * b * diffuse + sb;
+    final e = m.emissive;
+    if (e != null) {
+      cr += e.r * m.emissiveIntensity;
+      cg += e.g * m.emissiveIntensity;
+      cb += e.b * m.emissiveIntensity;
+    }
+    return Color.from(
+      alpha: (base.a * m.opacity).clamp(0.0, 1.0),
+      red: cr.clamp(0.0, 1.0),
+      green: cg.clamp(0.0, 1.0),
+      blue: cb.clamp(0.0, 1.0),
+    );
+  }
+
+  // -------------------------------------------------------------- meshes ---
+  void _mesh(_rt_Mesh3D n, _rt_Xf xf, _rt_ProjectionFrame pf, List<_Item> items, List<_Pickable> picks) {
+    final m = n.material;
+    if (!m.visible) return;
+    final g = n.geometry;
+    final world = [for (final v in g.vertices) xf.apply(v)];
+    final screen = [for (final v in world) pf.project(v)];
+    final depths = [for (final v in world) pf.depthOf(v)];
+    final pickable = n.pickable && n.isVisibleInTree;
+
+    for (var fi = 0; fi < g.faces.length; fi++) {
+      final f = g.faces[fi];
+      if (f.length < 3) continue;
+      var clipped = false;
+      for (final i in f) {
+        if (screen[i] == null) {
+          clipped = true;
+          break;
+        }
+      }
+      // Faces crossing the near plane are clipped instead of dropped, so big
+      // floors/tables never vanish when the camera gets close.
+      final List<Offset> pts;
+      if (clipped) {
+        pts = _clipNear([for (final i in f) world[i]], pf);
+        if (pts.length < 3) continue;
+      } else {
+        pts = [for (final i in f) screen[i]!];
+      }
+
+      // Newell normal (robust for quads and degenerate polygons).
+      var nx = 0.0, ny = 0.0, nz = 0.0, cx = 0.0, cy = 0.0, cz = 0.0, depth = 0.0;
+      for (var k = 0; k < f.length; k++) {
+        final a = world[f[k]], b = world[f[(k + 1) % f.length]];
+        nx += (a.y - b.y) * (a.z + b.z);
+        ny += (a.z - b.z) * (a.x + b.x);
+        nz += (a.x - b.x) * (a.y + b.y);
+        cx += a.x;
+        cy += a.y;
+        cz += a.z;
+        depth += depths[f[k]];
+      }
+      final inv = 1 / f.length;
+      final center = _rt_V3(cx * inv, cy * inv, cz * inv);
+      depth *= inv;
+      var normal = _rt_V3(nx, ny, nz).normalize();
+      final view = camera.orthographic ? -pf.fwd : (pf.eye - center).normalize();
+      final facing = normal.dot(view) >= 0;
+      if (!facing && !m.doubleSided && !m.wireframe) continue;
+      if (!facing) normal = -normal;
+
+      final gi = g.faceGroups != null && fi < g.faceGroups!.length ? g.faceGroups![fi] : 0;
+      final base = (m.faceColors != null && gi < m.faceColors!.length)
+          ? m.faceColors![gi]
+          : m.color;
+      final color = _shade(m, base, normal, center, view);
+
+      final path = Path()..addPolygon(pts, true);
+
+      final d = depth + n.depthBias;
+      items.add(_Item(d, (c) {
+        if (m.wireframe) {
+          c.drawPath(
+              path,
+              Paint()
+                ..style = PaintingStyle.stroke
+                ..strokeWidth = m.edgeWidth
+                ..color = color);
+          return;
+        }
+        final fill = Paint()
+          ..color = color
+          ..isAntiAlias = true;
+        c.drawPath(path, fill);
+        if (color.a >= 0.99) {
+          // Hide hairline seams between neighbouring opaque faces.
+          c.drawPath(
+              path,
+              fill
+                ..style = PaintingStyle.stroke
+                ..strokeWidth = 0.7);
+        }
+        if (m.edgeColor != null) {
+          c.drawPath(
+              path,
+              Paint()
+                ..style = PaintingStyle.stroke
+                ..strokeWidth = m.edgeWidth
+                ..color = m.edgeColor!);
+        }
+      }));
+      if (pickable) picks.add(_Pickable.path(n, path, d));
+    }
+  }
+
+  /// Sutherland–Hodgman clip of a world-space polygon against the near
+  /// plane, returning projected screen points.
+  List<Offset> _clipNear(List<_rt_V3> poly, _rt_ProjectionFrame pf) {
+    final near = camera.near * 1.01;
+    final out = <_rt_V3>[];
+    for (var k = 0; k < poly.length; k++) {
+      final a = poly[k], b = poly[(k + 1) % poly.length];
+      final da = pf.depthOf(a) - near, db = pf.depthOf(b) - near;
+      if (da >= 0) out.add(a);
+      if ((da >= 0) != (db >= 0)) out.add(a.lerp(b, da / (da - db)));
+    }
+    final res = <Offset>[];
+    for (final p in out) {
+      final s = pf.project(p);
+      if (s != null) res.add(s);
+    }
+    return res;
+  }
+
+  // ------------------------------------------------------------- spheres ---
+  void _sphere(_rt_Sphere3D n, _rt_Xf xf, _rt_ProjectionFrame pf, List<_Item> items, List<_Pickable> picks) {
+    final m = n.material;
+    if (!m.visible) return;
+    final c = xf.t;
+    final z = pf.depthOf(c);
+    if (!camera.orthographic && z < camera.near) return;
+    final sp = pf.project(c);
+    if (sp == null) return;
+    final r = n.radius * xf.maxScale * pf.pixelsPerUnit(z);
+    if (r < 0.3) return;
+    final view = camera.orthographic ? -pf.fwd : (pf.eye - c).normalize();
+    final lit = _shade(m, m.color, view, c, view);
+    final d = z + n.depthBias;
+
+    items.add(_Item(d, (canvas) {
+      if (m.wireframe) {
+        canvas.drawCircle(
+            sp,
+            r,
+            Paint()
+              ..style = PaintingStyle.stroke
+              ..color = lit);
+        return;
+      }
+      if (m.unlit) {
+        canvas.drawCircle(sp, r, Paint()..color = lit);
+      } else {
+        final hi = Color.lerp(lit, Colors.white.withValues(alpha: lit.a),
+            0.35 + m.shininess * 0.4)!;
+        final lo = Color.lerp(lit, Colors.black.withValues(alpha: lit.a), 0.45)!;
+        canvas.drawCircle(
+          sp,
+          r,
+          Paint()
+            ..shader = ui.Gradient.radial(
+              sp + Offset(-r * 0.35, -r * 0.4),
+              r * 1.35,
+              [hi, lit, lo],
+              const [0.0, 0.45, 1.0],
+            ),
+        );
+      }
+      if (m.edgeColor != null) {
+        canvas.drawCircle(
+            sp,
+            r,
+            Paint()
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = m.edgeWidth
+              ..color = m.edgeColor!);
+      }
+    }));
+    if (n.pickable && n.isVisibleInTree) picks.add(_Pickable.circle(n, sp, r, d));
+  }
+
+  // --------------------------------------------------------------- lines ---
+  void _line(_rt_Line3D n, _rt_Xf xf, _rt_ProjectionFrame pf, List<_Item> items) {
+    if (n.points.length < 2) return;
+    final world = [for (final p in n.points) xf.apply(p)];
+    final color = n.color.withValues(alpha: n.color.a * n.opacity);
+    final pairs = <(int, int)>[];
+    if (n.segments) {
+      for (var i = 0; i + 1 < world.length; i += 2) {
+        pairs.add((i, i + 1));
+      }
+    } else {
+      for (var i = 0; i + 1 < world.length; i++) {
+        pairs.add((i, i + 1));
+      }
+      if (n.closed) pairs.add((world.length - 1, 0));
+    }
+    for (final (i, j) in pairs) {
+      final a = pf.project(world[i]), b = pf.project(world[j]);
+      if (a == null || b == null) continue;
+      final d = (pf.depthOf(world[i]) + pf.depthOf(world[j])) / 2 + n.depthBias;
+      items.add(_Item(d, (c) {
+        final p = Paint()
+          ..color = color
+          ..strokeWidth = n.width
+          ..strokeCap = StrokeCap.round;
+        if (!n.dashed) {
+          c.drawLine(a, b, p);
+        } else {
+          final len = (b - a).distance;
+          const dash = 8.0, gap = 6.0;
+          final dir = (b - a) / (len == 0 ? 1 : len);
+          for (var t = 0.0; t < len; t += dash + gap) {
+            c.drawLine(a + dir * t, a + dir * math.min(t + dash, len), p);
+          }
+        }
+      }));
+    }
+  }
+
+  // -------------------------------------------------------------- points ---
+  void _points(_rt_Points3D n, _rt_Xf xf, _rt_ProjectionFrame pf, List<_Item> items) {
+    for (var i = 0; i < n.points.length; i++) {
+      final w = xf.apply(n.points[i]);
+      final s = pf.project(w);
+      if (s == null) continue;
+      final z = pf.depthOf(w);
+      final base = n.colors != null && i < n.colors!.length ? n.colors![i] : n.color;
+      final col = base.withValues(alpha: base.a * n.opacity);
+      final r = n.sizeAttenuation
+          ? math.max(0.5, n.size * pf.pixelsPerUnit(z) * 0.05)
+          : n.size / 2;
+      items.add(_Item(z + n.depthBias, (c) => c.drawCircle(s, r, Paint()..color = col)));
+    }
+  }
+
+  // -------------------------------------------------------------- labels ---
+  void _label(_rt_Label3D n, _rt_Xf xf, _rt_ProjectionFrame pf, List<_Item> items, List<_Pickable> picks) {
+    if (n.text.isEmpty) return;
+    final w = xf.t;
+    final s = pf.project(w);
+    if (s == null) return;
+    final z = pf.depthOf(w);
+    final fontSize = (n.pixelHeight ?? n.worldHeight * xf.maxScale * pf.pixelsPerUnit(z) * 0.6)
+        .clamp(5.0, 72.0);
+    final key = '${n.text}|${fontSize.toStringAsFixed(1)}|${n.color.toARGB32()}|${n.bold}';
+    var cache = _labelCache[n];
+    if (cache == null || cache.key != key) {
+      final tp = TextPainter(
+        text: TextSpan(
+          text: n.text,
+          style: TextStyle(
+            color: n.color,
+            fontSize: fontSize,
+            fontWeight: n.bold ? FontWeight.w800 : FontWeight.w500,
+            height: 1.1,
+          ),
+        ),
+        textAlign: TextAlign.center,
+        textDirection: TextDirection.ltr,
+      )..layout();
+      cache = _LabelCache(key, tp);
+      _labelCache[n] = cache;
+    }
+    final tp = cache.painter;
+    final padH = fontSize * 0.45, padV = fontSize * 0.25;
+    final rect = Rect.fromCenter(
+        center: s, width: tp.width + padH * 2, height: tp.height + padV * 2);
+    final d = z + n.depthBias;
+    items.add(_Item(d, (c) {
+      if (n.background != null) {
+        final rr = RRect.fromRectAndRadius(rect, Radius.circular(fontSize * 0.35));
+        c.drawRRect(rr, Paint()..color = n.background!);
+        if (n.borderColor != null) {
+          c.drawRRect(
+              rr,
+              Paint()
+                ..style = PaintingStyle.stroke
+                ..strokeWidth = 1.2
+                ..color = n.borderColor!);
+        }
+      }
+      tp.paint(c, s - Offset(tp.width / 2, tp.height / 2));
+    }));
+    if (n.pickable && n.isVisibleInTree) {
+      picks.add(_Pickable.path(n, Path()..addRect(rect), n.alwaysOnTop ? -1e9 : d));
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _rt_ScenePainter old) =>
+      old.scene != scene || old.camera != camera;
+}
+
+
+
+
+
+
+
+
+
+/// Pointer info handed to activity callbacks (THREE.Raycaster equivalent).
+class _rt_SceneEvent {
+  _rt_SceneEvent(this.position, this.hit, this.ray, this.frame, this.hits);
+
+  /// Local position inside the view.
+  final Offset position;
+
+  /// Nearest node under the pointer (mesh / sphere / label), if any.
+  final _rt_Node3D? hit;
+
+  /// All nodes under the pointer, nearest first.
+  final List<_rt_Node3D> hits;
+
+  /// World-space ray through the pointer.
+  final _rt_Ray3 ray;
+  final _rt_ProjectionFrame frame;
+
+  /// Walks up from [hit] to the first node matching [test] (e.g. a named
+  /// group), like checking `object.parent` chains after raycasting.
+  _rt_Node3D? hitWhere(bool Function(_rt_Node3D n) test) {
+    for (final h in hits) {
+      _rt_Node3D? n = h;
+      while (n != null) {
+        if (test(n)) return n;
+        n = n.parent;
+      }
+    }
+    return null;
+  }
+
+  _rt_Node3D? hitNamed(String name) => hitWhere((n) => n.name == name);
+}
+
+enum _rt_DragMode { rotate, pan }
+
+/// Controller so parents (e.g. zoom buttons) can talk to the view.
+class _rt_Scene3DController extends ChangeNotifier {
+  _rt_DragMode mode = _rt_DragMode.rotate;
+  void setMode(_rt_DragMode m) {
+    mode = m;
+    notifyListeners();
+  }
+}
+
+/// Interactive 3D viewport: renders [scene] through [camera] every frame
+/// (like three.js' `requestAnimationFrame` render loop) and provides
+/// OrbitControls-style gestures:
+///
+/// * one finger / left mouse drag: rotate (or pan in [_rt_DragMode.pan])
+/// * two fingers: pinch to zoom, drag to pan
+/// * mouse wheel / trackpad: zoom; right mouse drag: pan
+///
+/// If [onPointerDown] returns true, that gesture is captured by the activity
+/// (for dragging objects) and the camera does not move.
+class _rt_Scene3DView extends StatefulWidget {
+  const _rt_Scene3DView({
+    super.key,
+    required this.scene,
+    required this.camera,
+    this.controller,
+    this.onFrame,
+    this.onTap,
+    this.onPointerDown,
+    this.onPointerMove,
+    this.onPointerUp,
+    this.onHover,
+    this.cameraControls = true,
+  });
+
+  final _rt_Scene3D scene;
+  final _rt_Camera3D camera;
+  final _rt_Scene3DController? controller;
+
+  /// Called every frame with the elapsed seconds (animation loop).
+  final void Function(double dt)? onFrame;
+  final void Function(_rt_SceneEvent e)? onTap;
+  final bool Function(_rt_SceneEvent e)? onPointerDown;
+  final void Function(_rt_SceneEvent e)? onPointerMove;
+  final void Function(_rt_SceneEvent e)? onPointerUp;
+  final void Function(_rt_SceneEvent e)? onHover;
+
+  /// Set false to disable orbit/pan/zoom gestures entirely.
+  final bool cameraControls;
+
+  @override
+  State<_rt_Scene3DView> createState() => _Scene3DViewState();
+}
+
+class _Scene3DViewState extends State<_rt_Scene3DView> with SingleTickerProviderStateMixin {
+  late final Ticker _ticker;
+  final ValueNotifier<int> _tick = ValueNotifier(0);
+  final _rt_RenderState _render = _rt_RenderState();
+  Duration _last = Duration.zero;
+  Size _size = Size.zero;
+
+  final Map<int, Offset> _pointers = {};
+  int? _captured;
+  Offset? _downPos;
+  DateTime? _downTime;
+  double _moved = 0;
+  double? _pinchDist;
+  Offset? _pinchCenter;
+  int _buttons = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = createTicker(_onTick)..start();
+  }
+
+  void _onTick(Duration elapsed) {
+    var dt = (elapsed - _last).inMicroseconds / 1e6;
+    _last = elapsed;
+    if (dt > 0.1) dt = 0.1; // clamp after pauses
+    widget.camera.update(dt);
+    widget.onFrame?.call(dt);
+    _tick.value++;
+  }
+
+  @override
+  void dispose() {
+    _ticker.dispose();
+    _tick.dispose();
+    super.dispose();
+  }
+
+  _rt_SceneEvent _event(Offset p) {
+    final frame = _render.frame ?? widget.camera.frame(_size);
+    final hits = _render.hitTestAll(p);
+    return _rt_SceneEvent(p, hits.isEmpty ? null : hits.first, frame.ray(p), frame, hits);
+  }
+
+  void _down(PointerDownEvent e) {
+    _pointers[e.pointer] = e.localPosition;
+    _buttons = e.buttons;
+    if (_pointers.length == 1) {
+      _downPos = e.localPosition;
+      _downTime = DateTime.now();
+      _moved = 0;
+      if (widget.onPointerDown?.call(_event(e.localPosition)) ?? false) {
+        _captured = e.pointer;
+      }
+    } else {
+      _startPinch();
+    }
+  }
+
+  void _startPinch() {
+    if (_pointers.length < 2) return;
+    final ps = _pointers.values.take(2).toList();
+    _pinchDist = (ps[0] - ps[1]).distance;
+    _pinchCenter = (ps[0] + ps[1]) / 2;
+  }
+
+  void _move(PointerMoveEvent e) {
+    final prev = _pointers[e.pointer];
+    if (prev == null) return;
+    _pointers[e.pointer] = e.localPosition;
+    final delta = e.localPosition - prev;
+    _moved += delta.distance;
+
+    if (_captured == e.pointer) {
+      widget.onPointerMove?.call(_event(e.localPosition));
+      return;
+    }
+    if (_captured != null || !widget.cameraControls) return;
+    final cam = widget.camera;
+
+    if (_pointers.length >= 2) {
+      final ps = _pointers.values.take(2).toList();
+      final dist = (ps[0] - ps[1]).distance;
+      final center = (ps[0] + ps[1]) / 2;
+      if (_pinchDist != null && dist > 0) cam.dolly(_pinchDist! / dist);
+      if (_pinchCenter != null) {
+        final d = center - _pinchCenter!;
+        cam.pan(d.dx, d.dy, _size);
+      }
+      _pinchDist = dist;
+      _pinchCenter = center;
+      return;
+    }
+
+    final panMode = (widget.controller?.mode == _rt_DragMode.pan) ||
+        (_buttons & kSecondaryMouseButton) != 0 ||
+        (_buttons & kMiddleMouseButton) != 0;
+    if (panMode) {
+      cam.pan(delta.dx, delta.dy, _size);
+    } else {
+      cam.orbit(delta.dx, delta.dy, _size.height);
+    }
+  }
+
+  void _up(PointerEvent e, {bool cancelled = false}) {
+    _pointers.remove(e.pointer);
+    if (_captured == e.pointer) {
+      _captured = null;
+      widget.onPointerUp?.call(_event(e.localPosition));
+    }
+    if (!cancelled &&
+        _pointers.isEmpty &&
+        _downPos != null &&
+        _moved < 10 &&
+        DateTime.now().difference(_downTime!).inMilliseconds < 400) {
+      widget.onTap?.call(_event(e.localPosition));
+    }
+    if (_pointers.length < 2) {
+      _pinchDist = null;
+      _pinchCenter = null;
+    } else {
+      _startPinch();
+    }
+    if (_pointers.isEmpty) _downPos = null;
+  }
+
+  void _signal(PointerSignalEvent e) {
+    if (!widget.cameraControls) return;
+    if (e is PointerScrollEvent) {
+      GestureBinding.instance.pointerSignalResolver.register(e, (ev) {
+        final dy = (ev as PointerScrollEvent).scrollDelta.dy;
+        widget.camera.dolly(dy > 0 ? 1.08 : 1 / 1.08);
+      });
+    } else if (e is PointerScaleEvent) {
+      widget.camera.dolly(1 / e.scale);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, c) {
+      _size = c.biggest;
+      return Listener(
+        behavior: HitTestBehavior.opaque,
+        onPointerDown: _down,
+        onPointerMove: _move,
+        onPointerUp: _up,
+        onPointerCancel: (e) => _up(e, cancelled: true),
+        onPointerSignal: _signal,
+        onPointerHover: widget.onHover == null
+            ? null
+            : (e) => widget.onHover!(_event(e.localPosition)),
+        onPointerPanZoomUpdate: (e) {
+          if (!widget.cameraControls) return;
+          if (e.scale != 1) widget.camera.dolly(1 / e.scale.clamp(0.9, 1.1));
+        },
+        child: RepaintBoundary(
+          child: CustomPaint(
+            size: c.biggest,
+            painter: _rt_ScenePainter(
+              scene: widget.scene,
+              camera: widget.camera,
+              state: _render,
+              repaint: _tick,
+            ),
+          ),
+        ),
+      );
+    });
+  }
+}
+
+/// Simple tween runner for step animations (the HTML `animateProp` helper):
+///
+/// ```dart
+/// await tweens.run(2000, (t) => water.scale.y = 0.01 + t * 0.99);
+/// ```
+///
+/// Advance it from the view's `onFrame` callback: `tweens.update(dt)`.
+class _rt_TweenRunner {
+  /// [resumeOnCancel] false makes [cancelAll] abandon the awaiting code
+  /// instead of resuming it, so a step interrupted by Restart or by leaving
+  /// the page cannot finish later against the reset (or disposed) lab.
+  _rt_TweenRunner({this.resumeOnCancel = true});
+
+  final bool resumeOnCancel;
+  final List<_Tween> _active = [];
+
+  bool get isBusy => _active.isNotEmpty;
+
+  /// Runs [update] with eased progress 0..1 over [ms] milliseconds.
+  Future<void> run(int ms, void Function(double t) update,
+      {double Function(double) ease = _rt_Ease.outCubic}) {
+    final tw = _Tween(ms / 1000.0, update, ease);
+    _active.add(tw);
+    return tw.done.future;
+  }
+
+  /// Waits [ms] milliseconds (in animation time).
+  Future<void> wait(int ms) => run(ms, (_) {}, ease: _rt_Ease.linear);
+
+  void update(double dt) {
+    for (final t in List.of(_active)) {
+      t.elapsed += dt;
+      final p = (t.elapsed / t.duration).clamp(0.0, 1.0);
+      t.update(t.ease(p));
+      if (p >= 1) {
+        _active.remove(t);
+        t.done.complete();
+      }
+    }
+  }
+
+  /// Stops all tweens. Their futures complete (so awaiting code resumes)
+  /// only when [resumeOnCancel] is true; otherwise they never complete.
+  void cancelAll() {
+    if (resumeOnCancel) {
+      for (final t in _active) {
+        if (!t.done.isCompleted) t.done.complete();
+      }
+    }
+    _active.clear();
+  }
+}
+
+class _Tween {
+  _Tween(this.duration, this.update, this.ease);
+  final double duration;
+  final void Function(double) update;
+  final double Function(double) ease;
+  double elapsed = 0;
+  final Completer<void> done = Completer<void>();
+}
+
+
+
+
+
+
+
+/// Rotate / Pan mode buttons for the (vertical) canvas toolbar (HTML `setMode`).
+class _rt_RotatePanToggle extends StatelessWidget {
+  const _rt_RotatePanToggle({super.key, required this.controller, this.accent = _rt_Tw.teal600});
+
+  final _rt_Scene3DController controller;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: controller,
+      builder: (context, _) {
+        Widget b(_rt_DragMode m, IconData icon, String tip) {
+          final active = controller.mode == m;
+          return Tooltip(
+            message: tip,
+            child: InkResponse(
+              radius: 22,
+              onTap: () {
+                _rt_playSfx(_rt_Sfx.tap);
+                controller.setMode(m);
+              },
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: active ? accent : _rt_Lab.surface,
+                  shape: BoxShape.circle,
+                  boxShadow: active
+                      ? [BoxShadow(color: accent.withValues(alpha: 0.4), blurRadius: 6)]
+                      : null,
+                ),
+                child: Icon(icon, size: 18, color: active ? Colors.white : _rt_Lab.textMuted),
+              ),
+            ),
+          );
+        }
+
+        return Column(mainAxisSize: MainAxisSize.min, children: [
+          b(_rt_DragMode.rotate, Icons.threesixty, _rt_tr('Rotate', 'घुमाएँ')),
+          const SizedBox(height: 4),
+          b(_rt_DragMode.pan, Icons.pan_tool_outlined, _rt_tr('Pan', 'खिसकाएँ')),
+        ]);
+      },
+    );
+  }
+}
+
+// END ACTIVITY-LOCAL RUNTIME
+
+final _tx = _rt_Tx({
+  'en': {
+    'app': 'Calendars and Timekeeping',
+    'subtitle': 'Class 8 • Keeping Time with the Skies',
+    'enter': 'Enter _rt_Lab',
+    'tab': 'Teacher Board',
+    'missionObj': 'Mission Objective',
+    'selectInv': 'Select Investigation',
+    'procSteps': 'Procedural Steps',
+    'obsHeader': 'Observation',
+    'controls': 'Controls',
+    'twinTip': 'Tap the canvas, or use these buttons.',
+    'chipTip': 'Drag the chip onto the rings, or tap its button twin.',
+    'gotIt': 'Got it!',
+    'ttLabels': 'Toggle Labels',
+    'ttLock': 'Toggle Lock',
+    'btnMarkTip': 'Mark Shadow Tip',
+    'btnMeasureDot': 'Measure Marked Dots',
+    'opt1': '1. Measuring the Solar Day',
+    'opt2': '2. The Luni-Solar Mismatch',
+    's1Obj': 'Understand the scientific basis of time measurement.',
+    's2Obj': 'Understand the evolution of calendars.',
+    'localNoon': 'Local Noon',
+
+    // 3D labels.
+    'lblStick': 'Stick (1m)',
+    'lblSun': 'Sun',
+    'lblChalk': 'Chalk Marker',
+    'lblGround': 'Ground',
+    'lbl365': '365 days',
+    'lblLuniDays': '(12 x 29.5 days)',
+    'lbl354': '354 days',
+    'lblDesync': 'Desynchronization Detected',
+
+    // Measurement chips.
+    'tCaliper': 'Gap Caliper',
+    'daysUnit': 'days',
+    'tAdhika': 'Adhika Maasa',
+    'tAdded': '+ 30 days Added!',
+    'tDist': 'Dist at',
+
+    // Feedback.
+    'fbMeas': 'Caliper measured {days} days. Enter this value to validate.',
+    'fbMiss': 'Missed! Click closer to the exact tip of the shadow.',
+    'fbExc': "Excellent! You've marked all the shadows for Day {day}.",
+    'fbCorr': 'Correct! Well done.',
+    'fbComp': 'Investigation Complete!',
+    'fbResync': 'Calendar Re-synchronized. Remaining gap: 3 days.',
+    'fbScenComp': 'Scenario Completed!',
+    'fbInc': 'Incorrect. Check the calculations and try again.',
+    'timeIsDay1': 'Time is {time}. Mark the shadow tip.',
+    'timeIsDay2': 'Time is {time}. Mark the shadow tip (Day 2).',
+    'distMeasured': 'Distance measured. Enter the time of the shortest shadow.',
+
+    // Scenario 1 steps (sidebar text + HUD title/instruction + buttons).
+    's1s1text':
+        'A Solar Day is the duration between two consecutive local noons. We will simulate this by tracking shadow lengths.',
+    's1s1htitle': 'Step 1',
+    's1s1hinst': "Click 'Plant the Stick' to begin the experiment.",
+    's1s1btn': 'Plant the Stick',
+    's1s2text':
+        'Day 1: Watch the shadow as time passes. For each 10-minute interval, click exactly on the tip of the shadow on the ground to mark it with a chalk dot.',
+    's1s2htitle': 'Day 1: Shadow Tracking',
+    's1s2hinst': 'Drag the Glow Chalk Marker to the exact tip of the shadow.',
+    'trackWait': 'Tracking...',
+    's1s3text':
+        'Day 1: Use the Virtual Tape Measure to find the shortest shadow. Local noon occurs when the shadow is shortest.',
+    's1s3htitle': 'Day 1: Analysis',
+    's1s3hinst': 'Click dots to measure distance. Enter the time of the shortest shadow.',
+    's1s3btn': 'Validate Time',
+    's1s4text':
+        "Day 2: We must observe the next day's shadow to complete the Solar Day. Mark the shadow tips with blue chalk.",
+    's1s4htitle': 'Day 2: Shadow Tracking',
+    's1s4hinst': "Click 'Start Day 2' to begin the next day's observation.",
+    'btnStartDay2': 'Start Day 2',
+    's1s5text':
+        'Day 2 concludes. Calculate the duration using the formula: Duration = T(noon 2) − T(noon 1)',
+    's1s5htitle': 'Day 2: Conclusion',
+    's1s5hinst':
+        "Measure Day 2's shortest shadow, enter the noon time, and calculate duration.\nDuration = T(noon 2) − T(noon 1)",
+    's1s5btn': 'Validate Duration',
+    'inputDur': 'Duration (hrs)',
+
+    // Scenario 2 steps.
+    's2s1text':
+        "The Lunar calendar falls behind the Solar calendar by Δt = 11 days every year. We must insert an 'Adhika Maasa' (Intercalary Month) to fix this.",
+    's2s1htitle': 'Task 1',
+    's2s1hinst': "Click 'Start Time Cycles' to initialize the simulation.",
+    's2s1btn': 'Start Time Cycles',
+    's2s2text':
+        'Both rings rotate. The Solar ring completes a full circle. The Lunar ring stops short.',
+    's2s2htitle': 'Year 1 Simulation',
+    's2s2hinst': 'Run Year 1. Drag the Caliper to Lunar Ring to measure, then enter the gap.',
+    's2s2btn': 'Validate Gap',
+    's2s3text': 'The rings rotate again. The Lunar ring is now further behind.',
+    's2s3htitle': 'Accumulating the Gap',
+    's2s3hinst': 'Run Years 2 and 3. Measure and enter the accumulated gaps.',
+    's2s3btn': 'Validate Total Gap',
+    's2s4text':
+        'The gap is now > 30 days (one full lunar month). A flashing alert: "Desynchronization Detected".',
+    's2s4htitle': 'Desynchronization Detected!',
+    's2s4hinst': "Drag 'Adhika Maasa' block into the canvas to resynchronize.",
+    's2s4btn': 'Validate Resynchronization',
+    'inputGap1': 'Gap in days',
+    'inputGap2': 'Gap after Yr 2 (Days)',
+    'inputGap3': 'Total Gap (Days)',
+    'btnRunYr1': 'Run Year 1',
+    'btnRunYr2': 'Run Year 2',
+    'btnRunYr3': 'Run Year 3',
+    'dragCaliper1': 'Drag Gap Caliper to Measure',
+    'dragCaliper2': 'Drag Caliper to Measure Yr 2',
+    'dragCaliper3': 'Drag Caliper to Measure Yr 3',
+    'btnAdhika': 'Drag Adhika Maasa (30 Days)',
+    'desyncRedTxt': 'Desynchronization Detected! > 30 days gap.',
+
+    // Observation popups.
+    'obs1':
+        'Observation Complete: A Solar Day is defined as the time interval between two consecutive local noons. Measuring the shadow\'s length helps us accurately identify local noon, giving us the standard 24-hour cycle we rely on.',
+    'obs2':
+        'Observation Complete: A lunar year is roughly 11 days shorter than a solar year. Over 3 years, this gap grows to over 30 days. To align the lunar calendar with the seasons, an Adhika Maasa (intercalary month) is inserted!',
+  },
+  'hi': {
+    'app': 'कैलेंडर और समय मापन',
+    'subtitle': 'कक्षा 8 • आसमान के साथ समय मापना',
+    'enter': 'प्रयोगशाला में प्रवेश करें',
+    'tab': 'टीचर बोर्ड',
+    'missionObj': 'मिशन का उद्देश्य',
+    'selectInv': 'जांच का चयन करें',
+    'procSteps': 'प्रक्रियात्मक चरण',
+    'obsHeader': 'अवलोकन',
+    'controls': 'नियंत्रण',
+    'twinTip': 'कैनवास पर टैप करें, या इन बटनों का उपयोग करें।',
+    'chipTip': 'चिप को रिंगों पर खींचें, या उसके बटन पर टैप करें।',
+    'gotIt': 'समझ गया!',
+    'ttLabels': 'लेबल टॉगल करें',
+    'ttLock': 'लॉक टॉगल करें',
+    'btnMarkTip': 'छाया का सिरा चिह्नित करें',
+    'btnMeasureDot': 'चिह्नित बिंदुओं को मापें',
+    'opt1': '1. सौर दिवस मापना',
+    'opt2': '2. चंद्र-सौर असंतुलन',
+    's1Obj': 'समय मापन के वैज्ञानिक आधार को समझें।',
+    's2Obj': 'कैलेंडर के विकास को समझें।',
+    'localNoon': 'स्थानीय दोपहर',
+
+    'lblStick': 'छड़ी (1m)',
+    'lblSun': 'सूरज',
+    'lblChalk': 'चाक मार्कर',
+    'lblGround': 'ज़मीन',
+    'lbl365': '365 दिन',
+    'lblLuniDays': '(12 x 29.5 दिन)',
+    'lbl354': '354 दिन',
+    'lblDesync': 'असंतुलन का पता चला',
+
+    'tCaliper': 'गैप कैलिपर',
+    'daysUnit': 'दिन',
+    'tAdhika': 'अधिक मास',
+    'tAdded': '+ 30 दिन जोड़े गए!',
+    'tDist': 'पर दूरी',
+
+    'fbMeas': 'कैलिपर ने {days} दिन मापे। मान्य करने के लिए यह मान दर्ज करें।',
+    'fbMiss': 'चूक गए! छाया के सटीक सिरे के करीब क्लिक करें।',
+    'fbExc': 'बहुत बढ़िया! आपने दिन {day} के लिए सभी छायाओं को चिह्नित किया है।',
+    'fbCorr': 'सही! बहुत अच्छा।',
+    'fbComp': 'जांच पूरी हुई!',
+    'fbResync': 'कैलेंडर पुन: सिंक्रनाइज़ किया गया। शेष अंतर: 3 दिन।',
+    'fbScenComp': 'परिदृश्य पूरा हुआ!',
+    'fbInc': 'गलत। गणनाओं की जांच करें और पुनः प्रयास करें।',
+    'timeIsDay1': 'समय {time} है। छाया के सिरे को चिह्नित करें।',
+    'timeIsDay2': 'समय {time} है। छाया के सिरे को चिह्नित करें (दिन 2)।',
+    'distMeasured': 'दूरी मापी गई। सबसे छोटी छाया का समय दर्ज करें।',
+
+    's1s1text':
+        'एक सौर दिवस दो लगातार स्थानीय दोपहरों के बीच की अवधि है। हम छाया की लंबाई को ट्रैक करके इसका अनुकरण करेंगे।',
+    's1s1htitle': 'चरण 1',
+    's1s1hinst': "'स्टिक लगाएं' पर क्लिक करके प्रयोग शुरू करें।",
+    's1s1btn': 'स्टिक लगाएं',
+    's1s2text':
+        'दिन 1: समय बीतने के साथ छाया को देखें। प्रत्येक 10-मिनट के अंतराल पर, चाक बिंदु से इसे चिह्नित करने के लिए जमीन पर छाया के ठीक सिरे पर क्लिक करें।',
+    's1s2htitle': 'दिन 1: छाया ट्रैकिंग',
+    's1s2hinst': 'ग्लो चाक मार्कर को छाया के ठीक सिरे तक खींचें।',
+    'trackWait': 'ट्रैकिंग कर रहा है...',
+    's1s3text':
+        'दिन 1: सबसे छोटी छाया खोजने के लिए वर्चुअल टेप उपाय का उपयोग करें। स्थानीय दोपहर तब होती है जब छाया सबसे छोटी होती है।',
+    's1s3htitle': 'दिन 1: विश्लेषण',
+    's1s3hinst': 'दूरी मापने के लिए बिंदुओं पर क्लिक करें। सबसे छोटी छाया का समय दर्ज करें।',
+    's1s3btn': 'समय मान्य करें',
+    's1s4text':
+        'दिन 2: सौर दिवस पूरा करने के लिए हमें अगले दिन की छाया का निरीक्षण करना चाहिए। छाया के सिरों को नीले चाक से चिह्नित करें।',
+    's1s4htitle': 'दिन 2: छाया ट्रैकिंग',
+    's1s4hinst': "अगले दिन का अवलोकन शुरू करने के लिए 'दिन 2 शुरू करें' पर क्लिक करें।",
+    'btnStartDay2': 'दिन 2 शुरू करें',
+    's1s5text':
+        'दिन 2 समाप्त होता है। सूत्र का उपयोग करके अवधि की गणना करें: Duration = T(noon 2) − T(noon 1)',
+    's1s5htitle': 'दिन 2: निष्कर्ष',
+    's1s5hinst':
+        'दिन 2 की सबसे छोटी छाया को मापें, दोपहर का समय दर्ज करें, और अवधि की गणना करें।\nDuration = T(noon 2) − T(noon 1)',
+    's1s5btn': 'अवधि मान्य करें',
+    'inputDur': 'अवधि (घंटे)',
+
+    's2s1text':
+        "चंद्र कैलेंडर हर साल सौर कैलेंडर से Δt = 11 दिन पीछे हो जाता है। इसे ठीक करने के लिए हमें 'अधिक मास' डालना होगा।",
+    's2s1htitle': 'कार्य 1',
+    's2s1hinst': "सिमुलेशन शुरू करने के लिए 'समय चक्र शुरू करें' पर क्लिक करें।",
+    's2s1btn': 'समय चक्र शुरू करें',
+    's2s2text':
+        'दोनों रिंग घूमती हैं। सौर रिंग एक पूरा चक्कर लगाती है। चंद्र रिंग पहले ही रुक जाती है।',
+    's2s2htitle': 'वर्ष 1 सिमुलेशन',
+    's2s2hinst': 'वर्ष 1 चलाएं। कैलिपर को चंद्र रिंग पर खींचकर मापें, फिर अंतर दर्ज करें।',
+    's2s2btn': 'अंतर मान्य करें',
+    's2s3text': 'रिंग फिर से घूमती हैं। चंद्र रिंग अब और भी पीछे है।',
+    's2s3htitle': 'अंतर जमा हो रहा है',
+    's2s3hinst': 'वर्ष 2 और 3 चलाएं। जमा हुए अंतर को मापें और दर्ज करें।',
+    's2s3btn': 'कुल अंतर मान्य करें',
+    's2s4text':
+        "अंतर अब > 30 दिन (एक पूर्ण चंद्र मास) है। एक चमकती चेतावनी: 'असंतुलन का पता चला'।",
+    's2s4htitle': 'असंतुलन का पता चला!',
+    's2s4hinst': "पुन: सिंक्रनाइज़ करने के लिए 'अधिक मास' ब्लॉक को कैनवास में खींचें।",
+    's2s4btn': 'पुन: सिंक्रनाइज़ेशन मान्य करें',
+    'inputGap1': 'दिनों में अंतर',
+    'inputGap2': 'वर्ष 2 के बाद का अंतर (दिन)',
+    'inputGap3': 'कुल अंतर (दिन)',
+    'btnRunYr1': 'वर्ष 1 चलाएं',
+    'btnRunYr2': 'वर्ष 2 चलाएं',
+    'btnRunYr3': 'वर्ष 3 चलाएं',
+    'dragCaliper1': 'मापने के लिए गैप कैलिपर को खींचें',
+    'dragCaliper2': 'वर्ष 2 को मापने के लिए कैलिपर खींचें',
+    'dragCaliper3': 'वर्ष 3 को मापने के लिए कैलिपर खींचें',
+    'btnAdhika': 'अधिक मास खींचें (30 दिन)',
+    'desyncRedTxt': 'असंतुलन का पता चला! > 30 दिन का अंतर।',
+
+    'obs1':
+        'अवलोकन पूर्ण: एक सौर दिवस को दो लगातार स्थानीय दोपहरों के बीच के समय अंतराल के रूप में परिभाषित किया जाता है। छाया की लंबाई मापने से हमें स्थानीय दोपहर की सटीक पहचान करने में मदद मिलती है, जिससे हमें 24 घंटे का मानक चक्र मिलता है जिस पर हम निर्भर हैं।',
+    'obs2':
+        'अवलोकन पूर्ण: एक चंद्र वर्ष सौर वर्ष से लगभग 11 दिन छोटा होता है। 3 वर्षों में, यह अंतर 30 दिनों से अधिक हो जाता है। चंद्र कैलेंडर को मौसमों के साथ संरेखित करने के लिए, एक अधिक मास (अतिरिक्त महीना) डाला जाता है!',
+  },
+});
+
+// --- COLOURS (source tailwind zslYellow + scene constants) ---
+const _accent = Color(0xFFEAB308); // zslYellow
+const _skyBlue = Color(0xFF6EB5F0); // S1 scene background
+const _nightBg = Color(0xFF0F172A); // S2 scene background
+const _stickBrown = Color(0xFF8B4513);
+const _chalkYellow = Color(0xFFFFEA00);
+const _chalkBlue = Color(0xFF3B82F6);
+const _groundGreen = Color(0xFF4ADE80);
+const _ringBlue = Color(0xFF3B82F6);
+const _moonDark = Color(0xFF334155);
+const _moonLight = Color(0xFFFEF08A);
+const _alertDark = Color(0xFF991B1B);
+const _alertLight = Color(0xFFEF4444);
+
+const _theme = _rt_ShellTheme(
+  accent: _accent,
+  headerGradient: [_rt_Tw.slate900, Color(0xFF78350F)],
+  headerSubtitleColor: Color(0xFFFDE68A),
+);
+
+// --- SCENARIO 1 CONSTANTS (source TIME_STEPS / noonTimeMin / stick) ---
+const List<int> _timeSteps = [660, 670, 680, 690, 700, 710, 720, 724, 730, 740, 750];
+const int _noonMin = 724; // 12:04 PM, the shortest shadow
+const double _stickH = 4; // world units; labelled "Stick (1m)"
+const double _groundY = 0.1; // top of the green surface
+// SOURCE BUG FIX: the HTML showed dist*0.3 m although the 1 m stick is 4
+// units tall; 1 m / 4 units = 0.25 m per unit keeps the noon shadow ~1.00 m.
+const double _mPerUnit = 0.25;
+
+// --- SCENARIO 2 CONSTANTS (source buildScenario2 / runYear) ---
+const double _orbitR = 3.95;
+const double _lunarYearTurn = 2 * math.pi * (354 / 365.25);
+const double _adhikaTurn = 2 * math.pi * (30 / 365.25);
+
+String _fmtTime(int mins) {
+  final h = mins ~/ 60;
+  final m = mins % 60;
+  final ampm = h >= 12 ? 'PM' : 'AM';
+  final h12 = h > 12 ? h - 12 : h;
+  return '$h12:${m.toString().padLeft(2, '0')} $ampm';
+}
+
+class Cl8Ch11A2CalendarsTimekeepingPage extends StatefulWidget {
+  const Cl8Ch11A2CalendarsTimekeepingPage({super.key});
+
+  @override
+  State<Cl8Ch11A2CalendarsTimekeepingPage> createState() =>
+      _Cl8Ch11A2CalendarsTimekeepingPageState();
+}
+
+class _Cl8Ch11A2CalendarsTimekeepingPageState
+    extends State<Cl8Ch11A2CalendarsTimekeepingPage>
+    with SingleTickerProviderStateMixin {
+  // --- 3D ENGINE ---
+  final _rt_Scene3D _scene = _rt_Scene3D(background: _skyBlue);
+  final _rt_Camera3D _camera = _rt_Camera3D(fov: 60, position: _rt_V3(0, 8, 22), target: _rt_V3(0, 2, 0));
+  final _rt_Scene3DController _viewCtrl = _rt_Scene3DController();
+  final _rt_ShellController _shell = _rt_ShellController();
+  final GlobalKey _canvasKey = GlobalKey();
+
+  /// Everything scenario-specific lives under this group.
+  late final _rt_Node3D _lab = _scene.add(_rt_Node3D(name: 'lab'));
+  late final _rt_Points3D _starField = _buildStars();
+
+  // Scenario 1 nodes.
+  _rt_Mesh3D? _stick, _shadowQuad, _chalk;
+  _rt_Node3D? _sunGroup;
+  _rt_Line3D? _measureLine;
+  _rt_Label3D? _sunLabel, _chalkLabel, _stickLabel;
+  final List<_rt_Node3D> _markers = [];
+
+  // Scenario 2 nodes.
+  _rt_Node3D? _solarHolder, _lunarProxy;
+  _MoonSprite? _activeMoon;
+  _rt_Mesh3D? _gapArc, _redBeam;
+  _rt_Label3D? _alertLabel;
+
+  /// Static labels refreshed from [_tx] on every build (language switch).
+  final List<(_rt_Label3D, String)> _staticLabels = [];
+
+  /// Transient measurement labels (dist / caliper / adhika chips); these
+  /// ignore the labels toggle, like the HTML #canvas-measurements layer.
+  final List<_rt_Label3D> _measureLabels = [];
+
+  // --- LAB STATE (source AppState + scenarioData) ---
+  int _scenario = 1; // 1-based like the source
+  int _step = 1;
+  bool _showLabels = true;
+  bool _locked = false; // source toolToggleLock (starts unlocked)
+  bool _finished = false;
+  bool _busy = false; // between a correct validate and the step advance
+
+  // Scenario 1 state.
+  bool _planted = false;
+  int _day = 1;
+  int _timeIndex = 0;
+  bool _day2Started = false;
+  bool _distMeasured = false;
+  int _measureCursor = 0;
+  final _rt_V3 _sunTarget = _rt_V3();
+
+  // Scenario 2 state.
+  int _yearsRun = 0;
+  int _controlsShownFor = 0; // run-year controls revealed after 1 s
+  bool _adhikaInserted = false;
+  bool _adhikaControls = false;
+  double _solarRotTarget = 0, _lunarRotTarget = 0;
+  bool _animating = false;
+
+  final TextEditingController _ctTime1 = TextEditingController();
+  final TextEditingController _ctTime2 = TextEditingController();
+  final TextEditingController _ctDur = TextEditingController();
+  final TextEditingController _ctGap1 = TextEditingController();
+  final TextEditingController _ctGap2 = TextEditingController();
+  final TextEditingController _ctGap3 = TextEditingController();
+
+  /// Bumped on restart / scenario change so pending timers are dropped.
+  int _gen = 0;
+
+  /// Drives the flashing red desync warning (source tailwind `animate-pulse`).
+  late final AnimationController _pulse;
+
+  bool get _desyncActive => _scenario == 2 && _step == 4 && !_finished;
+
+  bool get _markingActive =>
+      _scenario == 1 &&
+      _planted &&
+      _timeIndex < _timeSteps.length &&
+      (_step == 2 || (_step == 4 && _day2Started));
+
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
+    _camera
+      ..minDistance = 6
+      ..maxDistance = 70;
+    _pulse = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 700))
+      ..repeat(reverse: true);
+    _buildScenario();
+  }
+
+  @override
+  void dispose() {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    _pulse.dispose();
+    _viewCtrl.dispose();
+    for (final c in [_ctTime1, _ctTime2, _ctDur, _ctGap1, _ctGap2, _ctGap3]) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  // ------------------------------------------------------------ helpers ---
+  _rt_Points3D _buildStars() {
+    // Source starfield: 800 points in a 150-unit cube. Kept behind the flat
+    // scenario-2 artwork (z < -15) so no star dots paint over the rings.
+    final rnd = math.Random(7);
+    final pts = [
+      for (var i = 0; i < 300; i++)
+        _rt_V3((rnd.nextDouble() - 0.5) * 150, (rnd.nextDouble() - 0.5) * 150,
+            -15 - rnd.nextDouble() * 60),
+    ];
+    final stars = _rt_Points3D(pts,
+        color: Colors.white, size: 2, opacity: 0.8, sizeAttenuation: false)
+      ..visible = false
+      ..pickable = false;
+    return _scene.add(stars);
+  }
+
+  _rt_Label3D _mkLabel(String key, _rt_V3 pos,
+      {Color color = Colors.white, double size = 11}) {
+    final l = _rt_Label3D(
+      _tx.s(key),
+      pixelHeight: size,
+      color: color,
+      background: const Color(0xCC0F172A),
+      borderColor: Colors.white.withValues(alpha: 0.25),
+    )
+      ..position.copy(pos)
+      ..pickable = false;
+    _staticLabels.add((l, key));
+    return _lab.add(l);
+  }
+
+  /// Transient measurement chip (HTML .caliper-tooltip / .measure-tooltip).
+  void _showMeasureLabel(String text, _rt_V3 pos, Color color, int ms) {
+    final l = _rt_Label3D(
+      text,
+      pixelHeight: 12,
+      color: color,
+      background: const Color(0xF2F8FAFC),
+      borderColor: color,
+    )
+      ..position.copy(pos)
+      ..pickable = false;
+    _lab.add(l);
+    _measureLabels.add(l);
+    final gen = _gen;
+    Timer(Duration(milliseconds: ms), () {
+      if (mounted && gen == _gen) {
+        l.removeFromParent();
+        _measureLabels.remove(l);
+      }
+    });
+  }
+
+  void _clearMeasureLabels() {
+    for (final l in _measureLabels) {
+      l.removeFromParent();
+    }
+    _measureLabels.clear();
+  }
+
+  // ------------------------------------------------------- scene builds ---
+  void _buildScenario() {
+    _lab.clear();
+    _staticLabels.clear();
+    _measureLabels.clear();
+    _stick = _shadowQuad = _chalk = _gapArc = _redBeam = null;
+    _sunGroup = _solarHolder = _lunarProxy = null;
+    _measureLine = null;
+    _sunLabel = _chalkLabel = _stickLabel = _alertLabel = null;
+    _activeMoon = null;
+    _markers.clear();
+
+    if (_scenario == 1) {
+      _buildScenario1();
+    } else {
+      _buildScenario2();
+    }
+    _applyCamera();
+  }
+
+  void _applyCamera() {
+    if (_scenario == 1) {
+      _camera
+        ..position.set(0, 8, 22)
+        ..target.set(0, 2, 0)
+        ..enableRotate = true
+        ..minPolarAngle = 0.05
+        ..maxPolarAngle = math.pi / 2 - 0.05; // never below the ground
+    } else {
+      _camera
+        ..position.set(0, 0, 20)
+        ..target.set(0, 0, 0)
+        ..enableRotate = false // source: controls.enableRotate = false
+        ..minPolarAngle = 0.001
+        ..maxPolarAngle = math.pi - 0.001;
+    }
+    _camera.saveHome();
+    _camera.reset();
+  }
+
+  /// buildScenario1(): sunny ground, hidden stick/sun/chalk, measure line.
+  void _buildScenario1() {
+    _scene.background = _skyBlue;
+    _starField.visible = false;
+    _scene.setLights([
+      _rt_Light3D.ambient(intensity: 0.55),
+      _rt_Light3D.hemisphere(intensity: 0.25),
+      _rt_Light3D.directional(_rt_V3(10, 20, 10), intensity: 0.8),
+    ]);
+
+    // Ground: grey base drum + green surface disc. The big faces carry large
+    // depth biases so markers/shadow always paint above them.
+    _lab.add(_rt_Mesh3D(_rt_Geometry3D.cylinder(20, 20.5, 2, segments: 40),
+        _rt_Material3D(color: const Color(0xFF555555)))
+      ..position.set(0, -1, 0)
+      ..depthBias = 900
+      ..pickable = false);
+    _lab.add(_rt_Mesh3D(_rt_Geometry3D.circle(19.8, segments: 48),
+        _rt_Material3D(color: _groundGreen))
+      ..rotation.x = -math.pi / 2
+      ..position.set(0, _groundY, 0)
+      ..depthBias = 880
+      ..pickable = false);
+
+    // The stick (hidden until planted).
+    _stick = _lab.add(_rt_Mesh3D(_rt_Geometry3D.cylinder(0.08, 0.08, _stickH, segments: 12),
+        _rt_Material3D(color: _stickBrown))
+      ..position.set(0, _stickH / 2, 0)
+      ..visible = false
+      ..pickable = false);
+
+    // Sun billboard: yellow core disc + 12-point orange ray star.
+    final sun = _rt_Node3D(name: 'sun')..visible = false;
+    sun.add(_rt_Mesh3D(_rt_Geometry3D.circle(1.6, segments: 32),
+        _rt_Material3D(color: _chalkYellow, unlit: true, doubleSided: true)));
+    sun.add(_rt_Mesh3D(_starGeometry(2.2, 1.6),
+        _rt_Material3D(color: const Color(0xFFFFA500), unlit: true, doubleSided: true))
+      ..position.z = -0.01);
+    sun.pickable = false;
+    _sunGroup = _lab.add(sun);
+
+    // Fake shadow quad (the source used a three.js shadow map).
+    _shadowQuad = _lab.add(_rt_Mesh3D(_rt_Geometry3D.plane(1, 1),
+        _rt_Material3D(color: Colors.black, opacity: 0.32, unlit: true, doubleSided: true))
+      ..visible = false
+      ..depthBias = 860
+      ..pickable = false);
+
+    // Chalk marker cone (follows the pointer while marking).
+    _chalk = _lab.add(_rt_Mesh3D(_rt_Geometry3D.cone(0.2, 1.2, segments: 12),
+        _rt_Material3D(color: _chalkYellow, emissive: _chalkYellow, emissiveIntensity: 0.4))
+      ..rotation.x = math.pi
+      ..visible = false
+      ..pickable = false);
+
+    _measureLine = _lab.add(_rt_Line3D(
+      [_rt_V3(0, 0.15, 0), _rt_V3(0, 0.15, 0)],
+      color: const Color(0xFFEF4444),
+      width: 3,
+    )
+      ..visible = false
+      ..pickable = false);
+
+    _stickLabel = _mkLabel('lblStick', _rt_V3(0, _stickH + 0.4, 0), color: _accent);
+    _sunLabel = _mkLabel('lblSun', _rt_V3(0, 12, 0), color: _accent);
+    _chalkLabel = _mkLabel('lblChalk', _rt_V3(0, 1.8, 0));
+    _mkLabel('lblGround', _rt_V3(8, 0.4, -8), color: const Color(0xFFBBF7D0));
+  }
+
+  /// buildScenario2(): solar ring (left) vs lunar ring (right).
+  void _buildScenario2() {
+    _scene.background = _nightBg;
+    _starField.visible = true;
+    _scene.setLights([_rt_Light3D.ambient(intensity: 1.0)]);
+
+    _rt_Line3D orbitRing() {
+      final pts = [
+        for (var i = 0; i < 64; i++)
+          _rt_V3(math.cos(i / 64 * 2 * math.pi) * _orbitR,
+              math.sin(i / 64 * 2 * math.pi) * _orbitR, 0),
+      ];
+      return _rt_Line3D(pts, color: _ringBlue, width: 2, closed: true)..pickable = false;
+    }
+
+    // --- Left: Solar year (sun centre, Earth orbits) ---
+    final solarGroup = _lab.add(_rt_Node3D(name: 'solar')..position.set(-5.5, 0, 0));
+    solarGroup.add(orbitRing());
+    solarGroup.add(_rt_Mesh3D(_starGeometry(1.6, 1.2),
+        _rt_Material3D(color: const Color(0xFFF59E0B), unlit: true, doubleSided: true))
+      ..position.z = -0.01
+      ..pickable = false);
+    solarGroup.add(_rt_Mesh3D(_rt_Geometry3D.circle(1.2, segments: 32),
+        _rt_Material3D(
+            color: const Color(0xFFFACC15),
+            unlit: true,
+            doubleSided: true,
+            edgeColor: const Color(0xFFD97706),
+            edgeWidth: 2))
+      ..pickable = false);
+    _solarHolder = solarGroup.add(_rt_Node3D(name: 'earthHolder'));
+    _solarHolder!.add(_stylizedEarth(0.6)..position.set(-_orbitR, 0, 0));
+
+    // --- Right: Lunar year (Earth centre, 12 phase moons) ---
+    final lunarGroup = _lab.add(_rt_Node3D(name: 'lunar')..position.set(5.5, 0, 0));
+    lunarGroup.add(_stylizedEarth(1.0));
+    lunarGroup.add(orbitRing());
+    for (var i = 0; i < 12; i++) {
+      final theta = i * 2 * math.pi / 12;
+      var p = (1.0 - theta / (2 * math.pi)) + 0.5;
+      p = p % 1.0;
+      final moon = _MoonSprite(0.35)..apply(p);
+      moon.node.position.set(math.cos(theta) * _orbitR, math.sin(theta) * _orbitR, 0.015);
+      lunarGroup.add(moon.node);
+    }
+
+    // Gap arc caliper visualiser (hidden until a caliper measurement).
+    _gapArc = lunarGroup.add(_rt_Mesh3D(
+        _rt_Geometry3D.ring(3.7, 4.2, segments: 32, thetaStart: math.pi,
+            thetaLength: math.pi / 4),
+        _rt_Material3D(
+            color: const Color(0xFFEF4444), opacity: 0.8, unlit: true, doubleSided: true))
+      ..position.z = 0.03
+      ..visible = false
+      ..pickable = false);
+
+    // Active orbiting moon (starts at the left of the ring: new moon).
+    _lunarProxy = lunarGroup.add(_rt_Node3D(name: 'lunarProxy'));
+    _activeMoon = _MoonSprite(0.4)..apply(0.0);
+    _activeMoon!.node.position.set(-_orbitR, 0, 0.05);
+    _lunarProxy!.add(_activeMoon!.node);
+
+    // Red desync beam from the sun to the active moon (hidden initially).
+    _redBeam = _lab.add(_rt_Mesh3D(_rt_Geometry3D.plane(1, 1.2),
+        _rt_Material3D(
+            color: const Color(0xFFEF4444), opacity: 0.3, unlit: true, doubleSided: true))
+      ..position.z = -0.05
+      ..visible = false
+      ..pickable = false);
+
+    _mkLabel('lbl365', _rt_V3(-5.5, 5.5, 0.2));
+    _mkLabel('lblLuniDays', _rt_V3(5.5, 5.5, 0.2));
+    _mkLabel('lbl365', _rt_V3(-5.5, -5.5, 0.2));
+    _mkLabel('lbl354', _rt_V3(5.5, -5.5, 0.2));
+    _alertLabel = _lab.add(_rt_Label3D(
+      _tx.s('lblDesync').toUpperCase(),
+      pixelHeight: 20,
+      color: _alertLight,
+      bold: true,
+    )
+      ..position.set(0, 0, 0.4)
+      ..visible = false
+      ..pickable = false);
+
+    _solarRotTarget = 0;
+    _lunarRotTarget = 0;
+    _animating = false;
+  }
+
+  /// createStylizedEarth(): blue ocean + two green continents + outline.
+  _rt_Node3D _stylizedEarth(double r) {
+    final g = _rt_Node3D(name: 'earth')..pickable = false;
+    g.add(_rt_Mesh3D(_rt_Geometry3D.circle(r, segments: 32),
+        _rt_Material3D(color: const Color(0xFF3B82F6), unlit: true, doubleSided: true)));
+    g.add(_rt_Mesh3D(_rt_Geometry3D.circle(r * 0.5, segments: 16),
+        _rt_Material3D(color: const Color(0xFF10B981), unlit: true, doubleSided: true))
+      ..position.set(-r * 0.2, r * 0.2, 0.01));
+    g.add(_rt_Mesh3D(_rt_Geometry3D.circle(r * 0.4, segments: 16),
+        _rt_Material3D(color: const Color(0xFF10B981), unlit: true, doubleSided: true))
+      ..position.set(r * 0.3, -r * 0.2, 0.01));
+    g.add(_rt_Line3D(
+      [
+        for (var i = 0; i < 32; i++)
+          _rt_V3(math.cos(i / 32 * 2 * math.pi) * r, math.sin(i / 32 * 2 * math.pi) * r, 0.02),
+      ],
+      color: const Color(0xFF1E293B),
+      width: 2,
+      closed: true,
+    ));
+    for (final c in g.children) {
+      c.pickable = false;
+    }
+    return g;
+  }
+
+  /// 12-point star polygon (the source THREE.Shape sun rays).
+  _rt_Geometry3D _starGeometry(double outer, double inner) {
+    const points = 12;
+    final verts = <_rt_V3>[];
+    for (var i = 0; i < points * 2; i++) {
+      final r = i.isEven ? outer : inner;
+      final a = i / (points * 2) * 2 * math.pi;
+      verts.add(_rt_V3(math.cos(a) * r, math.sin(a) * r, 0));
+    }
+    return _rt_Geometry3D(verts, [List.generate(verts.length, (i) => i)]);
+  }
+
+  // ----------------------------------------------------- scenario 1 math ---
+  /// updateSunPosition(): elevation/azimuth from the minutes-to-noon offset.
+  _rt_V3 _sunPosFor(int idx) {
+    final t = _timeSteps[idx.clamp(0, _timeSteps.length - 1)];
+    final hourOffset = (t - _noonMin) / 60.0;
+    final elevation = math.pi / 4 - hourOffset.abs() * 0.2;
+    final azimuth = hourOffset * 0.4;
+    const distance = 15.0;
+    return _rt_V3(
+      math.sin(azimuth) * math.cos(elevation) * distance,
+      math.sin(elevation) * distance,
+      math.cos(azimuth) * math.cos(elevation) * distance,
+    );
+  }
+
+  /// checkShadowMarker(): tip of the 4-unit stick's shadow on the ground.
+  _rt_V3 _tipFor(_rt_V3 sunPos) {
+    final dir = -sunPos.normalized();
+    final t = (0.05 - _stickH) / dir.y;
+    return _rt_V3(dir.x * t, _groundY, dir.z * t);
+  }
+
+  void _setSun(int idx, {bool instant = false}) {
+    _sunTarget.copy(_sunPosFor(idx));
+    if (instant) {
+      _sunGroup?.position.copy(_sunTarget);
+      _syncSunDependents();
+    }
+  }
+
+  void _syncSunDependents() {
+    final sun = _sunGroup;
+    if (sun == null) return;
+    // The directional light rides on the sun (source lights.main).
+    for (final l in _scene.lights) {
+      if (l.kind == _rt_LightKind.directional) l.position.copy(sun.position);
+    }
+    _sunLabel?.position.set(sun.position.x, sun.position.y + 2.5, sun.position.z);
+    // Shadow quad from the stick base to the current shadow tip.
+    final q = _shadowQuad;
+    if (q != null && _planted) {
+      final tip = _tipFor(sun.position);
+      final len = math.sqrt(tip.x * tip.x + tip.z * tip.z);
+      q.visible = len > 0.05;
+      q.scale.set(len, 0.35, 1);
+      q.rotation.x = -math.pi / 2;
+      q.rotation.z = math.atan2(-tip.z, tip.x);
+      q.position.set(tip.x / 2, _groundY + 0.02, tip.z / 2);
+    }
+  }
+
+  // ------------------------------------------------------------- frame ---
+  void _onFrame(double dt) {
+    if (_scenario == 1) {
+      final sun = _sunGroup;
+      if (sun != null && sun.visible) {
+        final k = 1 - math.pow(0.95, dt * 60).toDouble();
+        sun.position.lerpTo(_sunTarget, k);
+        sun.lookAt(_camera.position);
+        _syncSunDependents();
+      }
+      final chalk = _chalk;
+      if (chalk != null && _chalkLabel != null) {
+        _chalkLabel!.visible = _showLabels && chalk.visible;
+        _chalkLabel!.position
+            .set(chalk.position.x, chalk.position.y + 1.6, chalk.position.z);
+      }
+    } else {
+      final solar = _solarHolder, lunar = _lunarProxy;
+      if (solar == null || lunar == null) return;
+      if (_animating) {
+        final k = 1 - math.pow(0.97, dt * 60).toDouble();
+        solar.rotation.z += (_solarRotTarget - solar.rotation.z) * k;
+        lunar.rotation.z += (_lunarRotTarget - lunar.rotation.z) * k;
+        if ((solar.rotation.z - _solarRotTarget).abs() < 0.005 &&
+            (lunar.rotation.z - _lunarRotTarget).abs() < 0.005) {
+          solar.rotation.z = _solarRotTarget;
+          lunar.rotation.z = _lunarRotTarget;
+          _animating = false;
+        }
+      }
+      // Counter-rotate the active moon so its phase stays screen-aligned.
+      final moon = _activeMoon;
+      if (moon != null) {
+        moon.node.rotation.z = -lunar.rotation.z;
+        final currentAngle = (math.pi + lunar.rotation.z) % (2 * math.pi);
+        var p = (1.0 - currentAngle / (2 * math.pi)) + 0.5;
+        p = p % 1.0;
+        if (p < 0) p += 1.0;
+        moon.apply(p, alert: _desyncActive);
+      }
+      // Red beam sun -> active moon while the desync alert is up.
+      final beam = _redBeam;
+      if (beam != null) {
+        beam.visible = _desyncActive;
+        if (beam.visible && moon != null) {
+          final sunPos = _rt_V3(-5.5, 0, 0);
+          final moonPos = moon.node.worldPosition;
+          final dx = moonPos.x - sunPos.x, dy = moonPos.y - sunPos.y;
+          final dist = math.sqrt(dx * dx + dy * dy);
+          beam.scale.set(dist, 1, 1);
+          beam.position.set(sunPos.x + dx / 2, sunPos.y + dy / 2, -0.05);
+          beam.rotation.z = math.atan2(dy, dx);
+        }
+      }
+    }
+  }
+
+  // --------------------------------------------------- pointer handling ---
+  void _onTap(_rt_SceneEvent e) {
+    if (_scenario != 1 || _finished) return;
+    if (_markingActive) {
+      final p = e.ray.intersectY(_groundY);
+      if (p == null) return;
+      if (math.sqrt(p.x * p.x + p.z * p.z) > 19.8) return;
+      _tryMark(p);
+    } else if (_step == 3 || _step == 5) {
+      final marker = e.hitNamed('marker');
+      if (marker != null) _measureDot(marker);
+    }
+  }
+
+  void _onHover(_rt_SceneEvent e) {
+    final chalk = _chalk;
+    if (chalk == null) return;
+    if (!_markingActive) {
+      chalk.visible = false;
+      return;
+    }
+    final p = e.ray.intersectY(_groundY);
+    if (p != null && math.sqrt(p.x * p.x + p.z * p.z) <= 19.8) {
+      chalk.position.set(p.x, _groundY + 0.66, p.z);
+      chalk.visible = true;
+    } else {
+      chalk.visible = false;
+    }
+  }
+
+  // --------------------------------------------------- scenario 1 logic ---
+  /// validateInvestigation() step 1: show stick + sun + clock, Day 1 begins.
+  void _plantStick() {
+    if (_scenario != 1 || _step != 1 || _planted) return;
+    _rt_playSfx(_rt_Sfx.magic);
+    setState(() {
+      _planted = true;
+      _day = 1;
+      _timeIndex = 0;
+      _step = 2;
+      _stick?.visible = true;
+      _sunGroup?.visible = true;
+      _setSun(0, instant: true);
+    });
+  }
+
+  /// Highly forgiving shadow tip check (source threshold: 4.0 units).
+  void _tryMark(_rt_V3 clickPoint) {
+    final ideal = _tipFor(_sunPosFor(_timeIndex));
+    if (clickPoint.distanceTo(ideal) >= 4.0) {
+      _rt_playSfx(_rt_Sfx.wrong);
+      _shell.showToast(_tx.s('fbMiss'), color: _rt_Tw.red500, icon: Icons.warning);
+      return;
+    }
+    _rt_playSfx(_rt_Sfx.correct);
+
+    final markerColor = _day == 2 ? _chalkBlue : _chalkYellow;
+    final group = _rt_Node3D(name: 'marker');
+    group.add(_rt_Mesh3D(_rt_Geometry3D.cylinder(0.35, 0.35, 0.15, segments: 14),
+        _rt_Material3D(color: markerColor))
+      ..position.y = 0.075);
+    group.add(_rt_Mesh3D(_rt_Geometry3D.cylinder(0.15, 0.15, 0.16, segments: 12),
+        _rt_Material3D(color: Colors.white, unlit: true))
+      ..position.y = 0.08);
+    group.position.copy(ideal);
+    if (_day == 2) {
+      group.position.x += 0.2;
+      group.position.z += 0.2;
+    }
+    group.userData['time'] = _fmtTime(_timeSteps[_timeIndex]);
+    _lab.add(group);
+    _markers.add(group);
+
+    setState(() {
+      _timeIndex++;
+      if (_timeIndex >= _timeSteps.length) {
+        _chalk?.visible = false;
+        _shell.showToast(_tx.s('fbExc').replaceFirst('{day}', '$_day'),
+            color: _rt_Tw.green500, icon: Icons.check_circle);
+        _step = _day == 1 ? 3 : 5;
+        _distMeasured = false;
+        _measureCursor = 0;
+      } else {
+        _setSun(_timeIndex);
+      }
+    });
+  }
+
+  /// Sidebar twin of the canvas tap: marks the exact shadow tip.
+  void _markTipTwin() {
+    if (!_markingActive) return;
+    _tryMark(_tipFor(_sunPosFor(_timeIndex)));
+  }
+
+  /// onPointerDown() steps 3/5: virtual tape measure on a chalk dot.
+  void _measureDot(_rt_Node3D marker) {
+    if (_scenario != 1 || !(_step == 3 || _step == 5) || _finished) return;
+    _rt_playSfx(_rt_Sfx.tap);
+    final line = _measureLine;
+    if (line != null) {
+      line.points = [_rt_V3(0, 0.15, 0), _rt_V3(marker.position.x, 0.15, marker.position.z)];
+      line.visible = true;
+    }
+    final dist = _rt_V3(0, 0.15, 0).distanceTo(marker.position);
+    final meters = (dist * _mPerUnit).toStringAsFixed(2);
+    final timeStr = (marker.userData['time'] as String?) ?? '';
+    final text = _rt_appLanguage.isHindi
+        ? '$timeStr ${_tx.s('tDist')}: ${meters}m'
+        : '${_tx.s('tDist')} $timeStr: ${meters}m';
+    _clearMeasureLabels();
+    _showMeasureLabel(
+        text,
+        _rt_V3(marker.position.x, marker.position.y + 1.2, marker.position.z),
+        const Color(0xFF92400E),
+        4000);
+    _shell.showToast(text, color: _accent, icon: Icons.straighten);
+    setState(() => _distMeasured = true);
+  }
+
+  /// Sidebar twin: cycles through the marked dots.
+  void _measureDotTwin() {
+    if (_markers.isEmpty) return;
+    final marker = _markers[_measureCursor % _markers.length];
+    _measureCursor++;
+    _measureDot(marker);
+  }
+
+  /// startDay2(): blue chalk, time resets to 11:00 AM.
+  void _startDay2() {
+    if (_scenario != 1 || _step != 4 || _day2Started) return;
+    _rt_playSfx(_rt_Sfx.scenario);
+    setState(() {
+      _day2Started = true;
+      _day = 2;
+      _timeIndex = 0;
+      _distMeasured = false;
+      _measureLine?.visible = false;
+      _clearMeasureLabels();
+      final chalk = _chalk;
+      if (chalk != null) {
+        chalk.material.color = _chalkBlue;
+        chalk.material.emissive = _chalkBlue;
+      }
+      _setSun(0, instant: true);
+    });
+  }
+
+  // --------------------------------------------------- scenario 2 logic ---
+  void _startCycles() {
+    if (_scenario != 2 || _step != 1) return;
+    setState(() => _step = 2);
+  }
+
+  /// runYear(): both rings spin; controls appear 1 s later.
+  void _runYear(int year) {
+    if (_scenario != 2 || _yearsRun != year - 1) return;
+    if (year == 1 && _step != 2) return;
+    if (year > 1 && _step != 3) return;
+    _rt_playSfx(_rt_Sfx.magic);
+    setState(() {
+      _yearsRun = year;
+      _solarRotTarget -= 2 * math.pi;
+      _lunarRotTarget -= _lunarYearTurn;
+      _animating = true;
+    });
+    final gen = _gen;
+    Timer(const Duration(seconds: 1), () {
+      if (mounted && gen == _gen) setState(() => _controlsShownFor = year);
+    });
+  }
+
+  /// onCanvasDrop('caliper') / the chip's tap twin.
+  void _measureGap() {
+    if (_scenario != 2 || _finished) return;
+    if (!(_step == 2 && _controlsShownFor >= 1) &&
+        !(_step == 3 && _controlsShownFor >= 2)) {
+      return;
+    }
+    _rt_playSfx(_rt_Sfx.correct);
+    final days = _step == 2 ? 11 : (_yearsRun >= 3 ? 33 : 22);
+
+    final arc = _gapArc;
+    if (arc != null) {
+      final absRot = _lunarRotTarget.abs() % (2 * math.pi);
+      arc.geometry = _rt_Geometry3D.ring(3.7, 4.2,
+          segments: 32, thetaStart: math.pi, thetaLength: (2 * math.pi) - absRot);
+      arc.visible = true;
+      final gen = _gen;
+      Timer(const Duration(seconds: 8), () {
+        if (mounted && gen == _gen) arc.visible = false;
+      });
+    }
+    _showMeasureLabel('${_tx.s('tCaliper')}: $days ${_tx.s('daysUnit')}',
+        _rt_V3(1.3, 1.1, 0.3), const Color(0xFF0F172A), 8000);
+    _shell.showToast(_tx.s('fbMeas').replaceFirst('{days}', '$days'),
+        color: _rt_Tw.green500, icon: Icons.straighten);
+  }
+
+  /// insertAdhika(): the lunar ring catches up 30 days.
+  void _insertAdhika() {
+    if (_scenario != 2 || _step != 4 || _adhikaInserted || _finished) return;
+    _rt_playSfx(_rt_Sfx.magic);
+    setState(() {
+      _adhikaInserted = true;
+      _lunarRotTarget -= _adhikaTurn;
+      _animating = true;
+    });
+    _showMeasureLabel('${_tx.s('tAdhika')}: ${_tx.s('tAdded')}', _rt_V3(5.5, -1.4, 0.3),
+        _rt_Tw.purple600, 4000);
+    _shell.showToast(_tx.s('tAdded'), color: _rt_Tw.purple500, icon: Icons.add_circle);
+    final gen = _gen;
+    Timer(const Duration(seconds: 1), () {
+      if (mounted && gen == _gen) setState(() => _adhikaControls = true);
+    });
+  }
+
+  /// DragTarget drop (source onCanvasDrop: only the right canvas half).
+  void _onChipDrop(DragTargetDetails<String> details) {
+    final box = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null) return;
+    final local = box.globalToLocal(details.offset);
+    if (local.dx <= box.size.width / 2) return;
+    if (details.data == 'caliper') _measureGap();
+    if (details.data == 'adhika') _insertAdhika();
+  }
+
+  // ---------------------------------------------------------- validate ---
+  bool _timeOk(String v) {
+    final t = v.trim();
+    return t == '12:04' || t == '12:00';
+  }
+
+  void _validate() {
+    if (_busy || _finished) return;
+    bool ok;
+    if (_scenario == 1 && _step == 3) {
+      ok = _timeOk(_ctTime1.text);
+    } else if (_scenario == 1 && _step == 5) {
+      ok = _timeOk(_ctTime2.text) && _ctDur.text.trim() == '24';
+    } else if (_scenario == 2 && _step == 2) {
+      ok = _ctGap1.text.trim() == '11';
+    } else if (_scenario == 2 && _step == 3) {
+      ok = _ctGap2.text.trim() == '22' && _ctGap3.text.trim() == '33';
+    } else if (_scenario == 2 && _step == 4) {
+      ok = true;
+    } else {
+      return;
+    }
+
+    if (!ok) {
+      _rt_playSfx(_rt_Sfx.wrong);
+      _shell.showToast(_tx.s('fbInc'), color: _rt_Tw.red500, icon: Icons.warning);
+      return;
+    }
+    _rt_playSfx(_rt_Sfx.correct);
+    _shell.showToast(_tx.s('fbCorr'), color: _rt_Tw.green500, icon: Icons.check_circle);
+    final isLast = (_scenario == 1 && _step == 5) || (_scenario == 2 && _step == 4);
+    setState(() => _busy = true);
+    final gen = _gen;
+    Timer(const Duration(milliseconds: 1500), () {
+      if (!mounted || gen != _gen) return;
+      if (isLast) {
+        _complete();
+      } else {
+        setState(() {
+          _busy = false;
+          _step++;
+          _distMeasured = false;
+          _measureCursor = 0;
+          _measureLine?.visible = false;
+          _clearMeasureLabels();
+        });
+      }
+    });
+  }
+
+  void _complete() {
+    setState(() {
+      _busy = false;
+      _finished = true;
+      // SOURCE BUG FIX: the HTML left the red desync beam/alert visible after
+      // the resync; _desyncActive turning false clears it here.
+    });
+    _shell.showToast(_tx.s('fbComp'), color: _rt_Tw.green500, icon: Icons.emoji_events);
+    _shell.setSidebarOpen(true);
+    final gen = _gen;
+    Timer(const Duration(seconds: 4), () {
+      if (mounted && gen == _gen && _finished) _showObservation();
+    });
+  }
+
+  /// The draggable observation popup becomes a shell popup.
+  void _showObservation() {
+    _rt_playSfx(_rt_Sfx.success);
+    _rt_showShellPopup(
+      context,
+      title: _tx.s('obsHeader'),
+      icon: Icons.lightbulb,
+      color: _accent,
+      buttonLabel: _tx.s('gotIt'),
+      body: Text(
+        _tx.s(_scenario == 1 ? 'obs1' : 'obs2'),
+        textAlign: TextAlign.center,
+        style: TextStyle(fontSize: 12.5, color: _rt_Lab.text, height: 1.45),
+      ),
+    );
+  }
+
+  // --------------------------------------------------- scenario / reset ---
+  void _resetState() {
+    _step = 1;
+    _finished = false;
+    _busy = false;
+    _planted = false;
+    _day = 1;
+    _timeIndex = 0;
+    _day2Started = false;
+    _distMeasured = false;
+    _measureCursor = 0;
+    _yearsRun = 0;
+    _controlsShownFor = 0;
+    _adhikaInserted = false;
+    _adhikaControls = false;
+    _solarRotTarget = 0;
+    _lunarRotTarget = 0;
+    _animating = false;
+    for (final c in [_ctTime1, _ctTime2, _ctDur, _ctGap1, _ctGap2, _ctGap3]) {
+      c.clear();
+    }
+  }
+
+  void _loadScenario(int s) {
+    if (s == _scenario && _step == 1 && !_finished) {
+      _rt_playSfx(_rt_Sfx.tap);
+      return;
+    }
+    _rt_playSfx(_rt_Sfx.scenario);
+    _gen++;
+    setState(() {
+      _scenario = s;
+      _resetState();
+      _buildScenario();
+    });
+  }
+
+  /// resetLab(): everything back to scenario 1 (shell plays the sfx).
+  void _restart() {
+    _gen++;
+    setState(() {
+      _scenario = 1;
+      _showLabels = true;
+      _locked = false;
+      _resetState();
+      _buildScenario();
+    });
+  }
+
+  // ----------------------------------------------------------- HUD text ---
+  int get _stepCount => _scenario == 1 ? 5 : 4;
+
+  String _hudTitle() {
+    final s = _step.clamp(1, _stepCount);
+    return _tx.s('s${_scenario}s${s}htitle');
+  }
+
+  String _inst() {
+    if (_finished) return _tx.s(_scenario == 1 ? 'fbScenComp' : 'fbResync');
+    if (_scenario == 1) {
+      if (_step == 2) {
+        if (_timeIndex == 0) return _tx.s('s1s2hinst');
+        return _tx
+            .s('timeIsDay1')
+            .replaceFirst('{time}', _fmtTime(_timeSteps[_timeIndex]));
+      }
+      if (_step == 3 || _step == 5) {
+        if (_distMeasured) return _tx.s('distMeasured');
+        return _tx.s('s1s${_step}hinst');
+      }
+      if (_step == 4) {
+        if (!_day2Started) return _tx.s('s1s4hinst');
+        return _tx
+            .s('timeIsDay2')
+            .replaceFirst('{time}', _fmtTime(_timeSteps[_timeIndex]));
+      }
+      return _tx.s('s1s1hinst');
+    }
+    return _tx.s('s2s${_step.clamp(1, 4)}hinst');
+  }
+
+  /// Refreshes 3D label text + visibility for the current language/state.
+  void _syncLabels() {
+    for (final (l, key) in _staticLabels) {
+      l.text = _tx.s(key);
+      var vis = _showLabels;
+      if (identical(l, _stickLabel) || identical(l, _sunLabel)) vis &= _planted;
+      if (identical(l, _chalkLabel)) vis &= _chalk?.visible ?? false;
+      l.visible = vis;
+    }
+    final alert = _alertLabel;
+    if (alert != null) {
+      alert.text = _tx.s('lblDesync').toUpperCase();
+      alert.visible = _showLabels && _desyncActive;
+    }
+  }
+
+  // --------------------------------------------------------------- UI ---
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () => SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive),
+      child: _rt_LangBuilder(builder: (context, lang) {
+        _syncLabels();
+        return _rt_ActivityShell(
+          controller: _shell,
+          title: _tx.s('app'),
+          subtitle: _tx.s('subtitle'),
+          theme: _theme,
+          canvasBackground: _nightBg,
+          intro: _rt_IntroConfig(
+            title: _tx.s('app'),
+            subtitle: _tx.s('subtitle'),
+            buttonLabel: _tx.s('enter'),
+            icon: Icons.public,
+          ),
+          onRestart: _restart,
+          onZoomIn: _camera.zoomIn,
+          onZoomOut: _camera.zoomOut,
+          onResetView: _camera.reset,
+          toolbarExtras: [
+            _rt_RotatePanToggle(controller: _viewCtrl, accent: _accent),
+            const SizedBox(height: 4),
+            // Camera lock (source toolToggleLock).
+            Tooltip(
+              message: _tx.s('ttLock'),
+              child: InkResponse(
+                key: const ValueKey('btn-lock'),
+                radius: 22,
+                onTap: () {
+                  _rt_playSfx(_rt_Sfx.toggle);
+                  setState(() => _locked = !_locked);
+                },
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: _locked ? _accent : _rt_Lab.surface,
+                    shape: BoxShape.circle,
+                    boxShadow: _locked
+                        ? [BoxShadow(color: _accent.withValues(alpha: 0.4), blurRadius: 6)]
+                        : null,
+                  ),
+                  child: Icon(_locked ? Icons.lock : Icons.lock_open,
+                      size: 18, color: _locked ? Colors.black : _rt_Lab.textMuted),
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Tooltip(
+              message: _tx.s('ttLabels'),
+              child: InkResponse(
+                key: const ValueKey('btn-labels'),
+                radius: 22,
+                onTap: () {
+                  _rt_playSfx(_rt_Sfx.toggle);
+                  setState(() => _showLabels = !_showLabels);
+                },
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: _showLabels ? _accent : _rt_Lab.surface,
+                    shape: BoxShape.circle,
+                    boxShadow: _showLabels
+                        ? [BoxShadow(color: _accent.withValues(alpha: 0.4), blurRadius: 6)]
+                        : null,
+                  ),
+                  child: Icon(Icons.sell,
+                      size: 18, color: _showLabels ? Colors.black : _rt_Lab.textMuted),
+                ),
+              ),
+            ),
+          ],
+          hint: _rt_StepHint(
+            number: _finished ? '✓' : '$_step',
+            text: _inst(),
+            label: _hudTitle(),
+          ),
+          tabs: [
+            _rt_ShellTab(label: _tx.s('tab'), icon: Icons.menu_book, builder: (_) => _sidebar()),
+          ],
+          canvas: DragTarget<String>(
+            onWillAcceptWithDetails: (d) =>
+                _scenario == 2 && (d.data == 'caliper' || d.data == 'adhika'),
+            onAcceptWithDetails: _onChipDrop,
+            builder: (context, candidates, rejected) => SizedBox.expand(
+              key: _canvasKey,
+              child: _rt_Scene3DView(
+                scene: _scene,
+                camera: _camera,
+                controller: _viewCtrl,
+                cameraControls: !_locked,
+                onFrame: _onFrame,
+                onTap: _onTap,
+                onHover: _onHover,
+              ),
+            ),
+          ),
+          canvasOverlays: [
+            // Virtual clock (source #virtual-clock), under the menu button.
+            if (_scenario == 1 && _planted)
+              Positioned(top: 68, left: 16, child: _clockPill()),
+            Positioned(left: 60, right: 60, bottom: 8, child: Center(child: _hud())),
+          ],
+        );
+      }),
+    );
+  }
+
+  Widget _clockPill() {
+    final t = _fmtTime(_timeSteps[_timeIndex.clamp(0, _timeSteps.length - 1)]);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xE60F172A),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 10)],
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        const Icon(Icons.access_time, size: 16, color: _accent),
+        const SizedBox(width: 6),
+        Text(
+          t,
+          key: const ValueKey('clock-text'),
+          style: const TextStyle(
+              color: _accent,
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+              fontFamily: 'monospace'),
+        ),
+      ]),
+    );
+  }
+
+  // -------------------------------------------------------------- HUD ---
+  /// The bottom glass panel (#hud-container: title, instruction, controls).
+  Widget _hud() {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 560),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xE60F172A),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: _accent.withValues(alpha: 0.5), width: 1.4),
+          boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 12)],
+        ),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text(
+            _hudTitle().toUpperCase(),
+            key: const ValueKey('hud-title'),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.65),
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.4),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            _inst(),
+            key: const ValueKey('hud-inst'),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+                color: _finished ? _rt_Tw.green400 : Colors.white,
+                fontSize: 13.5,
+                fontWeight: FontWeight.w900,
+                height: 1.25),
+          ),
+          ..._hudControls(),
+        ]),
+      ),
+    );
+  }
+
+  List<Widget> _hudControls() {
+    if (_finished) return const [];
+    final out = <Widget>[const SizedBox(height: 8)];
+    if (_scenario == 1) {
+      switch (_step) {
+        case 1:
+          out.add(_rt_ActionButton(
+            key: const ValueKey('btn-plant'),
+            label: _tx.s('s1s1btn'),
+            icon: Icons.push_pin,
+            color: _accent,
+            sound: null,
+            onPressed: _plantStick,
+          ));
+        case 2:
+          out.add(_rt_ActionButton(
+            key: const ValueKey('btn-tracking'),
+            label: _tx.s('trackWait'),
+            icon: Icons.hourglass_top,
+            color: _accent,
+            onPressed: null,
+          ));
+        case 3:
+          out.add(Row(mainAxisSize: MainAxisSize.min, children: [
+            _inputField(_ctTime1, 'input-time1', '12:00', width: 108, time: true),
+            const SizedBox(width: 8),
+            _rt_ActionButton(
+              key: const ValueKey('btn-validate'),
+              label: _tx.s('s1s3btn'),
+              icon: Icons.check_circle,
+              color: _accent,
+              sound: null,
+              onPressed: _busy ? null : _validate,
+            ),
+          ]));
+        case 4:
+          out.add(_day2Started
+              ? _rt_ActionButton(
+                  key: const ValueKey('btn-tracking'),
+                  label: _tx.s('trackWait'),
+                  icon: Icons.hourglass_top,
+                  color: _chalkBlue,
+                  onPressed: null,
+                )
+              : _rt_ActionButton(
+                  key: const ValueKey('btn-start-day2'),
+                  label: _tx.s('btnStartDay2'),
+                  icon: Icons.play_arrow,
+                  color: _chalkBlue,
+                  sound: null,
+                  onPressed: _startDay2,
+                ));
+        case 5:
+          out.add(Row(mainAxisSize: MainAxisSize.min, children: [
+            _inputField(_ctTime2, 'input-time2', '12:00', width: 96, time: true),
+            const SizedBox(width: 6),
+            _inputField(_ctDur, 'input-dur', _tx.s('inputDur'), width: 110),
+            const SizedBox(width: 8),
+            _rt_ActionButton(
+              key: const ValueKey('btn-validate'),
+              label: _tx.s('s1s5btn'),
+              icon: Icons.check_circle,
+              color: _accent,
+              sound: null,
+              onPressed: _busy ? null : _validate,
+            ),
+          ]));
+      }
+      return out;
+    }
+
+    // Scenario 2.
+    switch (_step) {
+      case 1:
+        out.add(_rt_ActionButton(
+          key: const ValueKey('btn-start-cycles'),
+          label: _tx.s('s2s1btn'),
+          icon: Icons.play_circle,
+          color: _accent,
+          onPressed: _startCycles,
+        ));
+      case 2:
+        if (_yearsRun < 1) {
+          out.add(_rt_ActionButton(
+            key: const ValueKey('btn-run-yr1'),
+            label: _tx.s('btnRunYr1'),
+            icon: Icons.play_arrow,
+            color: _chalkBlue,
+            sound: null,
+            onPressed: () => _runYear(1),
+          ));
+        }
+        if (_controlsShownFor >= 1) {
+          out.add(_caliperRow('dragCaliper1', 'btn-caliper'));
+          out.add(const SizedBox(height: 6));
+          out.add(Row(mainAxisSize: MainAxisSize.min, children: [
+            _inputField(_ctGap1, 'input-gap1', _tx.s('inputGap1'), width: 150),
+            const SizedBox(width: 8),
+            _rt_ActionButton(
+              key: const ValueKey('btn-validate'),
+              label: _tx.s('s2s2btn'),
+              icon: Icons.check_circle,
+              color: _accent,
+              sound: null,
+              onPressed: _busy ? null : _validate,
+            ),
+          ]));
+        }
+      case 3:
+        if (_yearsRun < 2) {
+          out.add(_rt_ActionButton(
+            key: const ValueKey('btn-run-yr2'),
+            label: _tx.s('btnRunYr2'),
+            icon: Icons.play_arrow,
+            color: _chalkBlue,
+            sound: null,
+            onPressed: () => _runYear(2),
+          ));
+        }
+        if (_controlsShownFor >= 2) {
+          out.add(_caliperRow('dragCaliper2', 'btn-caliper2'));
+          out.add(const SizedBox(height: 6));
+          out.add(_inputField(_ctGap2, 'input-gap2', _tx.s('inputGap2'), width: 190));
+          if (_yearsRun < 3) {
+            out.add(const SizedBox(height: 6));
+            out.add(_rt_ActionButton(
+              key: const ValueKey('btn-run-yr3'),
+              label: _tx.s('btnRunYr3'),
+              icon: Icons.play_arrow,
+              color: _chalkBlue,
+              sound: null,
+              onPressed: () => _runYear(3),
+            ));
+          }
+        }
+        if (_controlsShownFor >= 3) {
+          out.add(const SizedBox(height: 6));
+          out.add(_caliperRow('dragCaliper3', 'btn-caliper3'));
+          out.add(const SizedBox(height: 6));
+          out.add(Row(mainAxisSize: MainAxisSize.min, children: [
+            _inputField(_ctGap3, 'input-gap3', _tx.s('inputGap3'), width: 150),
+            const SizedBox(width: 8),
+            _rt_ActionButton(
+              key: const ValueKey('btn-validate'),
+              label: _tx.s('s2s3btn'),
+              icon: Icons.check_circle,
+              color: _accent,
+              sound: null,
+              onPressed: _busy ? null : _validate,
+            ),
+          ]));
+        }
+      case 4:
+        // Source: the red warning carries tailwind `animate-pulse`.
+        out.add(FadeTransition(
+          opacity: _pulse.drive(Tween(begin: 1.0, end: 0.35)),
+          child: Text(
+            _tx.s('desyncRedTxt'),
+            key: const ValueKey('desync-text'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+                color: _alertLight, fontSize: 12, fontWeight: FontWeight.w900),
+          ),
+        ));
+        out.add(const SizedBox(height: 6));
+        if (!_adhikaInserted) {
+          out.add(Row(mainAxisSize: MainAxisSize.min, children: [
+            Flexible(child: _dragChip('adhika', _tx.s('btnAdhika'), _rt_Tw.purple600)),
+            const SizedBox(width: 8),
+            _rt_ActionButton(
+              key: const ValueKey('btn-adhika'),
+              label: _tx.s('tAdhika'),
+              icon: Icons.add_circle,
+              color: _rt_Tw.purple600,
+              sound: null,
+              onPressed: _insertAdhika,
+            ),
+          ]));
+        }
+        if (_adhikaControls) {
+          out.add(const SizedBox(height: 6));
+          out.add(_rt_ActionButton(
+            key: const ValueKey('btn-validate'),
+            label: _tx.s('s2s4btn'),
+            icon: Icons.check_circle,
+            color: _accent,
+            sound: null,
+            onPressed: _busy ? null : _validate,
+          ));
+        }
+    }
+    return out;
+  }
+
+  /// Caliper draggable chip + its tap twin button.
+  Widget _caliperRow(String labelKey, String twinKey) {
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Flexible(child: _dragChip('caliper', _tx.s(labelKey), _rt_Tw.slate700)),
+      const SizedBox(width: 8),
+      _rt_ActionButton(
+        key: ValueKey(twinKey),
+        label: _tx.s('tCaliper'),
+        icon: Icons.straighten,
+        color: _rt_Tw.slate600,
+        sound: null,
+        onPressed: _measureGap,
+      ),
+    ]);
+  }
+
+  Widget _dragChip(String data, String label, Color color) {
+    Widget chip({bool dragging = false}) => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+                color: data == 'caliper' ? _accent : Colors.white.withValues(alpha: 0.4)),
+            boxShadow: dragging
+                ? [const BoxShadow(color: Colors.black54, blurRadius: 10)]
+                : null,
+          ),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(data == 'caliper' ? Icons.straighten : Icons.add_circle,
+                size: 14, color: data == 'caliper' ? _accent : Colors.white),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
+            ),
+          ]),
+        );
+    return Draggable<String>(
+      data: data,
+      hitTestBehavior: HitTestBehavior.opaque,
+      onDragStarted: () => _rt_playSfx(_rt_Sfx.tap),
+      feedback: Material(color: Colors.transparent, child: chip(dragging: true)),
+      childWhenDragging: Opacity(opacity: 0.35, child: chip()),
+      child: chip(),
+    );
+  }
+
+  Widget _inputField(TextEditingController ctrl, String key, String hint,
+      {double width = 110, bool time = false}) {
+    return SizedBox(
+      width: width,
+      child: TextField(
+        key: ValueKey(key),
+        controller: ctrl,
+        textAlign: TextAlign.center,
+        keyboardType: time ? TextInputType.datetime : TextInputType.number,
+        style: const TextStyle(
+            fontSize: 13,
+            fontFamily: 'monospace',
+            fontWeight: FontWeight.w800,
+            color: Colors.white),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: TextStyle(
+              color: Colors.white.withValues(alpha: 0.4),
+              fontSize: 11,
+              fontFamily: 'monospace'),
+          isDense: true,
+          filled: true,
+          fillColor: Colors.white.withValues(alpha: 0.08),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 9),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.25)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: _accent),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ----------------------------------------------------------- sidebar ---
+  Widget _sidebar() {
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _rt_ObjectiveCard(
+            title: _tx.s('missionObj'),
+            desc: _tx.s(_scenario == 1 ? 's1Obj' : 's2Obj'),
+            accent: _accent,
+            icon: Icons.gps_fixed,
+          ),
+          const SizedBox(height: 10),
+          _rt_SectionLabel(_tx.s('selectInv'), icon: Icons.science, color: _accent),
+          for (var s = 1; s <= 2; s++)
+            _rt_ChoiceButton(
+              key: ValueKey('scen-$s'),
+              label: _tx.s('opt$s'),
+              state: _scenario == s ? _rt_ChoiceState.selected : _rt_ChoiceState.idle,
+              onTap: () => _loadScenario(s),
+            ),
+          ..._controls(),
+          const SizedBox(height: 10),
+          _rt_SectionLabel(_tx.s('procSteps'), icon: Icons.checklist, color: _rt_Tw.blue400),
+          ..._stepCards(),
+        ],
+      ),
+    );
+  }
+
+  /// Sidebar twins for the canvas interactions (accessibility/testability).
+  List<Widget> _controls() {
+    final items = <Widget>[];
+    if (_finished) return items;
+    if (_scenario == 1) {
+      if (_markingActive) {
+        items.add(_rt_ActionButton(
+          key: const ValueKey('btn-mark-tip'),
+          label: _tx.s('btnMarkTip'),
+          icon: Icons.edit_location_alt,
+          color: _day == 2 ? _chalkBlue : _rt_Tw.amber600,
+          expand: true,
+          sound: null,
+          onPressed: _markTipTwin,
+        ));
+      }
+      if (_step == 3 || _step == 5) {
+        items.add(_rt_ActionButton(
+          key: const ValueKey('btn-measure'),
+          label: _tx.s('btnMeasureDot'),
+          icon: Icons.straighten,
+          color: _rt_Tw.emerald600,
+          expand: true,
+          sound: null,
+          onPressed: _measureDotTwin,
+        ));
+      }
+    } else {
+      // Sidebar twins of the HUD drag chips (source #tool-caliper /
+      // #tool-adhika); shown exactly while the matching chip is available.
+      if ((_step == 2 && _controlsShownFor >= 1) ||
+          (_step == 3 && _controlsShownFor >= 2)) {
+        items.add(_rt_ActionButton(
+          key: const ValueKey('btn-caliper-side'),
+          label: _tx.s('tCaliper'),
+          icon: Icons.straighten,
+          color: _rt_Tw.slate600,
+          expand: true,
+          sound: null,
+          onPressed: _measureGap,
+        ));
+      }
+      if (_step == 4 && !_adhikaInserted) {
+        items.add(_rt_ActionButton(
+          key: const ValueKey('btn-adhika-side'),
+          label: _tx.s('tAdhika'),
+          icon: Icons.add_circle,
+          color: _rt_Tw.purple600,
+          expand: true,
+          sound: null,
+          onPressed: _insertAdhika,
+        ));
+      }
+    }
+    if (items.isEmpty) return items;
+    return [
+      const SizedBox(height: 10),
+      _rt_SectionLabel(_tx.s('controls'), icon: Icons.tune, color: _accent),
+      for (final w in items) ...[w, const SizedBox(height: 4)],
+      Text(_tx.s(_scenario == 1 ? 'twinTip' : 'chipTip'),
+          style: TextStyle(fontSize: 10.5, color: _rt_Lab.textMuted, height: 1.3)),
+    ];
+  }
+
+  /// updateUIPanel(): progressive step cards, the active one highlighted.
+  List<Widget> _stepCards() {
+    final reveal = _finished ? _stepCount : _step.clamp(1, _stepCount);
+    return [
+      for (var i = 1; i <= reveal; i++)
+        Builder(builder: (context) {
+          final active = !_finished && i == _step;
+          final done = _finished || i < _step;
+          return Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: active ? _accent.withValues(alpha: 0.12) : _rt_Lab.surface,
+              borderRadius: const BorderRadius.only(
+                  topRight: Radius.circular(10), bottomRight: Radius.circular(10)),
+              border: Border(
+                left: BorderSide(
+                    color: active ? _accent : (done ? _rt_Tw.green500 : _rt_Lab.border),
+                    width: 4),
+              ),
+            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Container(
+                  width: 20,
+                  height: 20,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: done ? _rt_Tw.green500 : _rt_Lab.overlay,
+                  ),
+                  child: done
+                      ? const Icon(Icons.check, size: 13, color: Colors.black)
+                      : Text('$i',
+                          style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                              color: active ? _accent : _rt_Lab.textMuted)),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _tx.s('s${_scenario}s${i}htitle').toUpperCase(),
+                    style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.6,
+                        color: active ? _accent : (done ? _rt_Tw.green500 : _rt_Lab.textMuted)),
+                  ),
+                ),
+              ]),
+              if (_scenario == 1 && i == 1) ...[
+                const SizedBox(height: 8),
+                _noonDiagram(),
+              ],
+              const SizedBox(height: 6),
+              Text(
+                _tx.s('s${_scenario}s${i}text'),
+                style: TextStyle(
+                    fontSize: 11.5,
+                    color: active ? _rt_Lab.text : _rt_Lab.textMuted,
+                    height: 1.35),
+              ),
+            ]),
+          );
+        }),
+    ];
+  }
+
+  /// The inline SVG of step 1 (sun arc over the stick, "Local Noon").
+  Widget _noonDiagram() {
+    return Container(
+      height: 92,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: _rt_Lab.overlay,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: _rt_Lab.border),
+      ),
+      child: CustomPaint(painter: _NoonArcPainter(_tx.s('localNoon'), _rt_Lab.text)),
+    );
+  }
+}
+
+// ==========================================================================
+// Stylised phase moon (source createPhaseTextureByP, drawn with meshes
+// instead of a canvas texture): dark disc + lit half + terminator ellipse.
+// ==========================================================================
+class _MoonSprite {
+  _MoonSprite(this.radius) {
+    node = _rt_Node3D(name: 'moon')..pickable = false;
+    _base = node.add(_rt_Mesh3D(_rt_Geometry3D.circle(radius, segments: 24),
+        _rt_Material3D(color: _moonDark, unlit: true, doubleSided: true))
+      ..pickable = false);
+    _right = node.add(_rt_Mesh3D(
+        _rt_Geometry3D.circle(radius, segments: 16,
+            thetaStart: -math.pi / 2, thetaLength: math.pi),
+        _rt_Material3D(color: _moonLight, unlit: true, doubleSided: true))
+      ..position.z = 0.004
+      ..pickable = false);
+    _left = node.add(_rt_Mesh3D(
+        _rt_Geometry3D.circle(radius, segments: 16,
+            thetaStart: math.pi / 2, thetaLength: math.pi),
+        _rt_Material3D(color: _moonLight, unlit: true, doubleSided: true))
+      ..position.z = 0.004
+      ..pickable = false);
+    _ellipse = node.add(_rt_Mesh3D(_rt_Geometry3D.circle(radius, segments: 24),
+        _rt_Material3D(color: _moonDark, unlit: true, doubleSided: true))
+      ..position.z = 0.008
+      ..pickable = false);
+    node.add(_rt_Line3D(
+      [
+        for (var i = 0; i < 24; i++)
+          _rt_V3(math.cos(i / 24 * 2 * math.pi) * radius,
+              math.sin(i / 24 * 2 * math.pi) * radius, 0.012),
+      ],
+      color: const Color(0xFF1E293B),
+      width: 2.5,
+      closed: true,
+    )..pickable = false);
+  }
+
+  final double radius;
+  late final _rt_Node3D node;
+  late final _rt_Mesh3D _base, _right, _left, _ellipse;
+
+  /// p = 0 new moon, 0.25 first quarter, 0.5 full, 0.75 last quarter.
+  void apply(double p, {bool alert = false}) {
+    final dark = alert ? _alertDark : _moonDark;
+    final light = alert ? _alertLight : _moonLight;
+    var v = p % 1.0;
+    if (v < 0) v += 1.0;
+
+    _base.material.color = dark;
+    _right.visible = false;
+    _left.visible = false;
+    _ellipse.visible = false;
+
+    if ((v - 0.5).abs() < 0.01) {
+      _base.material.color = light; // full moon
+    } else if (v < 0.01 || v > 0.99) {
+      // new moon: fully dark
+    } else if (v < 0.5) {
+      _right.visible = true;
+      _right.material.color = light;
+      _ellipse.visible = true;
+      if (v < 0.25) {
+        _ellipse.material.color = dark;
+        _ellipse.scale.x = math.max(0.02, 1 - v / 0.25);
+      } else {
+        _ellipse.material.color = light;
+        _ellipse.scale.x = math.max(0.02, (v - 0.25) / 0.25);
+      }
+    } else {
+      _left.visible = true;
+      _left.material.color = light;
+      _ellipse.visible = true;
+      if (v < 0.75) {
+        _ellipse.material.color = light;
+        _ellipse.scale.x = math.max(0.02, 1 - (v - 0.5) / 0.25);
+      } else {
+        _ellipse.material.color = dark;
+        _ellipse.scale.x = math.max(0.02, (v - 0.75) / 0.25);
+      }
+    }
+  }
+}
+
+// ==========================================================================
+// Mini diagram for the first step card (the source inline SVG: dashed sun
+// arc, sun at the top, stick and ground line, "Local Noon" caption).
+// ==========================================================================
+class _NoonArcPainter extends CustomPainter {
+  _NoonArcPainter(this.caption, this.textColor);
+
+  final String caption;
+  final Color textColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width, h = size.height;
+    final groundY = h * 0.86;
+
+    // Dashed arc path (M 20 90 Q 100 10 180 90 scaled to the card).
+    final arc = Path()
+      ..moveTo(w * 0.1, groundY)
+      ..quadraticBezierTo(w * 0.5, h * 0.04, w * 0.9, groundY);
+    final dashPaint = Paint()
+      ..color = _accent
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.6;
+    for (final metric in arc.computeMetrics()) {
+      var d = 0.0;
+      while (d < metric.length) {
+        final end = math.min(d + 6, metric.length);
+        canvas.drawPath(metric.extractPath(d, end), dashPaint);
+        d = end + 5;
+      }
+    }
+
+    // Sun at the top of the arc.
+    canvas.drawCircle(Offset(w * 0.5, h * 0.3), 8, Paint()..color = _accent);
+
+    // Ground + stick.
+    canvas.drawLine(Offset(w * 0.1, groundY), Offset(w * 0.9, groundY),
+        Paint()
+          ..color = _rt_Tw.slate400
+          ..strokeWidth = 2);
+    canvas.drawLine(Offset(w * 0.5, groundY), Offset(w * 0.5, h * 0.55),
+        Paint()
+          ..color = _stickBrown
+          ..strokeWidth = 4);
+
+    final tp = TextPainter(
+      text: TextSpan(
+        text: caption,
+        style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: textColor),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    tp.paint(canvas, Offset(w * 0.5 - tp.width / 2, h * 0.06));
+  }
+
+  @override
+  bool shouldRepaint(covariant _NoonArcPainter old) =>
+      old.caption != caption || old.textColor != textColor;
+}
