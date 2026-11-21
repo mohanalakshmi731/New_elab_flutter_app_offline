@@ -1,0 +1,951 @@
+{
+  "version": 1,
+  "class_level": 6,
+  "activities": [
+    {
+      "mapping_id": 1977,
+      "zone": "math",
+      "chapter_number": 1,
+      "title": "Introduction To Patterns In Mathematics",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 1978,
+      "zone": "math",
+      "chapter_number": 1,
+      "title": "Identifying And Extending Number Sequences",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 1979,
+      "zone": "math",
+      "chapter_number": 1,
+      "title": "Visualizing Number Sequences",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 1980,
+      "zone": "math",
+      "chapter_number": 1,
+      "title": "Discovering Relationships Among Number Sequences",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 1981,
+      "zone": "math",
+      "chapter_number": 1,
+      "title": "Exploring Patterns In Geometric Shapes",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 3871,
+      "zone": "math",
+      "chapter_number": 1,
+      "title": "Connecting Shape And Number Sequences",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2527,
+      "zone": "math",
+      "chapter_number": 2,
+      "title": "Identifying Basic Geometric Elements",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2528,
+      "zone": "math",
+      "chapter_number": 2,
+      "title": "Understanding Anglesand Their Components",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2529,
+      "zone": "math",
+      "chapter_number": 2,
+      "title": "The Angle Inspector",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2530,
+      "zone": "math",
+      "chapter_number": 2,
+      "title": "The Angle Sorter Challenge",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2531,
+      "zone": "math",
+      "chapter_number": 2,
+      "title": "Measuringand Drawing Angles",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 3887,
+      "zone": "math",
+      "chapter_number": 2,
+      "title": "Anglesin Real World Contexts",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2532,
+      "zone": "math",
+      "chapter_number": 3,
+      "title": "Number Puzzles Logical Deduction",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2533,
+      "zone": "math",
+      "chapter_number": 3,
+      "title": "Number Representationand Digit Properties",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2534,
+      "zone": "math",
+      "chapter_number": 3,
+      "title": "The Number Factory",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2535,
+      "zone": "math",
+      "chapter_number": 3,
+      "title": "Real World Number Applications Estimation",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2536,
+      "zone": "math",
+      "chapter_number": 3,
+      "title": "Strategic Arithmetic Number Games",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2537,
+      "zone": "math",
+      "chapter_number": 4,
+      "title": "Collectingand Organizing Data",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2538,
+      "zone": "math",
+      "chapter_number": 4,
+      "title": "Pictograph Power Building Data Storieswith Pictures",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2539,
+      "zone": "math",
+      "chapter_number": 4,
+      "title": "The Bar Graph Builder",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2540,
+      "zone": "math",
+      "chapter_number": 4,
+      "title": "Creating Bar Graphs",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2541,
+      "zone": "math",
+      "chapter_number": 4,
+      "title": "The Honest Picture Data Ethics",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2542,
+      "zone": "math",
+      "chapter_number": 5,
+      "title": "Exploring Multiplesand Factors",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2543,
+      "zone": "math",
+      "chapter_number": 5,
+      "title": "The Rectangle Factory",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2544,
+      "zone": "math",
+      "chapter_number": 5,
+      "title": "The Coprime Connection",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2545,
+      "zone": "math",
+      "chapter_number": 5,
+      "title": "Mastering Prime Factorisation",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2546,
+      "zone": "math",
+      "chapter_number": 5,
+      "title": "The Prime Factoriser Machine",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 3890,
+      "zone": "math",
+      "chapter_number": 5,
+      "title": "The Divisibility Engine",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2547,
+      "zone": "math",
+      "chapter_number": 6,
+      "title": "The Boundary Builder",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2548,
+      "zone": "math",
+      "chapter_number": 6,
+      "title": "Exploring Perimeter",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2549,
+      "zone": "math",
+      "chapter_number": 6,
+      "title": "Understanding Areaandits Measurement",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2550,
+      "zone": "math",
+      "chapter_number": 6,
+      "title": "The Shape Shifters Workshop",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2551,
+      "zone": "math",
+      "chapter_number": 6,
+      "title": "The Triangles Secret",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 3892,
+      "zone": "math",
+      "chapter_number": 6,
+      "title": "Areavs Perimeter The Shape Shifters",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2552,
+      "zone": "math",
+      "chapter_number": 7,
+      "title": "The Great Roti Share Off",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2553,
+      "zone": "math",
+      "chapter_number": 7,
+      "title": "Representing Fractionsona Number Line",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2554,
+      "zone": "math",
+      "chapter_number": 7,
+      "title": "The Roti Factory",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2555,
+      "zone": "math",
+      "chapter_number": 7,
+      "title": "Equivalent Fractions Simplest Form",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2556,
+      "zone": "math",
+      "chapter_number": 7,
+      "title": "The Great Fraction Bake Off",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 3894,
+      "zone": "math",
+      "chapter_number": 7,
+      "title": "The Fraction Factory",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2557,
+      "zone": "math",
+      "chapter_number": 8,
+      "title": "Compass Circle Construction",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2558,
+      "zone": "math",
+      "chapter_number": 8,
+      "title": "The Shape Architect",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2559,
+      "zone": "math",
+      "chapter_number": 8,
+      "title": "Constructing Squares And Rectangle",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2560,
+      "zone": "math",
+      "chapter_number": 8,
+      "title": "Advanced Geometric Constructions",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2561,
+      "zone": "math",
+      "chapter_number": 8,
+      "title": "The Diagonal Detective",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 3897,
+      "zone": "math",
+      "chapter_number": 8,
+      "title": "The Compass Quest",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2562,
+      "zone": "math",
+      "chapter_number": 9,
+      "title": "Introductionto Symmetry",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2563,
+      "zone": "math",
+      "chapter_number": 9,
+      "title": "Exploring Line Symmetry",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2564,
+      "zone": "math",
+      "chapter_number": 9,
+      "title": "Exploring Multiple Linesof Symmetry",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2565,
+      "zone": "math",
+      "chapter_number": 9,
+      "title": "Rotational Symmetryand Anglesof Rotation",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2566,
+      "zone": "math",
+      "chapter_number": 9,
+      "title": "Designing Figureswith Specific Rotational Orders",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 3898,
+      "zone": "math",
+      "chapter_number": 9,
+      "title": "Classifying Figuresby Combined Symmetries",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2567,
+      "zone": "math",
+      "chapter_number": 10,
+      "title": "Introduction To Negative Numbers And Number Line",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2568,
+      "zone": "math",
+      "chapter_number": 10,
+      "title": "Representing Integers With The Building Model",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2569,
+      "zone": "math",
+      "chapter_number": 10,
+      "title": "Adding Integers Using Contextual Models",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2570,
+      "zone": "math",
+      "chapter_number": 10,
+      "title": "Subtracting Integers Using Contextual Models",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2571,
+      "zone": "math",
+      "chapter_number": 10,
+      "title": "Comparing And Ordering Integers",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 3899,
+      "zone": "math",
+      "chapter_number": 10,
+      "title": "Real World Applications Of Integers",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2572,
+      "zone": "science",
+      "chapter_number": 1,
+      "title": "the essence of science",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2573,
+      "zone": "science",
+      "chapter_number": 1,
+      "title": "becoming an everyday scientist",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2574,
+      "zone": "science",
+      "chapter_number": 1,
+      "title": "applying scientific thinking",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2575,
+      "zone": "science",
+      "chapter_number": 1,
+      "title": "the scientific method",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2576,
+      "zone": "science",
+      "chapter_number": 1,
+      "title": "exploring diverse fields",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2577,
+      "zone": "science",
+      "chapter_number": 2,
+      "title": "classifying plants based on physical characteristics",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2578,
+      "zone": "science",
+      "chapter_number": 2,
+      "title": "observing and recording diversity in nature",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2579,
+      "zone": "science",
+      "chapter_number": 2,
+      "title": "classifying plants based on physical characteristics",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2580,
+      "zone": "science",
+      "chapter_number": 2,
+      "title": "classifying animals based on movement and body parts",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2581,
+      "zone": "science",
+      "chapter_number": 2,
+      "title": "understanding adaptations and habitats of living organisms",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 4152,
+      "zone": "science",
+      "chapter_number": 2,
+      "title": "principles and importance of grouping living organisms",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 4153,
+      "zone": "science",
+      "chapter_number": 2,
+      "title": "classifying plants based on seed structure",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2582,
+      "zone": "science",
+      "chapter_number": 3,
+      "title": "food diversity and culinary evolution",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2583,
+      "zone": "science",
+      "chapter_number": 3,
+      "title": "food diversity and culinary evolution",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2584,
+      "zone": "science",
+      "chapter_number": 3,
+      "title": "chemical tests for food nutrients",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2585,
+      "zone": "science",
+      "chapter_number": 3,
+      "title": "chemical tests for food nutrients",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2586,
+      "zone": "science",
+      "chapter_number": 3,
+      "title": "energy and body building nutrients",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 4154,
+      "zone": "science",
+      "chapter_number": 3,
+      "title": "protective nutrients and deficiency disorders",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 4155,
+      "zone": "science",
+      "chapter_number": 3,
+      "title": "designing a balanced diet",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 4156,
+      "zone": "science",
+      "chapter_number": 3,
+      "title": "food miles and sustainable eating",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2587,
+      "zone": "science",
+      "chapter_number": 4,
+      "title": "identifying magnetic and non magnetic materials",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2588,
+      "zone": "science",
+      "chapter_number": 4,
+      "title": "exploring magnetic poles and their properties",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2589,
+      "zone": "science",
+      "chapter_number": 4,
+      "title": "using magnets to find directions",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2590,
+      "zone": "science",
+      "chapter_number": 4,
+      "title": "investigating attraction and repulsion between magnets",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2591,
+      "zone": "science",
+      "chapter_number": 4,
+      "title": "magnetic fields through non magnetic materials",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 3868,
+      "zone": "science",
+      "chapter_number": 4,
+      "title": "applications of magnetic force",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2592,
+      "zone": "science",
+      "chapter_number": 5,
+      "title": "non standard units of length and their limitations",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2593,
+      "zone": "science",
+      "chapter_number": 5,
+      "title": "standard units of length si units and conversions",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2594,
+      "zone": "science",
+      "chapter_number": 5,
+      "title": "accurate measurement techniques with standard scales",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2595,
+      "zone": "science",
+      "chapter_number": 5,
+      "title": "measuring the length of curved lines",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2596,
+      "zone": "science",
+      "chapter_number": 5,
+      "title": "understanding reference points and relative position",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 3886,
+      "zone": "science",
+      "chapter_number": 5,
+      "title": "motion rest and classification of motion",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2597,
+      "zone": "science",
+      "chapter_number": 6,
+      "title": "identifying and grouping objects by materials",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2598,
+      "zone": "science",
+      "chapter_number": 6,
+      "title": "exploring material properties lustre and hardness",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2599,
+      "zone": "science",
+      "chapter_number": 6,
+      "title": "exploring material properties transparency",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2600,
+      "zone": "science",
+      "chapter_number": 6,
+      "title": "exploring material properties solubility in water",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2601,
+      "zone": "science",
+      "chapter_number": 6,
+      "title": "exploring material properties mass and volume",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 3888,
+      "zone": "science",
+      "chapter_number": 6,
+      "title": "defining matter and its applications",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2602,
+      "zone": "science",
+      "chapter_number": 7,
+      "title": "hotness coldness and the sense of touch",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2603,
+      "zone": "science",
+      "chapter_number": 7,
+      "title": "clinical thermometers and human body temperature",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2604,
+      "zone": "science",
+      "chapter_number": 7,
+      "title": "laboratory thermometers structure and calibration",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2605,
+      "zone": "science",
+      "chapter_number": 7,
+      "title": "measuring temperatures with laboratory thermometers",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2606,
+      "zone": "science",
+      "chapter_number": 7,
+      "title": "comparing thermometers and observing phase changes",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 3866,
+      "zone": "science",
+      "chapter_number": 7,
+      "title": "air temperature measurement and analysis",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2607,
+      "zone": "science",
+      "chapter_number": 8,
+      "title": "states of water and their properties",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2608,
+      "zone": "science",
+      "chapter_number": 8,
+      "title": "evaporation and factors affecting its rate",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2609,
+      "zone": "science",
+      "chapter_number": 8,
+      "title": "condensation and its manifestations",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2610,
+      "zone": "science",
+      "chapter_number": 8,
+      "title": "interconversion of waters states melting freezing",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2611,
+      "zone": "science",
+      "chapter_number": 8,
+      "title": "evaporations cooling effect",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 3893,
+      "zone": "science",
+      "chapter_number": 8,
+      "title": "the water cycle and cloud formation",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2613,
+      "zone": "science",
+      "chapter_number": 9,
+      "title": "handpicking",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2614,
+      "zone": "science",
+      "chapter_number": 9,
+      "title": "threshing and winnowing",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2615,
+      "zone": "science",
+      "chapter_number": 9,
+      "title": "sieving",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2616,
+      "zone": "science",
+      "chapter_number": 9,
+      "title": "evaporation for dissolved solids",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2617,
+      "zone": "science",
+      "chapter_number": 9,
+      "title": "sedimentation decantation and filtration",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 3896,
+      "zone": "science",
+      "chapter_number": 9,
+      "title": "churning and magnetic separation",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2618,
+      "zone": "science",
+      "chapter_number": 10,
+      "title": "characteristics of living beings",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2620,
+      "zone": "science",
+      "chapter_number": 10,
+      "title": "essential conditions for seed germination",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2621,
+      "zone": "science",
+      "chapter_number": 10,
+      "title": "plant growth and tropisms",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2622,
+      "zone": "science",
+      "chapter_number": 10,
+      "title": "life cycle of a plant",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2623,
+      "zone": "science",
+      "chapter_number": 10,
+      "title": "life cycle of insects mosquito",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 4157,
+      "zone": "science",
+      "chapter_number": 10,
+      "title": "life cycle of amphibians frog",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2624,
+      "zone": "science",
+      "chapter_number": 11,
+      "title": "air composition importance and uses",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2625,
+      "zone": "science",
+      "chapter_number": 11,
+      "title": "air composition importance and uses",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2626,
+      "zone": "science",
+      "chapter_number": 11,
+      "title": "water sources conservation and pollution",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2627,
+      "zone": "science",
+      "chapter_number": 11,
+      "title": "soil rocks and minerals formation composition and uses",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2628,
+      "zone": "science",
+      "chapter_number": 11,
+      "title": "fossil fuels formation uses and conservation",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 4158,
+      "zone": "science",
+      "chapter_number": 11,
+      "title": "energy from the sun its importance and uses",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 4159,
+      "zone": "science",
+      "chapter_number": 11,
+      "title": "forests ecosystems resources and conservation",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2629,
+      "zone": "science",
+      "chapter_number": 12,
+      "title": "stars and constellations",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2630,
+      "zone": "science",
+      "chapter_number": 12,
+      "title": "planets and their characteristics",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2632,
+      "zone": "science",
+      "chapter_number": 12,
+      "title": "planets and their characteristics",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2633,
+      "zone": "science",
+      "chapter_number": 12,
+      "title": "moons asteroids and comets",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 2634,
+      "zone": "science",
+      "chapter_number": 12,
+      "title": "moons asteroids and comets",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 4160,
+      "zone": "science",
+      "chapter_number": 12,
+      "title": "observing the night sky",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 4161,
+      "zone": "science",
+      "chapter_number": 12,
+      "title": "the sun and its role in the solar system",
+      "class_level": 6
+    },
+    {
+      "mapping_id": 4162,
+      "zone": "science",
+      "chapter_number": 12,
+      "title": "our galaxy and the universe",
+      "class_level": 6
+    }
+  ]
+}

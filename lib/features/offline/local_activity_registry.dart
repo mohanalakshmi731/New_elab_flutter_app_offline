@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'activities/math/registry.dart';
+import 'activities/class6/math/registry.dart';
+import 'activities/class6/science/registry.dart';
 import 'activities/class7/math/registry.dart';
 import 'activities/class7/science/registry.dart';
 import 'activities/class8/math/registry.dart';
@@ -18,7 +20,9 @@ Widget? localActivity(Map<String, dynamic> activity) {
       class8MathActivityWidgets[id] ??
       class8ScienceActivityWidgets[id] ??
       class7MathActivityWidgets[id] ??
-      class7ScienceActivityWidgets[id];
+      class7ScienceActivityWidgets[id] ??
+      class6MathActivityWidgets[id] ??
+      class6ScienceActivityWidgets[id];
 }
 
 bool supportsLocalActivity(Map<String, dynamic> activity) =>
@@ -33,12 +37,14 @@ String? localActivityZone(Map<String, dynamic> activity) {
   if (mathActivityWidgets.containsKey(id) ||
       class9MathActivityWidgets.containsKey(id) ||
       class8MathActivityWidgets.containsKey(id) ||
-      class7MathActivityWidgets.containsKey(id))
+      class7MathActivityWidgets.containsKey(id) ||
+      class6MathActivityWidgets.containsKey(id))
     return 'math';
   if (scienceActivityWidgets.containsKey(id) ||
       class9ScienceActivityWidgets.containsKey(id) ||
       class8ScienceActivityWidgets.containsKey(id) ||
-      class7ScienceActivityWidgets.containsKey(id))
+      class7ScienceActivityWidgets.containsKey(id) ||
+      class6ScienceActivityWidgets.containsKey(id))
     return 'science';
   return null;
 }

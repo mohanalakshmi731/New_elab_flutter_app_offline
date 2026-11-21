@@ -1,4 +1,4 @@
-# Offline learning — Classes 7, 8, 9 and 10
+# Offline learning — Classes 6, 7, 8, 9 and 10
 
 The Windows/native Flutter app bundles 70 Math and 49 Science activities copied from `D:/new-elab-app`. Provider mapping IDs are matched locally. Only activities returned for the signed-in account and matching this registry can be installed. Some chapters have no native activity; activities without a matching native widget are skipped during preparation.
 
@@ -56,3 +56,7 @@ Class 8 imports use the registries from D:/new-elab-app-8: 74 mathematics and 65
 Imported from D:/new-elab-app-7: 89 maths and 65 science mapping entries, backed by 152 distinct activity widgets. Source mappings that share a widget are preserved. All 66 source sound files are bundled under assets/audio/class7/, including filenames chosen dynamically by the science sound enums. Each copied sound has the same SHA-256 as its source. Mapping 2326 (BioDigital hormonal regulation anatomy models) requires internet and is deliberately excluded from offline preparation; its online availability is unchanged. One decorative network texture uses the existing bundled offline texture instead.
 
 Class 7 emotional-development mappings 2320 and 2324 are pending four source assets: assets/images/ch6_a4_avatar_default.jpg, ch6_a4_avatar_neutral.jpg, ch6_a4_avatar_happy.jpg and ch6_a4_avatar_very_sad.jpg. They are absent from the provided source, so the activity source is retained as .dart.pending-assets and not registered offline. Restore the images, the source .dart extension and registry entries together before re-enabling it.
+
+## Class 6 bundled content
+
+Imported from D:/new-elab-app-6: 58 maths and 77 science mapping entries, backed by 129 distinct native widgets. Shared source mappings are preserved. All 36 source audio files are bundled under assets/audio/class6/math/ and assets/audio/class6/science/ with source-identical SHA-256 hashes. Names shared across subjects retain their original separate paths. All activity audio references resolve to the Class 6 bundle; these activities have no remote viewer or illustration dependencies. Only activities returned by the authorized class package are shown.
