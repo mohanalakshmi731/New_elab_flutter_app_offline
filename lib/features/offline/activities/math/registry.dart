@@ -74,7 +74,7 @@ import 'package:elab_app/features/offline/activities/math/Chapter-9/TowerScalerA
 
 const Map<int, Widget> mathActivityWidgets = {
   // Chapter 1 Activities
-  2261: DecimalSorterApp(), //833 dev activity
+  833: DecimalSorterApp(), //833 dev activity
   2257: RoyalTilerApp(),
   2259: FactorSpaceAcademyApp(),
   2260: LCMHCFApp(),

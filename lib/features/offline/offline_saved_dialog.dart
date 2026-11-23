@@ -55,7 +55,7 @@ Future<void> showOfflineSavedDialog(
             ),
             const SizedBox(height: 20),
             Text(
-              quiz ? 'Your answers are saved!' : 'Activity completed!',
+              quiz ? 'Your quiz is saved!' : 'Activity completed!',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w700,
@@ -65,7 +65,7 @@ Future<void> showOfflineSavedDialog(
             const SizedBox(height: 12),
             Text(
               quiz
-                  ? 'Well done! Your answers are safe. Your results will update automatically when a connection is available.'
+                  ? 'Keep learning! Your answers are saved on this device and will sync automatically when you’re online again.'
                   : 'Great work! Your progress is saved and will update automatically when a connection is available.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -79,7 +79,7 @@ Future<void> showOfflineSavedDialog(
               child: FilledButton.icon(
                 onPressed: () => Navigator.of(context).pop(),
                 icon: const Icon(Icons.check_rounded),
-                label: const Text('Continue'),
+                label: Text(quiz ? 'Got it' : 'Continue'),
                 style: FilledButton.styleFrom(
                   backgroundColor: colors.primary,
                   foregroundColor: colors.onPrimary,

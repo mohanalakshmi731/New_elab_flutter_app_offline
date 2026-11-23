@@ -236,16 +236,30 @@ class OfflineWorkspace extends StatelessWidget {
                           padding: const EdgeInsets.only(right: 6),
                           child: TextButton.icon(
                             onPressed: () => onTab(i),
-                            icon: Icon(_icons[i % _icons.length], size: 18),
-                            label: Text(tabs[i]),
+                            icon: Icon(
+                              _icons[i % _icons.length],
+                              size: 18,
+                              color: selectedTab == i
+                                  ? colors.onPrimary
+                                  : colors.onSurfaceVariant,
+                            ),
+                            label: Text(
+                              tabs[i],
+                              style: TextStyle(
+                                color: selectedTab == i
+                                    ? colors.onPrimary
+                                    : colors.onSurfaceVariant,
+                                fontWeight: selectedTab == i
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                              ),
+                            ),
                             style: TextButton.styleFrom(
                               foregroundColor: selectedTab == i
-                                  ? colors.primary
+                                  ? colors.onPrimary
                                   : colors.onSurfaceVariant,
                               backgroundColor: selectedTab == i
-                                  ? colors.primaryContainer.withValues(
-                                      alpha: .65,
-                                    )
+                                  ? colors.primary
                                   : Colors.transparent,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 14,

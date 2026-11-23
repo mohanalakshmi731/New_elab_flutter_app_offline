@@ -7,6 +7,7 @@ import '../../core/network/api_client.dart';
 import '../../core/utils/json.dart';
 import '../../state/lab_practice.dart';
 import '../../state/providers.dart';
+import '../../widgets/form_fields.dart';
 import '../offline/offline_runtime.dart';
 
 /// Owns mode and selection for either activity player. A new identity gets a
@@ -139,27 +140,20 @@ class _LabActivityHostState extends ConsumerState<LabActivityHost> {
     ValueChanged<int?> change,
   ) => SizedBox(
     width: 220,
-    child: DropdownButtonFormField<int>(
-      key: ValueKey('$label:$value:$_revision'),
-      initialValue: value,
-      isExpanded: true,
-      decoration: InputDecoration(
-        hintText: 'Select ${label.toLowerCase()}',
-        isDense: true,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 14,
-        ),
-        border: const OutlineInputBorder(),
-      ),
+    child: AppSelect<int>(
+      key: ValueKey('$label:$_revision'),
+      value: value,
+      placeholder: 'Select ${label.toLowerCase()}',
+      height: 44,
+      fillColor: Theme.of(context).colorScheme.surface,
+      textColor: Theme.of(context).colorScheme.onSurface,
+      menuMaxHeight: 280,
       items: rows
+          .where((r) => asInt(r['id']) != null)
           .map(
-            (r) => DropdownMenuItem(
-              value: asInt(r['id']),
-              child: Text(
-                '${r['name'] ?? r['full_name'] ?? r['id']}',
-                overflow: TextOverflow.ellipsis,
-              ),
+            (r) => AppSelectItem(
+              asInt(r['id'])!,
+              '${r['name'] ?? r['full_name'] ?? r['id']}',
             ),
           )
           .toList(),
@@ -187,27 +181,15 @@ class _LabActivityHostState extends ConsumerState<LabActivityHost> {
               children: [
                 SizedBox(
                   width: 230,
-                  child: DropdownButtonFormField<bool>(
-                    initialValue: _practice,
-                    isExpanded: true,
-                    decoration: const InputDecoration(
-                      hintText: 'Activity mode',
-                      isDense: true,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 14,
-                      ),
-                      border: OutlineInputBorder(),
-                    ),
+                  child: AppSelect<bool>(
+                    value: _practice,
+                    placeholder: 'Activity mode',
+                    height: 44,
+                    fillColor: Theme.of(context).colorScheme.surface,
+                    textColor: Theme.of(context).colorScheme.onSurface,
                     items: const [
-                      DropdownMenuItem(
-                        value: false,
-                        child: Text('Presentation mode'),
-                      ),
-                      DropdownMenuItem(
-                        value: true,
-                        child: Text('Practice mode'),
-                      ),
+                      AppSelectItem(false, 'Presentation mode'),
+                      AppSelectItem(true, 'Practice mode'),
                     ],
                     onChanged: (v) {
                       if (v == null || v == _practice) return;
