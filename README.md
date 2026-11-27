@@ -92,6 +92,17 @@ flutter build ios       --release --dart-define-from-file=.env   # on a Mac
 flutter build macos     --release --dart-define-from-file=.env   # on a Mac
 ```
 
+To build the eLabs Windows installer, run on Windows with the Flutter Windows
+toolchain installed:
+
+```sh
+dart run inno_bundle --build-args=--dart-define-from-file=.env
+```
+
+The command builds the release app and its Inno Setup installer. It can download
+Inno Setup if needed. The `.env` values are compiled into the application, so
+do not put secrets in that file.
+
 Add `--dart-define=IS_MATHZORO=true` for the MathZoro app. Both flavors write the APK to the same
 `build/app/outputs/flutter-apk/app-release.apk`, so copy it away before building the other.
 

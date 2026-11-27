@@ -71,6 +71,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  inno_bundle: ^0.12.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -125,3 +126,9 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+inno_bundle:
+  id: 8fbb2ea0-e89b-11f1-a709-318bea7119b3
+  name: eLabs
+  publisher: Tedlance
+  installer_icon: windows/runner/resources/app_icon.ico
